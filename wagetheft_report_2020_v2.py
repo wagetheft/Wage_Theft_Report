@@ -28,6 +28,10 @@
 # 9/21/2021 by F. Peterson
 # 10/25/2021 by F. Peterson added summary block 1/0 triggers, 4 LoC and added formating to prev wage table
 # 2/3/2022 by F. Peterson added organization filter -- add State filter, added new WHD file and debugged, fix date bug, industry lebel adjusted (3,195 lines)
+# 2/14/2022 by F.Peterson add WHD prevailing wage inference
+# 3/3/2022 by F.Peterson added exclusion terms to construction industry
+# 3/4/2022 by F.Peterson fixed a bug with trade/industry header mixup
+# 3/4/2022 by F.Peterson fixed a bug with double output
 
 # Note: add an edit distance comparison
 # to fix replace() https://stackoverflow.com/questions/64843109/compiler-issue-assertionerror-on-replace-given-t-or-f-condition-with-string/64856554#64856554
@@ -46,9 +50,11 @@ import numpy as np
 
 import csv
 import math
+#import editdistance
 from datetime import datetime
 
 import os
+
 import pandas.io.formats.style #https://github.com/pandas-dev/pandas/issues/24884
 
 from string import ascii_letters
@@ -106,10 +112,10 @@ def main():
 
 
 	#settings****************************************************
-	TARGET_ZIPCODE = ALL_ZIPCODES #SANTA_CLARA_COUNTY_ZIPCODE #enter *_zipcode list; use ALL_ZIPCODES for all zip codes
+	TARGET_ZIPCODE = SANTA_CLARA_COUNTY_ZIPCODE #enter *_zipcode list; use ALL_ZIPCODES for all zip codes
 	TARGET_INDUSTRY = ALL_NAICS_LIBRARY() #NAICS Industies -- change in ALL_NAICS_LIBRARY()
-	STATE_FILTER = 1 #1 for all of california, else 0 for just santa_clara_county_cities
-	ORGANIZATION_FILTER  = True # True to filter, False no filter for specific organizantion name, see TARGET_ORGANIZATION
+	STATE_FILTER = 0 #1 for all of california, else 0 for just santa_clara_county_cities
+	ORGANIZATION_FILTER  = False # True to filter, False no filter for specific organizantion name, see TARGET_ORGANIZATION
 
 	TEST = 0 #0 for normal run; 1 for custom test dataset (unified_test); 2 for small dataset (first 1,000 of each file)
 	
@@ -120,7 +126,7 @@ def main():
 	Nonsignatory_Ratio_Block = False
 
 	CLEAN_OUTPUT = 0 #1 to output cleaned files for violations and suppliers ## this is a draft and does nothing for now
-	FLAG = 0 #1 Flag duplicate, #0 drop duplicates
+	FLAG_DUPLICATE = 0 #1 FLAG_DUPLICATE duplicate, #0 drop duplicates
 	OPEN_CASES = 0 #1 for open cases only (or nearly paid off), 0 for all cases
 	
 	TABLES = 1 #1 for tables and 0 for just text description
@@ -133,7 +139,7 @@ def main():
 	INFER_ZIP = 1 #1 to infer zip code
 	
 	federal_data = 1 #1 to include federal data
-	state_data = 0 #1 to include state data
+	state_data = 1 #1 to include state data
 
 	default_region = santa_clara_county_cities # santa_clara_county_cities #cities: leave blank "" for cities, which extract the region from the zip code list, this is only used for a list of cities in a county list
 
@@ -156,8 +162,141 @@ def main():
 
 	#Signatory and prevailing libraries*********************************************************
 
-	prevailing_wage_terms = ["(L.C. 223)", "(LC 223)", "(L.C. 1771)", "(LC 1771)", "(L.C. 1773.1)", "(LC 1773.1)", "(L.C. 1775)", "(LC 1775)", "(L.C. 1774)", "(LC 1774)","(underpayment)", "(misclassification)", "(prevailing)", "(incorrect)", "(increase)", 
-	"(fringe)", "(apprentice)", "(City of )", "(School District)", "(County)", "(College)", "(University)", "(State of )", "(Library)", "(Fire station)", "(Fire depart)","(Sheriff)", "(Police)", "(Water District)", "prevailing"] #"(rate)", 
+	prevailing_wage_terms = [ #https://www.dir.ca.gov/public-works/californiaprevailingwagelaws.pdf
+		"(L.C. 223)", "(section 223)", "(LC 223)", #frequently used
+		"(L.C. 1720)", "(section 1720)", "(LC 1720)", 
+		"(L.C. 1720.2)", "(section 1720.2)", "(LC 1720.2)", 
+		"(L.C. 1720.3)", "(section 1720.3)", "(LC 1720.3)", 
+		"(L.C. 1720.4)", "(section 1720.4)", "(LC 1720.4)",
+		"(L.C. 1720.5)", "(section 1720.5)", "(LC 1720.5)",
+		"(L.C. 1720.6)", "(section 1720.6)", "(LC 1720.6)", 
+		"(L.C. 1720.7)", "(section 1720.7)", "(LC 1720.7)", 
+		"(L.C. 1721)", "(section 1721)", "(LC 1721)",
+		"(L.C. 1722)", "(section 1722)", "(LC 1722)",
+		"(L.C. 1722.1)", "(section 1722.1)", "(LC 1722.1)",
+		"(L.C. 1723)", "(section 1723)", "(LC 1723)",
+		"(L.C. 1724)", "(section 1724)", "(LC 1724)",
+		"(L.C. 1725.5)", "(section 1725.5)", "(LC 1725.5)",
+		"(L.C. 1726)", "(section 1726)", "(LC 1726)",
+		"(L.C. 1727)", "(section 1727)", "(LC 1727)",
+		"(L.C. 1728)", "(section 1728)", "(LC 1728)",
+		"(L.C. 1729)", "(section 1729)", "(LC 1729)",
+		"(L.C. 1730)", "(section 1730)", "(LC 1730)",
+		"(L.C. 1734)", "(section 1734)", "(LC 1734)",
+		"(L.C. 1735)", "(section 1735)", "(LC 1735)",
+		"(L.C. 1736)", "(section 1736)", "(LC 1736)",
+		"(L.C. 1740)", "(section 1740)", "(LC 1740)",
+		"(L.C. 1741)", "(section 1741)", "(LC 1741)",
+		"(L.C. 1741.1)", "(section 1741.1)", "(LC 1741.1)",
+		"(L.C. 1742)", "(section 1742)", "(LC 1742)",
+		"(L.C. 1742.1)", "(section 1742.1)", "(LC 1742.1)",
+		"(L.C. 1743)", "(section 1743)", "(LC 1743)",
+		"(L.C. 1750)", "(section 1750)", "(LC 1750)",
+		"(L.C. 1770)", "(section 1770)", "(LC 1770)",
+		"(L.C. 1771)", "(section 1771)", "(LC 1771)", #frequently used
+		"(L.C. 1771.1)", "(section 1771.1)", "(LC 1771.1)",
+		"(L.C. 1771.2)", "(section 1771.2)", "(LC 1771.2)",
+		"(L.C. 1771.3)", "(section 1771.3)", "(LC 1771.3)",
+		"(L.C. 1771.4)", "(section 1771.4)", "(LC 1771.4)",
+		"(L.C. 1771.5)", "(section 1771.5)", "(LC 1771.5)",
+		"(L.C. 1771.6)", "(section 1771.6)", "(LC 1771.6)",
+		"(L.C. 1771.7)", "(section 1771.7)", "(LC 1771.7)",
+		"(L.C. 1772)", "(section 1772)", "(LC 1772)",
+		"(L.C. 1773)", "(section 1773)", "(LC 1773)",
+		"(L.C. 1773.1)", "(section 1773.1)", "(LC 1773.1)", #frequently used
+		"(L.C. 1773.2)", "(section 1773.2)", "(LC 1773.2)",
+		"(L.C. 1773.3)", "(section 1773.3)", "(LC 1773.3)",
+		"(L.C. 1773.4)", "(section 1773.4)", "(LC 1773.4)",
+		"(L.C. 1773.5)", "(section 1773.5)", "(LC 1773.5)",
+		"(L.C. 1773.6)", "(section 1773.6)", "(LC 1773.6)",
+		"(L.C. 1773.7)", "(section 1773.7)", "(LC 1773.7)",
+		"(L.C. 1773.8)", "(section 1773.8)", "(LC 1773.8)",
+		"(L.C. 1773.9)", "(section 1773.9)", "(LC 1773.9)",
+		"(L.C. 1773.11)", "(section 1773.11)", "(LC 1773.11)",
+		"(L.C. 1774)", "(section 1774)", "(LC 1774)", #frequently used
+		"(L.C. 1775)", "(section 1775)", "(LC 1775)", #frequently used
+		"(L.C. 1776)", "(section 1776)", "(LC 1776)",
+		"(L.C. 1777)", "(section 1777)", "(LC 1777)",
+		"(L.C. 1777.1)", "(section 1777.1)", "(LC 1777.1)",
+		"(L.C. 1777.5)", "(section 1777.5)", "(LC 1777.5)",
+		"(L.C. 1777.6)", "(section 1777.6)", "(LC 1777.6)",
+		"(L.C. 1777.7)", "(section 1777.7)", "(LC 1777.7)",
+		"(L.C. 1778)", "(section 1778)", "(LC 1778)",
+		"(L.C. 1779)", "(section 1779)", "(LC 1779)",
+		"(L.C. 1780)", "(section 1780)", "(LC 1780)",
+		"(L.C. 1781)", "(section 1781)", "(LC 1781)",
+		"(L.C. 1782)", "(section 1782)", "(LC 1782)", 
+		"(L.C. 1784)", "(section 1784)", "(LC 1784)",
+		"(L.C. 1810)", "(section 1810)", "(LC 1810)",
+		"(L.C. 1811)", "(section 1811)", "(LC 1811)",
+		"(L.C. 1812)", "(section 1812)", "(LC 1812)",
+		"(L.C. 1813)", "(section 1813)", "(LC 1813)",
+		"(L.C. 1814)", "(section 1814)", "(LC 1814)",
+		"(L.C. 1815)", "(section 1815)", "(LC 1815)",
+		"(L.C. 1860)", "(section 1860)", "(LC 1860)",
+		"(L.C. 1861)", "(section 1861)", "(LC 1861)",
+
+		"(P.C. 4104)", "(section 4104)", "(PC 4104)",
+		"(P.C. 6823)", "(section 6823)", "(PC 6823)",
+		"(P.C. 6953)", "(section 6953)", "(PC 6953)",
+		"(P.C. 10128)", "(section 10128)", "(PC 10128)",
+		"(P.C. 20672)", "(section 20672)", "(PC 20672)",
+		"(P.C. 20919.27)", "(section 20919.27)", "(PC 20919.27)",
+
+		"(P.R.C. 5366)", "(section 5366)", "(PRC 5366)",
+		"(P.R.C. 43501)", "(section 43501)", "(PRC 43501)",
+		"(P.R.C. 75075)", "(section 75075)", "(PRC 75075)",
+
+		"(P.U.C. 399.13)", "(section 399.13)", "(PUC 399.13)",
+		"(P.U.C. 3354.1)", "(section 3354.1)", "(PUC 3354.1)",
+		"(P.U.C. 16461.5)", "(section 16461.5)", "(PUC 16461.5)",
+		"(P.U.C. 100152)", "(section 100152)", "(PUC 100152)",
+		"(P.U.C. 102284)", "(section 102284)", "(PUC 102284)",
+		"(P.U.C. 102288)", "(section 102288)", "(PUC 102288)",
+		"(P.U.C. 103396)", "(section 103396)", "(PUC 103396)",
+		"(P.U.C. 130242)", "(section 130242)", "(PUC 130242)",
+
+		"(S.H.C. 670.1)", "(section 670.1)", "(SHC 670.1)",
+		"(S.H.C. 27189)", "(section 27189)", "(SHC 27189)",
+
+		"(W.C. 8007)", "(section 8007)", "(WC 8007)",
+
+		"(W.I.C. 1752.9)", "(section 1752.9)", "(WIC 1752.9)",
+
+		"(E.C. 17066)", "(section 17066)", "(EC 17066)",
+		"(E.C. 81704)", "(section 81704)", "(EC 81704)",
+
+		"(F.G.C. 1350)", "(section 1350)", "(FGC 1350)",
+		"(F.G.C. 1501.5)", "(section 1501.5)", "(FGC 1501.5)",
+
+		"(G.C. 5956.8)", "(section 5956.8)", "(GC 5956.8)",
+		"(G.C. 14453)", "(section 14453)", "(GC 14453)",
+		"(G.C. 14670.36)", "(section 14670.36)", "(GC 14670.36)",
+		"(G.C. 14955)", "(section 14955)", "(GC 14955)",
+		"(G.C. 14975)", "(section 14975)", "(GC 14975)",
+		"(G.C. 14976)", "(section 14976)", "(GC 14976)",
+		"(G.C. 54253)", "(section 54253)", "(GC 54253)",
+		"(G.C. 63036)", "(section 63036)", "(GC 63036)",
+		"(G.C. 91533)", "(section 91533)", "(GC 91533)",
+
+		"(H.S.C. 33425)", "(section 33425)", "(HSC 33425)",
+		"(H.S.C. 50675.4)", "(section 50675.4)", "(HSC 50675.4)",
+		"(H.S.C. 50746)", "(section 50746)", "(HSC 50746)",
+		"(H.S.C. 50749)", "(section 50749)", "(HSC 50749)",
+		"(H.S.C. 50766)", "(section 50766)", "(HSC 50766)",
+		"(H.S.C. 50898.2)", "(section 50898.2)", "(HSC 50898.2)",
+		"(H.S.C. 50953)", "(section 50953)", "(HSC 50953)",
+		"(H.S.C. 125290.65)", "(section 125290.65)", "(HSC 125290.65)",
+
+		"(underpayment)", "(misclassification)", "(prevailing)", "(incorrect)", "(increase)", "(fringe)", 
+		"(apprentice)", "(apprenticeship)", "(Public Contract)"
+		"(City of )", "(School District)", "(County)", "(College)", "(University)", "(State of )", "(Library)", 
+		"(Fire station)", "(Fire depart)","(Sheriff)", "(Police)", "(Water District)", 
+		"(DBRA)"
+		]
+
+	#add for WHD 
+	# Special Minimum Wages - Apprentices: flsa_smwap_violtn_cnt, flsa_smwap_bw_atp_amt, flsa_smwap_ee_atp_cnt
 
 	SIGNATORY_INDUSTRY = Signatory_Library()
 
@@ -198,8 +337,8 @@ def main():
 
 	DF_OG = df_csv.copy() #hold a copy of the original data
 
-	df_csv = DropDuplicateRecords(df_csv, FLAG) #remove duplicate cases using case_id and violation as a unique key
-	df_csv = DropDuplicateBackwage(df_csv, FLAG)
+	df_csv = DropDuplicateRecords(df_csv, FLAG_DUPLICATE) #remove duplicate cases using case_id and violation as a unique key
+	df_csv = DropDuplicateBackwage(df_csv, FLAG_DUPLICATE)
 
 	#unused df_csv = FilterForDate(df_csv, YEAR_START, YEAR_END) #filter for date
 
@@ -230,6 +369,9 @@ def main():
 		if TARGET_ZIPCODE[0] is not '00000':
 			df_csv = Filter_for_Zipcode(df_csv, TARGET_ZIPCODE)
 
+	#PREVAILING WAGE
+	if federal_data == 1:
+		df_csv = infer_WHD_prevailing_wage_violation(df_csv)
 	if prevailing_wage_report == 1:
 		df_csv = InferPrevailingWageAndColumnFlag(df_csv, prevailing_wage_terms)
 	
@@ -237,8 +379,8 @@ def main():
 	
 	#unused df_csv = Filter_for_Target_Industry(df_csv,TARGET_INDUSTRY) ##debug 12/23/2020 <-- run here for faster time but without global summary
 
-	df_csv = DropDuplicateRecords(df_csv, FLAG) #remove duplicate cases using case_id and violation as a unique key
-	df_csv = DropDuplicateBackwage(df_csv, FLAG)
+	df_csv = DropDuplicateRecords(df_csv, FLAG_DUPLICATE) #remove duplicate cases using case_id and violation as a unique key
+	df_csv = DropDuplicateBackwage(df_csv, FLAG_DUPLICATE)
 
 	#infer signatories
 	if "Signatory" not in df_csv.columns: df_csv["Signatory"] = 0
@@ -361,8 +503,10 @@ def main():
 			out_target['DIR_Case_Name'] = np.where(out_target['Signatory']==1, "masked", out_target['DIR_Case_Name'] )
 
 	#create csv output file**********************************
-	#option to_csv_test_header = ['trade_nm','legal_nm','trade']
+	#option to_csv_test_header = ['trade_nm','legal_nm','industry']
 	#option out_target[to_csv_test_header]
+	
+	out_target = out_target.drop_duplicates(keep='last') #added to prevent bug that outputs 2x
 	out_target.to_csv('report_output/' + target_city.replace(' ','_') + '_Theft_'+ TARGET_INDUSTRY[0][0].replace(' ','_') +'.csv', encoding="utf-8-sig")
 	
 	#summary
@@ -402,10 +546,10 @@ def main():
 
 	##Format for summary
 	DF_OG_ALL = DF_OG.copy()
-	DF_OG_ALL = DropDuplicateRecords(DF_OG_ALL, FLAG)
+	DF_OG_ALL = DropDuplicateRecords(DF_OG_ALL, FLAG_DUPLICATE)
 
 	DF_OG_VLN = DF_OG.copy()
-	DF_OG_VLN = DropDuplicateRecords(DF_OG_VLN, FLAG)
+	DF_OG_VLN = DropDuplicateRecords(DF_OG_VLN, FLAG_DUPLICATE)
 	DF_OG_VLN = Clean_Summary_Values(DF_OG_VLN)
 
 	#report headers***************************************************
@@ -413,7 +557,7 @@ def main():
 	
 	header_two_way_table = ["violtn_cnt", "ee_violtd_cnt", "bw_amt", "records", "ee_pmt_recv"]
 	header = ["legal_nm", "trade_nm", "cty_nm"] + header_two_way_table
-	header_two_way = header_two_way_table + ["zip_cd", 'legal_nm', "juris_or_proj_nm", 'case_id', 'violation','backwage_owed']
+	header_two_way = header_two_way_table + ["zip_cd", 'legal_nm', "juris_or_proj_nm", 'case_id', 'violation', 'violation_code','backwage_owed']
 	
 	header += ["naics_desc."]
 
@@ -447,7 +591,7 @@ def main():
 		Signatory_to_Nonsignatory_Block(df, df, textFile)
 
 	if math.isclose(df['bw_amt'].sum(), out_counts['bw_amt'].sum(), rel_tol=0.03, abs_tol=0.0):
-		do_nothing = ""
+		do_nothing = "<p>Purposful Omission of Industry Summary Block</p>"
 	else:
 		Industry_Summary_Block(out_counts, out_counts, total_ee_violtd, total_bw_atp, total_case_violtn, unique_legalname, agency_df, OPEN_CASES, textFile)
 
@@ -471,22 +615,22 @@ def main():
 		textFile.write("<h2>Wage theft by industry and city region</h2> \n")
 		textFile.close()
 
-	df_all_industry = unique_legalname.groupby(["trade", pd.Grouper(key='cty_nm')]).agg({ #https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
+	df_all_industry = unique_legalname.groupby(['industry', pd.Grouper(key='cty_nm')]).agg({ #https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
 		"bw_amt":'sum',
 		"violtn_cnt":'sum',
 		"ee_violtd_cnt":'sum',
 		"ee_pmt_recv": 'sum',
 		"records": 'sum',
-	}).reset_index().sort_values(["trade", 'cty_nm'], ascending=[True, True])
+	}).reset_index().sort_values(['industry', 'cty_nm'], ascending=[True, True])
 
-	df_all_industry = df_all_industry.set_index(["trade", 'cty_nm'])
+	df_all_industry = df_all_industry.set_index(['industry', 'cty_nm'])
 	df_all_industry = df_all_industry.sort_index()
 
 	df_all_industry = df_all_industry.reindex(columns=header_two_way_table)
 	for trade, new_df in df_all_industry.groupby(level=0):
 		new_df = pd.concat([
 			new_df, 
-			new_df.sum().to_frame().T.assign(trade='', cty_nm='COUNTYWIDE').set_index(["trade", 'cty_nm'])
+			new_df.sum().to_frame().T.assign(trade='', cty_nm='COUNTYWIDE').set_index(['trade', 'cty_nm'])
 			], sort=True).sort_index()
 
 		new_df["bw_amt"] = new_df.apply(lambda x: "{0:,.0f}".format(x["bw_amt"] ), axis=1 )
@@ -504,15 +648,15 @@ def main():
 		textFile.write("<h2>Wage theft by zip code region and industry</h2> \n")
 		textFile.close()
 
-	df_all_industry_3 = unique_legalname.groupby(["zip_cd", pd.Grouper(key='trade')]).agg({ #https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
+	df_all_industry_3 = unique_legalname.groupby(["zip_cd", pd.Grouper(key='industry')]).agg({ #https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
 		"bw_amt":'sum',
 		"violtn_cnt":'sum',
 		"ee_violtd_cnt":'sum',
 		"ee_pmt_recv": 'sum',
 		"records": 'sum',
-	}).reset_index().sort_values(['zip_cd', "trade"], ascending=[True, True])
+	}).reset_index().sort_values(['zip_cd', 'industry'], ascending=[True, True])
 
-	df_all_industry_3 = df_all_industry_3.set_index(['zip_cd', "trade"])
+	df_all_industry_3 = df_all_industry_3.set_index(['zip_cd', 'industry'])
 	df_all_industry_3 = df_all_industry_3.sort_index()
 
 	df_all_industry_3 = df_all_industry_3.reindex(columns=header_two_way_table)
@@ -520,7 +664,7 @@ def main():
 		
 		new_df_3 = pd.concat([
 			new_df_3, 
-			new_df_3.sum().to_frame().T.assign(zip_cd='', trade='ZIPCODEWIDE').set_index(['zip_cd', "trade"])
+			new_df_3.sum().to_frame().T.assign(zip_cd='', trade='ZIPCODEWIDE').set_index(['zip_cd', 'trade'])
 			], sort=True).sort_index()
 
 		new_df_3["bw_amt"] = new_df_3.apply(lambda x: "{0:,.0f}".format(x["bw_amt"] ), axis=1 )
@@ -538,16 +682,16 @@ def main():
 		textFile.write("<h2>Wage theft by city and industry</h2> \n")
 		textFile.close()
 
-	df_all_industry_n = unique_legalname.groupby(["cty_nm", pd.Grouper(key="zip_cd"), pd.Grouper(key='trade'),  pd.Grouper(key='legal_nm')]).agg({ #https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
+	df_all_industry_n = unique_legalname.groupby(["cty_nm", pd.Grouper(key="zip_cd"), pd.Grouper(key='industry'),  pd.Grouper(key='legal_nm')]).agg({ #https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
 		"bw_amt":'sum',
 		"violtn_cnt":'sum',
 		"ee_violtd_cnt":'sum',
 		"ee_pmt_recv": 'sum',
 		'backwage_owed':'sum',
 		"records": 'sum',
-		}).reset_index().sort_values(['cty_nm', "zip_cd", "trade", 'legal_nm'], ascending=[True, True, True, True])
+		}).reset_index().sort_values(['cty_nm', "zip_cd", 'industry', 'legal_nm'], ascending=[True, True, True, True])
 
-	df_all_industry_n = df_all_industry_n.set_index(['cty_nm', "zip_cd", "trade", 'legal_nm'])
+	df_all_industry_n = df_all_industry_n.set_index(['cty_nm', "zip_cd", 'industry', 'legal_nm'])
 	df_all_industry_n = df_all_industry_n.sort_index()
 
 	df_all_industry_n = df_all_industry_n.reindex(columns=header_two_way)
@@ -573,19 +717,19 @@ def main():
 			#Industry_Summary_Block(city_cases, new_df_2, total_ee_violtd, city_total_bw_atp, total_case_violtn, city_unique_legalname, city_agency_df, cty_nm, SUMMARY_SIG, file_path(temp_file_name))
 			#Industry_Summary_Block_4_Zipcode_and_City(new_df_n, df_all_industry_n, TARGET_INDUSTRY, SUMMARY_SIG, file_path(temp_file_name) )
 
-		new_df_2 = new_df_2.groupby(["cty_nm", 'trade']).agg({ #https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
+		new_df_2 = new_df_2.groupby(["cty_nm", 'industry']).agg({ #https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
 			"bw_amt":'sum',
 			"violtn_cnt":'sum',
 			"ee_violtd_cnt":'sum',
 			"ee_pmt_recv": 'sum',
 			"records": 'sum',
-			}).reset_index().sort_values(['cty_nm', "trade"], ascending=[True, True])
+			}).reset_index().sort_values(['cty_nm', 'industry'], ascending=[True, True])
 
-		new_df_2 = new_df_2.set_index(['cty_nm', "trade"])
+		new_df_2 = new_df_2.set_index(['cty_nm', 'industry'])
 		new_df_2 = new_df_2.sort_index()
 
 		new_df_2 = pd.concat([ 
-			new_df_2.sum().to_frame().T.assign(cty_nm='', trade='CITYWIDE').set_index(['cty_nm', "trade"]),
+			new_df_2.sum().to_frame().T.assign(cty_nm='', trade='CITYWIDE').set_index(['cty_nm', 'trade']),
 			new_df_2
 			], sort=True).sort_index()
 
@@ -930,7 +1074,7 @@ def Filter_for_Target_Industry(df, TARGET_INDUSTRY):
 	appended_data = pd.DataFrame()
 	for x in range(len(TARGET_INDUSTRY)): #https://stackoverflow.com/questions/28669482/appending-pandas-dataframes-generated-in-a-for-loop
 		temp_term = TARGET_INDUSTRY[x][0]
-		df_temp = df.loc[df['trade'].str.upper()==temp_term.upper() ]
+		df_temp = df.loc[df['industry'].str.upper()==temp_term.upper() ]
 		appended_data = appended_data.append(df_temp)
 	return appended_data
 
@@ -999,13 +1143,13 @@ def InferPrevailingWageAndColumnFlag(df, prevailing_wage_terms):
 	df['Prevailing'] = df.Prevailing.fillna("0")
 
 	prevailing_wage_pattern = '|'.join(prevailing_wage_terms)
-	found_prevailing = (  #(pd.isna(df['Prevailing'])) &
+	found_prevailing = ( 
+		( (df['violation_code'].astype(str).str.contains(prevailing_wage_pattern, flags=re.IGNORECASE, regex = True) ) ) |
 		( (df['violation'].astype(str).str.contains(prevailing_wage_pattern, flags=re.IGNORECASE, regex = True) ) ) | 
-		( (df['Note'].astype(str).str.contains(prevailing_wage_pattern, flags=re.IGNORECASE, regex = True) ) )|  
+		( (df['Note'].astype(str).str.contains(prevailing_wage_pattern, flags=re.IGNORECASE, regex = True) ) ) |  
 		( (df['juris_or_proj_nm'].astype(str).str.contains(prevailing_wage_pattern, flags=re.IGNORECASE, regex = True) ) )
-		)
+	)
 	df['Prevailing'] = pd.to_numeric(df['Prevailing'], errors='coerce')
-	#df['Prevailing'] = found_prevailing.replace( (True,False), (1, df['Prevailing'] ) ) #fill column ''Prevailing''
 	df['Prevailing'][found_prevailing] = 1
 
 	return df
@@ -1082,29 +1226,37 @@ def InferSignatoriesFromAddressAndFlag(df, signatory_address_list):
 	return df
 
 def Label_Industry(df, INFER, TARGET_INDUSTRY):
-	if 'trade' not in df.columns: df['trade'] = ""
+	if 'industry' not in df.columns: df['industry'] = ""
 	if 'trade2' not in df.columns: df['trade2'] = ""
 
 	if not df.empty: #filter out industry rows
-		for x in range(len(TARGET_INDUSTRY)):
+		for x in range(1, len(TARGET_INDUSTRY)): #exclude cell 0 that contains an industry label cell
 			#add a levinstein distance with distance of two and match and correct: debug 10/30/2020
-			PATTERN_EXCLUDE = EXCLUSION_LIST_GENERATOR(TARGET_INDUSTRY[x])
 			PATTERN_IND = '|'.join(TARGET_INDUSTRY[x])
+			PATTERN_EXCLUDE = EXCLUSION_LIST_GENERATOR(TARGET_INDUSTRY[x])
 			
 			if INFER == 1:
 				foundIt_ind1=(
+
 					(
-					df['legal_nm'].astype(str).str.contains(PATTERN_IND, flags=re.IGNORECASE, regex = True) &
-					~df['legal_nm'].astype(str).str.contains(PATTERN_EXCLUDE, flags=re.IGNORECASE, regex = True) ) |
+					df['legal_nm'].astype(str).str.contains(PATTERN_IND, flags=re.IGNORECASE, regex = True) 
+					&
+					~df['legal_nm'].astype(str).str.contains(PATTERN_EXCLUDE, flags=re.IGNORECASE, regex = True) )
+					
+					|
+
 					(
-					df['trade_nm'].astype(str).str.contains(PATTERN_IND, flags=re.IGNORECASE, regex = True) &
+					df['trade_nm'].astype(str).str.contains(PATTERN_IND, flags=re.IGNORECASE, regex = True) 
+					&
 					~df['trade_nm'].astype(str).str.contains(PATTERN_EXCLUDE, flags=re.IGNORECASE, regex = True) ) 
+
 					)
-				df['trade'][foundIt_ind1] = TARGET_INDUSTRY[x][0]
+
+				df['industry'][foundIt_ind1] = TARGET_INDUSTRY[x][0]
 
 			#second round fills in anything missed with the exisiting NAICS coding
 			foundIt_ind2=(
-				#(df['trade'] == "") &
+				#(df['industry'] == "") &
 				df['naic_cd'].astype(str).str.contains(PATTERN_IND, flags=re.IGNORECASE, regex = True) &
 				~df['naic_cd'].astype(str).str.contains(PATTERN_EXCLUDE, flags=re.IGNORECASE, regex = True) 
 			)
@@ -1118,27 +1270,27 @@ def Label_Industry(df, INFER, TARGET_INDUSTRY):
 			df['trade2'][foundIt_ind3] = TARGET_INDUSTRY[x][0]
 
 			# foundIt_ind4=( #commented out 12/24/2020 because the labels were just not useful
-			# 	(#pd.isna(df['trade']) &
+			# 	(#pd.isna(df['industry']) &
 			# 	df['industry'].astype(str).str.contains(PATTERN_IND, flags=re.IGNORECASE, regex = True) &
 			# 	~df['industry'].astype(str).str.contains(PATTERN_EXCLUDE, flags=re.IGNORECASE, regex = True) )
 			# 	)
 			# df['trade2'][foundIt_ind4] = TARGET_INDUSTRY[x][0]
 
-		df['trade'] = df.apply(
+		df['industry'] = df.apply(
 			lambda row: 
-				row['trade2'] if (row['trade'] == '') and (row['trade2'] != '')
-				else row['trade']
+				row['trade2'] if (row['industry'] == '') and (row['trade2'] != '')
+				else row['industry']
 				,axis=1
 			)
 		
 		#if all fails, assign 'other' so it gets counted
-		df['trade'] = df['trade'].replace(r'^\s*$', 'Undefined', regex=True)
-		df['trade'] = df['trade'].fillna('Undefined')
-		df['trade'] = df['trade'].replace(np.nan, 'Undefined')
+		df['industry'] = df['industry'].replace(r'^\s*$', 'Undefined', regex=True)
+		df['industry'] = df['industry'].fillna('Undefined')
+		df['industry'] = df['industry'].replace(np.nan, 'Undefined')
 
 		#when the above misses the fillna
-		#mode = df['trade'].mode().values[0]
-		#df['trade'].fillna(value=mode, inplace=True) #https://stackoverflow.com/questions/58631524/fillna-not-replacing-nan-values-in-the-dataframe
+		#mode = df['industry'].mode().values[0]
+		#df['industry'].fillna(value=mode, inplace=True) #https://stackoverflow.com/questions/58631524/fillna-not-replacing-nan-values-in-the-dataframe
 
 	return df
 
@@ -1161,7 +1313,7 @@ def InferSignatoryIndustryAndLabel(df, SIGNATORY_INDUSTRY):
 				~df['trade_nm'].astype(str).str.contains(PATTERN_EXCLUDE, flags=re.IGNORECASE, regex = True) 
 				) |
 				(df['Signatory'] == 1) & 
-				(df['trade'] == SIGNATORY_INDUSTRY[x][0][0])
+				(df['industry'] == SIGNATORY_INDUSTRY[x][0][0])
 				)
 			df['signatory_industry'][foundIt_ind1] = SIGNATORY_INDUSTRY[x][0][0]
 		
@@ -1293,6 +1445,17 @@ def infer_wage_penalty(df):
 	
 	return df
 
+def infer_WHD_prevailing_wage_violation(df):
+	#dbra_cl_violtn_cnt, dbra_bw_atp_amt, dbra_ee_atp_cnt
+	if "dbra_cl_violtn_cnt" in df.columns:
+		df.loc[df["dbra_cl_violtn_cnt"] > 0, "violation_code"] = "DBRA"
+	#if "dbra_bw_atp_amt" in df.columns:
+		#df.loc[df["dbra_bw_atp_amt"] > 0, "violation_code"] = "DBRA"
+	#if "dbra_ee_atp_cnt" in df.columns:
+		#df.loc[df["dbra_ee_atp_cnt"] > 0, "violation_code"] = "DBRA"
+
+	return df
+
 def lookuplist(trade, list_x, col):
 	trigger = True
 	if pd.isna(trade):
@@ -1410,7 +1573,7 @@ def MoveBusinessTypeToBusinessTypeColumn(df):
 	foundIt=(df['legal_nm'].str.contains(pattern_individual, flags=re.IGNORECASE, regex = True) | 
 	df['trade_nm'].str.contains(pattern_individual, flags=re.IGNORECASE, regex = True) )
 
-	#df['Businesstype'] = foundIt.replace((True,False), ('Individual',df['Businesstype']), regex=True) #fill column 'trade'
+	#df['Businesstype'] = foundIt.replace((True,False), ('Individual',df['Businesstype']), regex=True) #fill column 'industry'
 	df['Businesstype'][foundIt] = 'Individual'
 	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('an individual', '', regex=True, case=False)
 	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('an individual', '', regex=True, case=False)
@@ -1425,7 +1588,7 @@ def MoveLimitedLiabilityBusinessTypeToBusinessTypeColumn(df):
 	foundIt=(df['legal_nm'].str.contains(pattern_company, flags=re.IGNORECASE, regex = True) | 
 	df['trade_nm'].str.contains(pattern_company, flags=re.IGNORECASE, regex = True) )
 
-	#df['Businesstype'] = foundIt.replace((True,False), ('Company',df['Businesstype']), regex=True) #fill column 'trade'
+	#df['Businesstype'] = foundIt.replace((True,False), ('Company',df['Businesstype']), regex=True) #fill column 'industry'
 	df['Businesstype'][foundIt] = 'Company'
 
 	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(r'\bLLC$', '', regex=True, case=False)
@@ -1476,7 +1639,7 @@ def MovePartnershipBusinessTypeToBusinessTypeColumn(df):
 	foundIt=(df['legal_nm'].str.contains(pattern_partner, flags=re.IGNORECASE, regex = True) | 
 	df['trade_nm'].str.contains(pattern_partner, flags=re.IGNORECASE, regex = True) )
 
-	#df['Businesstype'] = foundIt.replace((True,False), ('Partnership',df['Businesstype']), regex=True) #fill column 'trade'
+	#df['Businesstype'] = foundIt.replace((True,False), ('Partnership',df['Businesstype']), regex=True) #fill column 'industry'
 	df['Businesstype'][foundIt] = 'Partnership'
 
 	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('both jointly and severally as employers', '',  regex=True, case=False)
@@ -1920,7 +2083,7 @@ def FormatNumbersHTMLRow (df):
 
 
 #drop duplicated backwage values, keeping the first
-def DropDuplicateBackwage(df, FLAG):
+def DropDuplicateBackwage(df, FLAG_DUPLICATE):
 	if not df.empty:
 		df['case_id'] = df['case_id'].str.strip() #remove spaces
 		df["ee_pmt_due_x"] = df["ee_pmt_due"]
@@ -1935,11 +2098,11 @@ def DropDuplicateBackwage(df, FLAG):
 		df["ee_pmt_due_x"] = np.where(df['_DUP_PMT_DUE_X'] == True, 0, df["ee_pmt_due_x"])
 
 		#drop for report
-		if FLAG == 0:
+		if FLAG_DUPLICATE == 0:
 			df["ee_pmt_due"] = np.where(df['_DUP_PMT_DUE_X'] == True, 0, df["ee_pmt_due"])
 	return df
 
-def DropDuplicateRecords(df, FLAG):
+def DropDuplicateRecords(df, FLAG_DUPLICATE):
 
 	if not df.empty:
 		df['case_id'] = df['case_id'].str.strip() #remove spaces
@@ -1955,7 +2118,7 @@ def DropDuplicateRecords(df, FLAG):
 		df["_L-NM_X"] = df.duplicated(subset=['case_id', 'legal_nm', 'street_addr', 'violation', 'bw_amt'], keep=False)
 
 		#drop for report
-		if FLAG == 0:
+		if FLAG_DUPLICATE == 0:
 			df = df.drop_duplicates(subset=['case_id', 'violation', 'bw_amt'], keep = 'first')
 			df = df.drop_duplicates(subset=['case_id', 'trade_nm', 'street_addr', 'violation', 'bw_amt'], keep = 'first')
 			df = df.drop_duplicates(subset=['case_id', 'legal_nm', 'street_addr', 'violation', 'bw_amt'], keep = 'first')
@@ -2082,6 +2245,7 @@ def Setup_Regular_headers(df_csv): #DSLE, WHD, etc headers
 	if 'naic_cd' not in df_csv.columns: df_csv['naic_cd'] = ""
 	
 	if 'violation' not in df_csv.columns: df_csv['violation'] = ""
+	if 'violation_code' not in df_csv.columns: df_csv['violation_code'] = ""
 	if 'ee_violtd_cnt' not in df_csv.columns: df_csv['ee_violtd_cnt'] = 0
 	if 'violtn_cnt' not in df_csv.columns: df_csv['violtn_cnt'] = 0
 	if 'bw_amt' not in df_csv.columns: df_csv['bw_amt'] = 0
@@ -2218,7 +2382,7 @@ def Signatory_Library():
 def ALL_NAICS_LIBRARY():
 	# ^ notation means the term must prefix the string
 	# (...) captures substring like A(pple) https://unbounded.systems/blog/3-kinds-of-parentheses-are-you-a-regex-master/
-	#\b matches word boundaries between work and non-word https://www.regular-expressions.info/wordboundaries.html
+	#\b matches word boundaries between word and non-word https://www.regular-expressions.info/wordboundaries.html
 	#r' always write pattern strings with the 'r' just as a habit https://developers.google.com/edu/python/regular-expressions
 	#. matches any single character except newline '\n' https://developers.google.com/edu/python/regular-expressions
 	#* matches preceding char repeatedly, with .* adds any number of additional chars
@@ -2246,7 +2410,10 @@ def ALL_NAICS_LIBRARY():
 	'mason', 'marble', 'cooling', '161000', '162000', "^(23)", '230000', "^(3323)", "^(3334)", '333415', '337110', '337212', '339950', 
 	'423320', '532410', '541350', '561730', '561790', '562910', '623200', r'tree.*service', 'Excavating', 'Restoration', 'MOULDING',
 	'electric', 'labor', 'ASPHALT','CEMENT', 'FENCING', r'HOME.*REPAIR', r'WOOD.*WORKING', 'ROOTER', r'\bHVAC\b', '^(54132)', r"(!Farm\b)",
-	r"(!CARE.HOME.)", r"(!RETIREMENT)", r"(!GROUP.HOME.)"] #'PLUMBING',
+	r"(!.*CARE.HOME.*)",
+	r"(!RETIREMENT)", r"(!.*GROUP.HOME.*)", r"(!.*RESIDENTIAL.*CARE.*)",
+	r"(!CATERING)", r"(!AUTO.*BODY)", r"(!FOOD.*SERVICE)", r"(!CLEANING)", r"(!ELDERLY)"] #'PLUMBING',
+	
 	#manufacturing 
 	manufacturing_terms = ['Manufacturing', r'Manufactur.*', 'machine', 'milling', 'millwork', 'Product', 'Preserving', 'Slaughter', 'Dairy', 
 	'Packaging', 'Beverage', 'Textile', 'Apparel', 'Printing', 'Petroleum', 'WELDING', 'Pesticide', 'Forging', 'Industrial', 'Metalworking', 
@@ -2314,22 +2481,22 @@ def ALL_NAICS_LIBRARY():
 	educational_terms = ['Educational', r'educat.*','^(61)', 'school', 'university', 'college', 'training', 'instruction', 'lecture',  
 	'learning', r'tutor.*', 'CULINARY', '(!MEDICINE)'] 
 	#healthcare 
-	residential_carehome_terms = ["Residential_carehome", r"resident.\*care.\*home", r"assist.\*living", r"board.\*care.\*home" , 
-	r"senior.\*care.\*home", r"resident.\*home.\*care", r"nursing.\*home", r"memory.\*care", r"home.\*senior", r"care.\*senior",
-	r"senior.\*care", r"sunrise.\*manor", r"elderly.\*care.\*facility", r"care.\*center", r"senior.\*care", r"elderly.\*care",
-	r"garden.\*villa", r"home.\*elderly", "residence", "manor", r'\bvilla\b', "haven", r"resident.\*care", r"home.\*care", r'ADULT.\*DAY.\*PROGRAM',
-	r"board.\*and.\*care", r"residential.\*facility", "^(6241)", "^(5170)", "^(6232)", "^(6239)", "^(6233)", "^(6216)", "^(6242)", 
+	residential_carehome_terms = ["Residential_carehome", r"resident.*care.*home", r"assist.*living", r"board.*care.*home" ,
+	r"senior.*care.*home", r"resident.*home.*care", r"nursing.*home", r"memory.*care", r"home.*senior", r"care.*senior",
+	r"senior.*care", r"sunrise.*manor", r"elderly.*care.*facility", r"care.*center", r"senior.*care", r"elderly.*care",
+	r"garden.*villa", r"home.*elderly", "residence", "manor", r'\bvilla\b', "haven", r"resident.*care", r"home.*care", r'ADULT.*DAY.*PROGRAM',
+	r"board.*and.*care", r"residential.*facility", "^(6241)", "^(5170)", "^(6232)", "^(6239)", "^(6233)", "^(6216)", "^(6242)", 
 	'CLOVERLEAF CARE'] # removed 11/16/2020 per discussion w/ Felwina "care", 
-	carehome_terms = ['Carehome', r'care.\*home', r'\bRCFE\b', r'\bChild\b', 'RETIREMENT', 'Convalescence', r'Adult.\*Resident.\*Care', 
-	r'Group.\*Home', r'Crisis.\*Nurseries', r'Short.\*Term.\*Residential', 'Therapeutic', 'Crisis', r'child.\*care', 'preschool', r'\byouth\b', 
+	carehome_terms = ['Carehome', r'care.*home', r'.*care.*home.*', r'\bRCFE\b', r'\bChild\b', 'RETIREMENT', 'Convalescence', r'Adult.*Resident.*Care', 
+	r'Group.*Home', r'Crisis.*Nurseries', r'Short.*Term.*Residential', 'Therapeutic', 'Crisis', r'child.*care', 'preschool', r'\byouth\b', 
 	'adolescent', 'transitional', 'lodge', 'maternity', 'cottage', 'recovery', 'early', 'Montessori', 'kindercare', 
-	r'develop.\*disabl.\*', r'disablit.\*', r'special.\*need', 'academy', r'\bYMCA\b', r"\bresiden.\*", r'DAY.\*CARE', r'DAY.\*CENTER',
-	'crisis', 'Elwyn', 'treatment', r'total.care', r'skilled.\*nursing', r'house.\*home.\*health', r'adult.\*care.\*facility', 
+	r'develop.*disabl.*', r'disablit.*', r'special.*need', 'academy', r'\bYMCA\b', r"\bresiden.*", r'DAY.*CARE', r'DAY.*CENTER',
+	'crisis', 'Elwyn', 'treatment', r'total.care', r'skilled.*nursing', r'house.*home.*health', r'adult.*care.*facility', 
 	'RCFAs', 'RCFEs', '^(RCFA)', '^(RCFE)', '^(RFCE)', '^(SNF)$'] #10/30/2020 removed 'learning', 'home', 'lane', 'camp', 'ranch', 'nursery', 'Family', 
-	healthcare_terms = ['Health_care', '^(62)', r'Health.\*care', r'\bDMD\b', r'\bMD\b', r'\bDDS\b', 'AMBULATORY', 'GENETICS', 'HOSPITAL',
+	healthcare_terms = ['Health_care', '^(62)', r'Health.*care', r'\bDMD\b', r'\bMD\b', r'\bDDS\b', 'AMBULATORY', 'GENETICS', 'HOSPITAL',
 	'DENTAL', 'MEDICINE', 'medical', 'health', 'doctor', 'SURGERY', 'KAISER PERMANENTE', 'OPTOMETRI', 'MEDICAL CENTER', 'PHARMA', 'ANKLE',
 	'BEHAVIORAL', 'PEDIATRICS', 'ALLERGY', 'ASTHMA', 'DENTIST', 'CHIROPRACTIC', 'ACUPUNCTURE', 'REHABILITATION', 'OPTOMETRY', 
-	'LIFES CONNECTIONS', 'PROSTHETICS', 'ORTHOSYNETICS', 'CANCER', r'SUBACUTE.\*CARE', r'URGENT.\*CARE', 'ACCUPUNCTURE ', '(!EDUCATION)'] 
+	'LIFES CONNECTIONS', 'PROSTHETICS', 'ORTHOSYNETICS', 'CANCER', r'SUBACUTE.*CARE', r'URGENT.*CARE', 'ACCUPUNCTURE ', '(!EDUCATION)'] 
 	#entertainment 
 	#Art, Entertainment, and Recreation
 	entertainment_terms = ['Entertainment', '^(71)', 'performing', 'Billiard', 'theater', 'dance', 'musical', 'artist', r'sport.*', 'team', 
@@ -2449,8 +2616,8 @@ def ALL_NAICS_LIBRARY():
 	SIX_INDUSTRIES_REPORT = [['Six-'], carehome_terms_rollup, fast_food_terms, construction_terms, personal_care_terms, 
 	gig_terms, janitorial_terms, other_terms]
 
-	return ALL_NAICS_INDUSTRIES
-	#return SIX_INDUSTRIES_REPORT
+	#return ALL_NAICS_INDUSTRIES
+	return SIX_INDUSTRIES_REPORT
 	#return WTC_NAICS_INDUSTRIES
 	#return SPECIFIC_NAICS_INDUSTRY
 
@@ -2459,9 +2626,10 @@ def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
 
 	read_file_test = "dlse_judgements/unified_test.csv"
 
-	#read_file0 = "dlse_judgements/unified_20190629.csv" #mixed SJOE, SCCBTC, DLSE, WHD
+	read_file0 = "dlse_judgements/unified_no_WHD_20190629.csv" #mixed SJOE, SCCBTC, DLSE
 	read_file1 = "dlse_judgements/whd_whisard_02052022.csv" #US DOL WHD website
 	read_file2 = "dlse_judgements/ordered_HQ20009_HQ_08132019.csv" #CA DIR DSLE PRA
+	
 	
 	if TEST == 2:
 		federal_data = 1
@@ -2473,9 +2641,11 @@ def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
 		df_csv = Setup_Regular_headers(df_csv)
 	
 	else : #TEST == 2 (use 1000) or TEST == 0 (use 1000000000) and then limited to n==TEST_CASES rows 
-		#DF0 = ...
+		DF0 = pd.read_csv(read_file0, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
 		DF1 = pd.read_csv(read_file1, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
 		DF2 = pd.read_csv(read_file2, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
+		
+		df_csv_0 = Setup_Regular_headers(DF0)
 		
 		df_csv_1 = Setup_Regular_headers(DF1)
 		df_csv_1['juris_or_proj_nm'] = 'WHD' #Jurisdiction_or_Project_Name
@@ -2484,8 +2654,9 @@ def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
 		
 		if federal_data == 1 and state_data == 0: df_csv = df_csv_1
 		elif federal_data == 0 and state_data == 1: df_csv = df_csv_2
-		else: df_csv = pd.concat([df_csv_1, df_csv_2], ignore_index=True) #, axis=1, sort=False) # fills non overlapping columns with NAN
-		
+		#else: df_csv = pd.concat([df_csv_1, df_csv_2], ignore_index=True) #, axis=1, sort=False) # fills non overlapping columns with NAN
+		else: df_csv = pd.concat([df_csv_0, df_csv_1, df_csv_2], ignore_index=True)
+
 		#df_csv = df_csv.replace(r'\\n\\n',' ', regex=True) 
 		#df_csv = df_csv.replace(r'\\r\\n',' ', regex=True) 
 		#df_csv = df_csv.replace(r'\\r',' ', regex=True) 
@@ -3082,13 +3253,13 @@ def Signatory_to_Nonsignatory_Block(df1, df2, filename):
 	ratio_construction_ = df1.loc[df1['signatory_industry'] == 'Construction','backwage_owed'].sum()
 	#ratio_construction_ucon = df1.loc[df1['signatory_industry'] == 'Construction','backwage_owed'].sum()
 	#ratio_construction_cea = df1.loc[df1['signatory_industry'] == 'Construction','backwage_owed'].sum()
-	construction_industry_backwage = df1.loc[df1['trade'] == 'Construction','backwage_owed'].sum() 
+	construction_industry_backwage = df1.loc[df1['industry'] == 'Construction','backwage_owed'].sum() 
 	ratio_construction = (ratio_construction_) / construction_industry_backwage
 
 	ratio_hospital_ = df1.loc[df1['signatory_industry'] == 'Health_care','backwage_owed'].sum() 
-	carehome_industry_backwage = df1.loc[df1['trade'] == 'Carehome','backwage_owed'].sum() 
-	healthcare_industry_backwage = df1.loc[df1['trade'] == 'Health_care','backwage_owed'].sum()
-	residential_carehome_industry_backwage = df1.loc[df1['trade'] == 'Residential_carehome','backwage_owed'].sum()
+	carehome_industry_backwage = df1.loc[df1['industry'] == 'Carehome','backwage_owed'].sum() 
+	healthcare_industry_backwage = df1.loc[df1['industry'] == 'Health_care','backwage_owed'].sum()
+	residential_carehome_industry_backwage = df1.loc[df1['industry'] == 'Residential_carehome','backwage_owed'].sum()
 	ratio_hospital = ratio_hospital_ / (carehome_industry_backwage + healthcare_industry_backwage + residential_carehome_industry_backwage) 
 	
 	filename.write("<p>")
