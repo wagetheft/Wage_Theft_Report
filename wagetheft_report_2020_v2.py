@@ -32,6 +32,8 @@
 # 3/3/2022 by F.Peterson added exclusion terms to construction industry
 # 3/4/2022 by F.Peterson fixed a bug with trade/industry header mixup
 # 3/4/2022 by F.Peterson fixed a bug with double output
+# 3/7/2022 by F.Peterson added county of San Diego
+
 
 # Note: add an edit distance comparison
 # to fix replace() https://stackoverflow.com/questions/64843109/compiler-issue-assertionerror-on-replace-given-t-or-f-condition-with-string/64856554#64856554
@@ -50,7 +52,7 @@ import numpy as np
 
 import csv
 import math
-#import editdistance
+import editdistance #in the works
 from datetime import datetime
 
 import os
@@ -92,7 +94,10 @@ def main():
 	ALL_ZIPCODES = ['00000']
 	Stockton_City_Zipcode = ['Stockton', '95201', '95202', '95203', '95204', '95205', '95206', '95207', '95208', '95209', '95210', '95211', '95212', '95213', '95215', '95219', '95267', '95269', '95296', '95297']
 	Fresno_City_Zipcode = ['Fresno', '93611', '93612', '93619', '93650', '93701', '93702', '93703', '93704', '93705', '93706', '93710', '93711', '93720', '93721', '93722', '93723', '93725', '93726', '93727', '93728', '93730']
-	
+	San_Diego_City_Zipcode = ['San Diego', '92105', '92106', '92107', '92108', '92113', '92114', '92115', '92116', '92117', '92122', '92123', '92124', '92126', '92127', '92101', '92102', '92103', '92104', '92109', '92110', '92111', '92112', '92119', '92120', '92121', '92128', '92129', '92130', '92131', '92136', '92137', '92145', '92147', '92132', '92134', '92135', '92138', '92139', '92140', '92142', '92149', '92150', '92152', '92158', '92159', '92160', '92161', '92162', '92163', '92164', '92165', '92171', '92172', '92174', '92179', '92182', '92184', '92192', '92193', '92195', '92196', '92197', '92153', '92154', '92155', '92166', '92167', '92168', '92169', '92170', '92175', '92176', '92177', '92186', '92187', '92190', '92191', '92198', '92199']
+	San_Diego_Unincorporated_Zipcode = ['San Diego Unincorporated','92672', '92592', '92194', '92178', '92173', '92143', '92133', '92118', '92096', '92093', '92092', '92091', '92090', '92088', '92086', '92085', '92084', '92083', '92082', '92081', '92079', '92078', '92075', '92074', '92072', '92071', '92070', '92069', '92068', '92067', '92066', '92065', '92064', '92061', '92060', '92059', '92058', '92057', '92056', '92055', '92054', '92052', '92051', '92049', '92046', '92040', '92039', '92038', '92037', '92036', '92033', '92030', '92029', '92028', '92027', '92026', '92025', '92024', '92023', '92022', '92021', '92020', '92019', '92018', '92014', '92013', '92011', '92010', '92009', '92008', '92007', '92004', '92003', '91990', '91987', '91980', '91979', '91978', '91977', '91976', '91963', '91962', '91951', '91950', '91948', '91947', '91946', '91945', '91944', '91943', '91942', '91941', '91935', '91934', '91933', '91932', '91931', '91921', '91917', '91916', '91915', '91914', '91913', '91912', '91911', '91910', '91909', '91908', '91906', '91905', '91903', '91902', '91901'] 
+	SAN_DIEGO_COUNTY_ZIPCODE = ['San Diego County'] + San_Diego_City_Zipcode + San_Diego_Unincorporated_Zipcode
+
 	Custom_Zipcode = ['95112', '95113']
 
 	delete_terms = ['County of Santa Clara']
@@ -112,7 +117,7 @@ def main():
 
 
 	#settings****************************************************
-	TARGET_ZIPCODE = SANTA_CLARA_COUNTY_ZIPCODE #enter *_zipcode list; use ALL_ZIPCODES for all zip codes
+	TARGET_ZIPCODE = SAN_DIEGO_COUNTY_ZIPCODE #SANTA_CLARA_COUNTY_ZIPCODE #enter *_zipcode list; use ALL_ZIPCODES for all zip codes
 	TARGET_INDUSTRY = ALL_NAICS_LIBRARY() #NAICS Industies -- change in ALL_NAICS_LIBRARY()
 	STATE_FILTER = 0 #1 for all of california, else 0 for just santa_clara_county_cities
 	ORGANIZATION_FILTER  = False # True to filter, False no filter for specific organizantion name, see TARGET_ORGANIZATION
@@ -2616,8 +2621,8 @@ def ALL_NAICS_LIBRARY():
 	SIX_INDUSTRIES_REPORT = [['Six-'], carehome_terms_rollup, fast_food_terms, construction_terms, personal_care_terms, 
 	gig_terms, janitorial_terms, other_terms]
 
-	#return ALL_NAICS_INDUSTRIES
-	return SIX_INDUSTRIES_REPORT
+	return ALL_NAICS_INDUSTRIES
+	#return SIX_INDUSTRIES_REPORT
 	#return WTC_NAICS_INDUSTRIES
 	#return SPECIFIC_NAICS_INDUSTRY
 
