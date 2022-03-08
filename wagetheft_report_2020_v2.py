@@ -90,23 +90,25 @@ def main():
 	inferred_zipcode = ['99999','99999'] #this tells the system to add records that the zipcode is infered by a city name
 
 	SANTA_CLARA_COUNTY_ZIPCODE = ['Santa Clara County'] + Santa_Clara_Unincorporated_Zipcode + Campbell_City_Zipcode + Cupertino_City_Zipcode + Gilroy_City_Zipcode + Los_Altos_City_Zipcode + Los_Gatos_City_Zipcode + Milpitas_City_Zipcode + Morgan_Hill_City_Zipcode + Mountain_View_City_Zipcode + Palo_Alto_City_Zipcode + San_Jose_City_Zipcode + Santa_Clara_City_Zipcode + Saratoga_City_Zipcode + Stanford_City_Zipcode + Sunnyvale_City_Zipcode + inferred_zipcode
-
-	ALL_ZIPCODES = ['00000']
-	Stockton_City_Zipcode = ['Stockton', '95201', '95202', '95203', '95204', '95205', '95206', '95207', '95208', '95209', '95210', '95211', '95212', '95213', '95215', '95219', '95267', '95269', '95296', '95297']
-	Fresno_City_Zipcode = ['Fresno', '93611', '93612', '93619', '93650', '93701', '93702', '93703', '93704', '93705', '93706', '93710', '93711', '93720', '93721', '93722', '93723', '93725', '93726', '93727', '93728', '93730']
-	
-	San_Diego_City_Zipcode = ['San Diego', '92105', '92106', '92107', '92108', '92113', '92114', '92115', '92116', '92117', '92122', '92123', '92124', '92126', '92127', '92101', '92102', '92103', '92104', '92109', '92110', '92111', '92112', '92119', '92120', '92121', '92128', '92129', '92130', '92131', '92136', '92137', '92145', '92147', '92132', '92134', '92135', '92138', '92139', '92140', '92142', '92149', '92150', '92152', '92158', '92159', '92160', '92161', '92162', '92163', '92164', '92165', '92171', '92172', '92174', '92179', '92182', '92184', '92192', '92193', '92195', '92196', '92197', '92153', '92154', '92155', '92166', '92167', '92168', '92169', '92170', '92175', '92176', '92177', '92186', '92187', '92190', '92191', '92198', '92199']
-	San_Diego_Unincorporated_Zipcode = ['San Diego Unincorporated','92672', '92592', '92194', '92178', '92173', '92143', '92133', '92118', '92096', '92093', '92092', '92091', '92090', '92088', '92086', '92085', '92084', '92083', '92082', '92081', '92079', '92078', '92075', '92074', '92072', '92071', '92070', '92069', '92068', '92067', '92066', '92065', '92064', '92061', '92060', '92059', '92058', '92057', '92056', '92055', '92054', '92052', '92051', '92049', '92046', '92040', '92039', '92038', '92037', '92036', '92033', '92030', '92029', '92028', '92027', '92026', '92025', '92024', '92023', '92022', '92021', '92020', '92019', '92018', '92014', '92013', '92011', '92010', '92009', '92008', '92007', '92004', '92003', '91990', '91987', '91980', '91979', '91978', '91977', '91976', '91963', '91962', '91951', '91950', '91948', '91947', '91946', '91945', '91944', '91943', '91942', '91941', '91935', '91934', '91933', '91932', '91931', '91921', '91917', '91916', '91915', '91914', '91913', '91912', '91911', '91910', '91909', '91908', '91906', '91905', '91903', '91902', '91901'] 
-	SAN_DIEGO_COUNTY_ZIPCODE = ['San Diego County'] + San_Diego_City_Zipcode + San_Diego_Unincorporated_Zipcode + inferred_zipcode
-
-	Custom_Zipcode = ['95112', '95113']
-
-	delete_terms = ['County of Santa Clara']
-
 	#region by cities (don't use this one except for specific situation)
 	santa_clara_county_cities = ['County of Santa Clara', 'Alum Rock', 'Cambrian Park', 'Campbell', 'Cupertino', 'East Foothills', 
 	'Fruitdale', 'Gilroy', 'Lexington Hills', 'Los Altos', 'Los Altos Hills', 'Los Gatos', 'Loyola', 'Milpitas', 'Monte Sereno', 
 	'Morgan Hill', 'Mountain View', 'Palo Alto', 'San Jose', 'San Martin', 'Santa Clara', 'Saratoga', 'Stanford', 'Sunnyvale', '99999']
+
+	San_Diego_City_Zipcode = ['San Diego', '92105', '92106', '92107', '92108', '92113', '92114', '92115', '92116', '92117', '92122', '92123', '92124', '92126', '92127', '92101', '92102', '92103', '92104', '92109', '92110', '92111', '92112', '92119', '92120', '92121', '92128', '92129', '92130', '92131', '92136', '92137', '92145', '92147', '92132', '92134', '92135', '92138', '92139', '92140', '92142', '92149', '92150', '92152', '92158', '92159', '92160', '92161', '92162', '92163', '92164', '92165', '92171', '92172', '92174', '92179', '92182', '92184', '92192', '92193', '92195', '92196', '92197', '92153', '92154', '92155', '92166', '92167', '92168', '92169', '92170', '92175', '92176', '92177', '92186', '92187', '92190', '92191', '92198', '92199']
+	San_Diego_Unincorporated_Zipcode = ['San Diego Unincorporated','92672', '92592', '92194', '92178', '92173', '92143', '92133', '92118', '92096', '92093', '92092', '92091', '92090', '92088', '92086', '92085', '92084', '92083', '92082', '92081', '92079', '92078', '92075', '92074', '92072', '92071', '92070', '92069', '92068', '92067', '92066', '92065', '92064', '92061', '92060', '92059', '92058', '92057', '92056', '92055', '92054', '92052', '92051', '92049', '92046', '92040', '92039', '92038', '92037', '92036', '92033', '92030', '92029', '92028', '92027', '92026', '92025', '92024', '92023', '92022', '92021', '92020', '92019', '92018', '92014', '92013', '92011', '92010', '92009', '92008', '92007', '92004', '92003', '91990', '91987', '91980', '91979', '91978', '91977', '91976', '91963', '91962', '91951', '91950', '91948', '91947', '91946', '91945', '91944', '91943', '91942', '91941', '91935', '91934', '91933', '91932', '91931', '91921', '91917', '91916', '91915', '91914', '91913', '91912', '91911', '91910', '91909', '91908', '91906', '91905', '91903', '91902', '91901'] 
+	
+	SAN_DIEGO_COUNTY_ZIPCODE = ['San Diego County'] + San_Diego_City_Zipcode + San_Diego_Unincorporated_Zipcode + inferred_zipcode
+	san_diego_county_cities = ['County of San Diego', 'ALPINE','WARNER SPRINGS', 'VISTA', 'VALLEY CENTER', 'TEMECULA', 'TECATE', 'SPRING VALLEY', 'SOLANA BEACH', 'SANTEE', 'SANTA YSABEL', 'SANTA CLARITA', 'SAN YSIDRO', 'SAN MARCOS', 'SAN LUIS REY', 'SAN DIEGO', 'SAN CLEMENTE', 'RANCHO SANTA FE', 'RAMONA', 'RAINBOW', 'POWAY', 'PAUMA VALLEY', 'PALA', 'OCEANSIDE', 'NATIONAL CITY', 'MIRA MESA', 'LEUCADIA', 'LEMON GROVE', 'LAKESIDE', 'LA MESA', 'LA JOLLA', 'JULIAN', 'JAMUL', 'JACUMBA', 'IMPERIAL BEACH', 'IMPERIAL BCH', 'FALLBROOK', 'ESCONDIDO', 'ENCINITAS', 'EL CAJON', 'DULZURA', 'DEL MAR', 'CUDAHY', 'CORONADO', 'CHULA VISTA', 'CARLSBAD', 'CARDIFF BY THE SEA', 'CARDIFF', 'CAMPO', 'CAMP PENDLETON', 'BOULEVARD', 'BORREGO SPRINGS', 'BONSALL', 'BONITA']
+
+
+	Stockton_City_Zipcode = ['Stockton', '95201', '95202', '95203', '95204', '95205', '95206', '95207', '95208', '95209', '95210', '95211', '95212', '95213', '95215', '95219', '95267', '95269', '95296', '95297']
+	Fresno_City_Zipcode = ['Fresno', '93611', '93612', '93619', '93650', '93701', '93702', '93703', '93704', '93705', '93706', '93710', '93711', '93720', '93721', '93722', '93723', '93725', '93726', '93727', '93728', '93730']
+	
+	ALL_ZIPCODES = ['00000']
+	Custom_Zipcode = ['95112', '95113']
+
+	delete_terms = ['County of Santa Clara']
 
 	#organizations
 	TARGET_ORGANIZATION = [['organizations'],['GOODWILL']] #use uppercase
@@ -118,7 +120,7 @@ def main():
 
 
 	#settings****************************************************
-	TARGET_ZIPCODE = SANTA_CLARA_COUNTY_ZIPCODE #enter *_zipcode list; use ALL_ZIPCODES for all zip codes
+	TARGET_ZIPCODE = SAN_DIEGO_COUNTY_ZIPCODE #SANTA_CLARA_COUNTY_ZIPCODE #enter *_zipcode list; use ALL_ZIPCODES for all zip codes
 	TARGET_INDUSTRY = ALL_NAICS_LIBRARY() #NAICS Industies -- change in ALL_NAICS_LIBRARY()
 	STATE_FILTER = 0 #1 for all of california, else 0 for just santa_clara_county_cities
 	ORGANIZATION_FILTER  = False # True to filter, False no filter for specific organizantion name, see TARGET_ORGANIZATION
@@ -310,26 +312,31 @@ def main():
 	#3/7/2022 bugFile = open('report_output/debug.html', 'w')
 	#3/7/2022 debug_fileSetup_def(bugFile)
 
-	#destup region definition
-	if TARGET_ZIPCODE[0] == '00000': 
-		target_city = "all regions"
-		default_region = ""
+	#region definition
+	#default
+	JURISDICTON_NAME = "City of "
+	default_region_name = TARGET_ZIPCODE[len(TARGET_ZIPCODE) -1] 
+	default_region_name = default_region_name.replace(default_region_name[len(default_region_name) - 3], "XXX")
+	default_region = [TARGET_ZIPCODE[0], TARGET_ZIPCODE[0]] #options: santa_clara_county_cities for region or for a city use the city name "san jose"; this constant is used to search for missing zip codes
+
+	if (TARGET_ZIPCODE[0] == "Santa Clara County"):
+		JURISDICTON_NAME = " "
 		default_region_name = '99999'
-	else: #target region
-		default_region_name = TARGET_ZIPCODE[len(TARGET_ZIPCODE) -1]
+		default_region = santa_clara_county_cities # backup in case forget to put city list
+
+	if (TARGET_ZIPCODE[0] == "San Diego County"):
+		JURISDICTON_NAME = " "
+		default_region_name = '99999'
+		default_region = san_diego_county_cities # backup in case forget to put city list
+	
+	if (TARGET_ZIPCODE[0] == '00000'):
+		JURISDICTON_NAME = "All regions " 
+		default_region_name = '99999'
 		default_region = ""
-		JURISDICTON_NAME = "City of "
-
-		if (TARGET_ZIPCODE[0] == "Santa Clara County"):
-			JURISDICTON_NAME = " "
-			default_region_name = '99999'
-			default_region = santa_clara_county_cities # backup in case forget to put city list
-		
-		target_city = JURISDICTON_NAME + TARGET_ZIPCODE[0]  #!!!enter target jurisdiction here; "<h1>DRAFT REPORT: Wage Theft in the jurisdiction of... "
-
-	if default_region == '': default_region = [TARGET_ZIPCODE[0], TARGET_ZIPCODE[0]] #options: santa_clara_county_cities for region or for a city use the city name "san jose"; this constant is used to search for missing zip codes
-
+	
+	target_city = JURISDICTON_NAME + TARGET_ZIPCODE[0]  #target jurisdiction: Report Title block and file name "<h1>DRAFT REPORT: Wage Theft in the jurisdiction of... "
 	target_industry = TARGET_INDUSTRY[0][0]
+
 	temp_file_name = 'report_output/' + target_city.replace(' ','_') +'_theft_summary_'+ target_industry.replace(' ','_') +'.html'
 
 	#Concat data***************************************************************************
