@@ -34,6 +34,7 @@
 # 3/4/2022 by F.Peterson fixed a bug with double output
 # 3/7/2022 by F.Peterson added county of San Diego
 # 6/28/2022 by F.Peterson started adding API (does not run)
+# 6/29/2022 by I. Kolli added parameters to API code
 
 
 # Note: add an edit distance comparison
@@ -322,12 +323,12 @@ def main():
 	#***************************************************************************
 	#API call
 	generateWageReport(TEST, PARAM_1_TARGET_ZIPCODE, PARAM_2_TARGET_INDUSTRY, federal_data, state_data, FLAG_DUPLICATE, STATE_FILTER, 
-	TARGET_STATES, INFER_ZIP, prevailing_wage_report)
+	TARGET_STATES, INFER_ZIP, prevailing_wage_report, signatories_report, All_Industry_Summary_Block, Nonsignatory_Ratio_Block, CLEAN_OUTPUT, OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG,TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS)
 
 #Functions*************************************************
 	
 def generateWageReport(TEST, zip_codes_backup, TARGET_ZIPCODE, TARGET_INDUSTRY, federal_data, state_data, FLAG_DUPLICATE, STATE_FILTER, 
-TARGET_STATES, INFER_ZIP, prevailing_wage_report):
+TARGET_STATES, INFER_ZIP, prevailing_wage_report, signatories_report, All_Industry_Summary_Block, Nonsignatory_Ratio_Block, CLEAN_OUTPUT, OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG, TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS):
 	#3/7/2022 bugFile = open('report_output/debug.html', 'w')
 	#3/7/2022 debug_fileSetup_def(bugFile)
 
