@@ -33,6 +33,7 @@
 # 3/4/2022 by F.Peterson fixed a bug with trade/industry header mixup
 # 3/4/2022 by F.Peterson fixed a bug with double output
 # 3/7/2022 by F.Peterson added county of San Diego
+# 6/28/2022 by F.Peterson started adding API (does not run)
 
 
 # Note: add an edit distance comparison
@@ -97,10 +98,20 @@ def main():
 
 	San_Diego_City_Zipcode = ['San Diego', '92105', '92106', '92107', '92108', '92113', '92114', '92115', '92116', '92117', '92122', '92123', '92124', '92126', '92127', '92101', '92102', '92103', '92104', '92109', '92110', '92111', '92112', '92119', '92120', '92121', '92128', '92129', '92130', '92131', '92136', '92137', '92145', '92147', '92132', '92134', '92135', '92138', '92139', '92140', '92142', '92149', '92150', '92152', '92158', '92159', '92160', '92161', '92162', '92163', '92164', '92165', '92171', '92172', '92174', '92179', '92182', '92184', '92192', '92193', '92195', '92196', '92197', '92153', '92154', '92155', '92166', '92167', '92168', '92169', '92170', '92175', '92176', '92177', '92186', '92187', '92190', '92191', '92198', '92199']
 	San_Diego_Unincorporated_Zipcode = ['San Diego Unincorporated','92672', '92592', '92194', '92178', '92173', '92143', '92133', '92118', '92096', '92093', '92092', '92091', '92090', '92088', '92086', '92085', '92084', '92083', '92082', '92081', '92079', '92078', '92075', '92074', '92072', '92071', '92070', '92069', '92068', '92067', '92066', '92065', '92064', '92061', '92060', '92059', '92058', '92057', '92056', '92055', '92054', '92052', '92051', '92049', '92046', '92040', '92039', '92038', '92037', '92036', '92033', '92030', '92029', '92028', '92027', '92026', '92025', '92024', '92023', '92022', '92021', '92020', '92019', '92018', '92014', '92013', '92011', '92010', '92009', '92008', '92007', '92004', '92003', '91990', '91987', '91980', '91979', '91978', '91977', '91976', '91963', '91962', '91951', '91950', '91948', '91947', '91946', '91945', '91944', '91943', '91942', '91941', '91935', '91934', '91933', '91932', '91931', '91921', '91917', '91916', '91915', '91914', '91913', '91912', '91911', '91910', '91909', '91908', '91906', '91905', '91903', '91902', '91901'] 
+
+	zipcode = {} # add a function to read jurisdiction and zipode list from csv file
+
+	
 	
 	SAN_DIEGO_COUNTY_ZIPCODE = ['San Diego County'] + San_Diego_City_Zipcode + San_Diego_Unincorporated_Zipcode + inferred_zipcode
 	san_diego_county_cities = ['County of San Diego', 'ALPINE','WARNER SPRINGS', 'VISTA', 'VALLEY CENTER', 'TEMECULA', 'TECATE', 'SPRING VALLEY', 'SOLANA BEACH', 'SANTEE', 'SANTA YSABEL', 'SANTA CLARITA', 'SAN YSIDRO', 'SAN MARCOS', 'SAN LUIS REY', 'SAN DIEGO', 'SAN CLEMENTE', 'RANCHO SANTA FE', 'RAMONA', 'RAINBOW', 'POWAY', 'PAUMA VALLEY', 'PALA', 'OCEANSIDE', 'NATIONAL CITY', 'MIRA MESA', 'LEUCADIA', 'LEMON GROVE', 'LAKESIDE', 'LA MESA', 'LA JOLLA', 'JULIAN', 'JAMUL', 'JACUMBA', 'IMPERIAL BEACH', 'IMPERIAL BCH', 'FALLBROOK', 'ESCONDIDO', 'ENCINITAS', 'EL CAJON', 'DULZURA', 'DEL MAR', 'CUDAHY', 'CORONADO', 'CHULA VISTA', 'CARLSBAD', 'CARDIFF BY THE SEA', 'CARDIFF', 'CAMPO', 'CAMP PENDLETON', 'BOULEVARD', 'BORREGO SPRINGS', 'BONSALL', 'BONITA']
 
+	zip_codes_backup = { 
+		"san_diego_city_zipcode": San_Diego_City_Zipcode, 
+		"san_diego_unincorporated_zipcode": San_Diego_Unincorporated_Zipcode,
+		"santa_clara_county_cities": santa_clara_county_cities,
+		"san_diego_county_cities": san_diego_county_cities,
+		}
 
 	Stockton_City_Zipcode = ['Stockton', '95201', '95202', '95203', '95204', '95205', '95206', '95207', '95208', '95209', '95210', '95211', '95212', '95213', '95215', '95219', '95267', '95269', '95296', '95297']
 	Fresno_City_Zipcode = ['Fresno', '93611', '93612', '93619', '93650', '93701', '93702', '93703', '93704', '93705', '93706', '93710', '93711', '93720', '93721', '93722', '93723', '93725', '93726', '93727', '93728', '93730']
@@ -121,7 +132,11 @@ def main():
 
 	#settings****************************************************
 	TARGET_ZIPCODE = SAN_DIEGO_COUNTY_ZIPCODE #SANTA_CLARA_COUNTY_ZIPCODE #enter *_zipcode list; use ALL_ZIPCODES for all zip codes
+	PARAM_1_TARGET_ZIPCODE = zip_codes_backup["san_diego_city_zipcode"]
+
 	TARGET_INDUSTRY = ALL_NAICS_LIBRARY() #NAICS Industies -- change in ALL_NAICS_LIBRARY()
+	PARAM_2_TARGET_INDUSTRY = ALL_NAICS_LIBRARY() #NAICS Industies -- change in ALL_NAICS_LIBRARY()
+
 	STATE_FILTER = 0 #1 for all of california, else 0 for just santa_clara_county_cities
 	ORGANIZATION_FILTER  = False # True to filter, False no filter for specific organizantion name, see TARGET_ORGANIZATION
 
@@ -150,11 +165,6 @@ def main():
 	state_data = 1 #1 to include state data
 
 	default_region = santa_clara_county_cities # santa_clara_county_cities #cities: leave blank "" for cities, which extract the region from the zip code list, this is only used for a list of cities in a county list
-
-	if TEST == 0 or TEST == 1: 
-		TEST_CASES = 1000000000 # read all records
-	else: #TEST == 2 #short set--use first 1000 for debugging 
-		TEST_CASES = 10000 
 
 	#unused YEAR_START_FILTER = '01/01/2000' #1995 is earliest case -- this does not work
 	#unused YEAR_END_FILTER = '09/01/2019'
@@ -308,9 +318,24 @@ def main():
 
 	SIGNATORY_INDUSTRY = Signatory_Library()
 
+	TEMP_PARAM_LIST = [PARAM_1_TARGET_ZIPCODE, PARAM_2_TARGET_INDUSTRY] #temp line of code while I figure out Alex instructions
 	#***************************************************************************
+	#API call
+	generateWageReport(TEST, PARAM_1_TARGET_ZIPCODE, PARAM_2_TARGET_INDUSTRY, federal_data, state_data, FLAG_DUPLICATE, STATE_FILTER, 
+	TARGET_STATES, INFER_ZIP, prevailing_wage_report)
+
+#Functions*************************************************
+	
+def generateWageReport(TEST, zip_codes_backup, TARGET_ZIPCODE, TARGET_INDUSTRY, federal_data, state_data, FLAG_DUPLICATE, STATE_FILTER, 
+TARGET_STATES, INFER_ZIP, prevailing_wage_report):
 	#3/7/2022 bugFile = open('report_output/debug.html', 'w')
 	#3/7/2022 debug_fileSetup_def(bugFile)
+
+	#TEST
+	if TEST == 0 or TEST == 1: 
+		TEST_CASES = 1000000000 # read all records
+	else: #TEST == 2 #short set--use first 1000 for debugging 
+		TEST_CASES = 10000 
 
 	#region definition
 	#default
@@ -322,12 +347,12 @@ def main():
 	if (TARGET_ZIPCODE[0] == "Santa Clara County"):
 		JURISDICTON_NAME = " "
 		default_region_name = '99999'
-		default_region = santa_clara_county_cities # backup in case forget to put city list
+		default_region = zip_codes_backup["santa_clara_county_cities"] # backup in case forget to put city list
 
 	if (TARGET_ZIPCODE[0] == "San Diego County"):
 		JURISDICTON_NAME = " "
 		default_region_name = '99999'
-		default_region = san_diego_county_cities # backup in case forget to put city list
+		default_region = zip_codes_backup["san_diego_county_cities"] # backup in case forget to put city list
 	
 	if (TARGET_ZIPCODE[0] == '00000'):
 		JURISDICTON_NAME = "All regions " 
@@ -958,9 +983,9 @@ def main():
 	#3/7/2022 bugFile.write("<h1>Done</h1> \n")
 	#3/7/2022 bugFile.write("</html></body> \n")
 	#3/7/2022 bugFile.close()
+	
+	return temp_file_name #the temp json returned from API
 
-
-#Functions*************************************************
 
 def Clean_Repeat_Violator_HTML_Row(df, COLUMN_NAME):
 	#df = df.dropna(subset=[COLUMN_NAME]) #drop NAs
