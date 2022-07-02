@@ -35,7 +35,7 @@
 # 3/7/2022 by F. Peterson added county of San Diego
 # 6/28/2022 by F. Peterson started adding API (does not run)
 # 6/29/2022 by I. Kolli added parameters to API code
-# 7/2/2022 by F. Peterson API
+# 7/2/2022 by F. Peterson added several more parameters to API code
 
 
 # Note: add an edit distance comparison
