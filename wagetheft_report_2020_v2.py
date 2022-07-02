@@ -28,13 +28,14 @@
 # 9/21/2021 by F. Peterson
 # 10/25/2021 by F. Peterson added summary block 1/0 triggers, 4 LoC and added formating to prev wage table
 # 2/3/2022 by F. Peterson added organization filter -- add State filter, added new WHD file and debugged, fix date bug, industry lebel adjusted (3,195 lines)
-# 2/14/2022 by F.Peterson add WHD prevailing wage inference
-# 3/3/2022 by F.Peterson added exclusion terms to construction industry
-# 3/4/2022 by F.Peterson fixed a bug with trade/industry header mixup
-# 3/4/2022 by F.Peterson fixed a bug with double output
-# 3/7/2022 by F.Peterson added county of San Diego
-# 6/28/2022 by F.Peterson started adding API (does not run)
+# 2/14/2022 by F. Peterson add WHD prevailing wage inference
+# 3/3/2022 by F. Peterson added exclusion terms to construction industry
+# 3/4/2022 by F. Peterson fixed a bug with trade/industry header mixup
+# 3/4/2022 by F. Peterson fixed a bug with double output
+# 3/7/2022 by F. Peterson added county of San Diego
+# 6/28/2022 by F. Peterson started adding API (does not run)
 # 6/29/2022 by I. Kolli added parameters to API code
+# 7/2/2022 by F. Peterson API
 
 
 # Note: add an edit distance comparison
@@ -322,13 +323,18 @@ def main():
 	TEMP_PARAM_LIST = [PARAM_1_TARGET_ZIPCODE, PARAM_2_TARGET_INDUSTRY] #temp line of code while I figure out Alex instructions
 	#***************************************************************************
 	#API call
-	generateWageReport(TEST, PARAM_1_TARGET_ZIPCODE, PARAM_2_TARGET_INDUSTRY, federal_data, state_data, FLAG_DUPLICATE, STATE_FILTER, 
-	TARGET_STATES, INFER_ZIP, prevailing_wage_report, signatories_report, All_Industry_Summary_Block, Nonsignatory_Ratio_Block, CLEAN_OUTPUT, OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG,TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS)
+	generateWageReport(TEST, PARAM_1_TARGET_ZIPCODE, PARAM_2_TARGET_INDUSTRY, prevailing_wage_terms, SIGNATORY_INDUSTRY, TARGET_ORGANIZATION, 
+	federal_data, state_data, 
+	FLAG_DUPLICATE, STATE_FILTER, ORGANIZATION_FILTER, TARGET_STATES, INFER_ZIP, prevailing_wage_report, signatories_report, All_Industry_Summary_Block, 
+	Nonsignatory_Ratio_Block, CLEAN_OUTPUT, OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG,TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS)
 
 #Functions*************************************************
 	
-def generateWageReport(TEST, zip_codes_backup, TARGET_ZIPCODE, TARGET_INDUSTRY, federal_data, state_data, FLAG_DUPLICATE, STATE_FILTER, 
-TARGET_STATES, INFER_ZIP, prevailing_wage_report, signatories_report, All_Industry_Summary_Block, Nonsignatory_Ratio_Block, CLEAN_OUTPUT, OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG, TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS):
+def generateWageReport(TEST, zip_codes_backup, TARGET_ZIPCODE, TARGET_INDUSTRY, prevailing_wage_terms, SIGNATORY_INDUSTRY, TARGET_ORGANIZATION, 
+federal_data, state_data, 
+FLAG_DUPLICATE, STATE_FILTER, ORGANIZATION_FILTER, TARGET_STATES, INFER_ZIP, prevailing_wage_report, signatories_report, 
+All_Industry_Summary_Block, Nonsignatory_Ratio_Block, CLEAN_OUTPUT, OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG, 
+TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS):
 	#3/7/2022 bugFile = open('report_output/debug.html', 'w')
 	#3/7/2022 debug_fileSetup_def(bugFile)
 
