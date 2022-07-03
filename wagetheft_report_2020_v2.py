@@ -36,7 +36,7 @@
 # 6/28/2022 by F. Peterson started adding API (does not run)
 # 6/29/2022 by I. Kolli added parameters to API code
 # 7/2/2022 by F. Peterson added several more parameters to API code and create output folder if missing: tested and works
-
+# 7/2/2022 by F. Peterson added url pulls for WHD and DOL violations
 
 # Note: add an edit distance comparison
 # to fix replace() https://stackoverflow.com/questions/64843109/compiler-issue-assertionerror-on-replace-given-t-or-f-condition-with-string/64856554#64856554
@@ -384,7 +384,7 @@ TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS):
 
 	#Inferences*********************************
 	#zip codes
-	if not df_csv.empty: 
+	if not df_csv.empty and 'zip_cd' in df_csv.columns: 
 		#df_csv['zip_cd'] = df_raw['zip_cd'].astype(str).str.zfill(5)
 		
 		#def generate_placeholder_zip(row): https://stackoverflow.com/questions/57048689/update-or-replace-value-in-df-when-conditions-are-met/57048934#57048934
@@ -466,11 +466,12 @@ TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS):
 		total_ee_violtd = df['ee_violtd_cnt'].sum() #overwrite
 
 		#by issue count
-		df['violtn_cnt'] = df['violtn_cnt'].fillna(df['violation'].str.count("Issue")) #assume mean
-		df['violtn_cnt'] = np.where(df['violtn_cnt'] == "", df['violation'].str.count("Issue"), df['violtn_cnt']) # catch if na misses
-		df['violtn_cnt'] = np.where(df['violtn_cnt'] == 0, df['violation'].str.count("Issue"), df['violtn_cnt'])
-		df['violtn_cnt'] = np.where(df['violtn_cnt'] == False, df['violation'].str.count("Issue"), df['violtn_cnt'])
-		total_case_violtn = df['violtn_cnt'].sum() #overwrite
+		if 'violation' in df.columns:
+			df['violtn_cnt'] = df['violtn_cnt'].fillna(df['violation'].str.count("Issue")) #assume mean
+			df['violtn_cnt'] = np.where(df['violtn_cnt'] == "", df['violation'].str.count("Issue"), df['violtn_cnt']) # catch if na misses
+			df['violtn_cnt'] = np.where(df['violtn_cnt'] == 0, df['violation'].str.count("Issue"), df['violtn_cnt'])
+			df['violtn_cnt'] = np.where(df['violtn_cnt'] == False, df['violation'].str.count("Issue"), df['violtn_cnt'])
+			total_case_violtn = df['violtn_cnt'].sum() #overwrite
 
 		#violations
 		total_case_violtn = max(df['violtn_cnt'].sum(), df['ee_violtd_cnt'].sum() ) #safe assumption: violation count is always more then the number of employees
@@ -514,9 +515,10 @@ TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS):
 	df['backwage_owed'] = df['wages_owed'] + df['cmp_assd_cnt'] + df['interest_owed']
 	#add ee_pmt_due check if equal ?
 
-	df['backwage_owed'] = np.where(df['Paid'] == 'Y', 0, df['backwage_owed'] ) # zero out if documented as paid
-	df['cmp_assd_cnt'] = np.where(df['Paid'] == 'Y', 0, df['cmp_assd_cnt'] ) # zero out if documented as paid
-	df['interest_owed'] = np.where(df['Paid'] == 'Y', 0, df['interest_owed'] ) # zero out if documented as paid
+	if 'Paid' in df.columns:
+		df['backwage_owed'] = np.where(df['Paid'] == 'Y', 0, df['backwage_owed'] ) # zero out if documented as paid
+		df['cmp_assd_cnt'] = np.where(df['Paid'] == 'Y', 0, df['cmp_assd_cnt'] ) # zero out if documented as paid
+		df['interest_owed'] = np.where(df['Paid'] == 'Y', 0, df['interest_owed'] ) # zero out if documented as paid
 
 	out_target = df.copy() #at some point, save this file for quicker reports and only run up to here when a new dataset is introduced
 
@@ -530,10 +532,12 @@ TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS):
 
 	#unique_legalname_sig  = unique_legalname_sig[~unique_legalname_sig.index.duplicated()]
 
-	out_prevailing_target = unique_legalname_sig.loc[unique_legalname_sig['Prevailing'] == 1]
-	out_signatory_target = unique_legalname_sig.loc[unique_legalname_sig["Signatory"] == 1]
+	if 'Prevailing' in df.columns:
+		out_prevailing_target = unique_legalname_sig.loc[unique_legalname_sig['Prevailing'] == 1]
+	if "Signatory" in df.columns:
+		out_signatory_target = unique_legalname_sig.loc[unique_legalname_sig["Signatory"] == 1]
 
-	if signatories_report == 0: 
+	if signatories_report == 0 and 'Signatory' and 'legal_nm' and 'trade_nm' in out_target.columns:
 		#unused out_target = out_target.loc[out_target['Signatory']!=1] #filter
 		out_target['legal_nm'] = np.where(out_target['Signatory']==1, "masked", out_target['legal_nm'] )
 		out_target['trade_nm'] = np.where(out_target['Signatory']==1, "masked", out_target['trade_nm'] )
@@ -1002,7 +1006,7 @@ def Clean_Repeat_Violator_HTML_Row(df, COLUMN_NAME):
 
 def GroupByX(df, COLUMN_NAME):
 
-	if not df[COLUMN_NAME].isnull().all():
+	if COLUMN_NAME in df.columns and not df[COLUMN_NAME].isnull().all():
 
 		df = df[df[COLUMN_NAME].notnull() ]
 		df = df[df[COLUMN_NAME] != 'nan']
@@ -1030,7 +1034,7 @@ def GroupByX(df, COLUMN_NAME):
 
 def GroupByMultpleCases(df, COLUMN_NAME):
 
-	if not df[COLUMN_NAME].isnull().all():
+	if COLUMN_NAME in df.columns and not df[COLUMN_NAME].isnull().all():
 
 		df = df[df[COLUMN_NAME].notnull() ]
 		df = df[df[COLUMN_NAME] != 'nan']
@@ -1196,40 +1200,42 @@ def InferPrevailingWageAndColumnFlag(df, prevailing_wage_terms):
 
 def InferAgencyFromCaseIDAndLabel(df, LABEL_COLUMN):
 
-	foundAgencybyCaseID_1 = pd.isna(df[LABEL_COLUMN]) #find case IDs with a hyphen
-	#df[LABEL_COLUMN] = df[LABEL_COLUMN].fillna(foundAgencybyCaseID_1.replace( (True,False), (df['case_id'].astype(str).apply(lambda st: st[:st.find("-")]), df[LABEL_COLUMN]) ) ) #https://stackoverflow.com/questions/51660357/extract-substring-between-two-characters-in-pandas
-	df[LABEL_COLUMN][foundAgencybyCaseID_1] = df['case_id'].astype(str).apply(lambda st: st[:st.find("-")])  #https://stackoverflow.com/questions/51660357/extract-substring-between-two-characters-in-pandas
+	if LABEL_COLUMN in df.columns:
+		foundAgencybyCaseID_1 = pd.isna(df[LABEL_COLUMN]) #find case IDs with a hyphen
+		#df[LABEL_COLUMN] = df[LABEL_COLUMN].fillna(foundAgencybyCaseID_1.replace( (True,False), (df['case_id'].astype(str).apply(lambda st: st[:st.find("-")]), df[LABEL_COLUMN]) ) ) #https://stackoverflow.com/questions/51660357/extract-substring-between-two-characters-in-pandas
+		df[LABEL_COLUMN][foundAgencybyCaseID_1] = df['case_id'].astype(str).apply(lambda st: st[:st.find("-")])  #https://stackoverflow.com/questions/51660357/extract-substring-between-two-characters-in-pandas
 
-	foundAgencybyCaseID_2 = pd.isna(df[LABEL_COLUMN]) #cind case ID when no hyphen
-	#df[LABEL_COLUMN] = df[LABEL_COLUMN].fillna(foundAgencybyCaseID_2.replace( (True,False), (df['case_id'].astype(str).str[:3], df[LABEL_COLUMN]) ) )
-	df[LABEL_COLUMN][foundAgencybyCaseID_2] = df['case_id'].astype(str).str[:3]
+		foundAgencybyCaseID_2 = pd.isna(df[LABEL_COLUMN]) #cind case ID when no hyphen
+		#df[LABEL_COLUMN] = df[LABEL_COLUMN].fillna(foundAgencybyCaseID_2.replace( (True,False), (df['case_id'].astype(str).str[:3], df[LABEL_COLUMN]) ) )
+		df[LABEL_COLUMN][foundAgencybyCaseID_2] = df['case_id'].astype(str).str[:3]
 
-	#hardcode for DLSE nomemclature with a note * for assumed
-	DLSE_terms = ['01', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '23', '32', '35', 'WC']
-	pattern_DLSE = '|'.join(DLSE_terms)
-	found_DLSE = (df[LABEL_COLUMN].str.contains(pattern_DLSE ) )
-	#df[LABEL_COLUMN] = found_DLSE.replace( (True,False), ("DLSE", df[LABEL_COLUMN] ) )
-	df[LABEL_COLUMN][found_DLSE] = "DLSE"
+		#hardcode for DLSE nomemclature with a note * for assumed
+		DLSE_terms = ['01', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '23', '32', '35', 'WC']
+		pattern_DLSE = '|'.join(DLSE_terms)
+		found_DLSE = (df[LABEL_COLUMN].str.contains(pattern_DLSE ) )
+		#df[LABEL_COLUMN] = found_DLSE.replace( (True,False), ("DLSE", df[LABEL_COLUMN] ) )
+		df[LABEL_COLUMN][found_DLSE] = "DLSE"
 
 	return df
 
 def InferSignatoriesFromNameAndFlag(df, SIGNATORY_INDUSTRY):
 
-	if "Signatory" not in df.columns: df["Signatory"] = 0
+	if 'legal_nm' and 'trade_nm' in df.columns:
+		if "Signatory" not in df.columns: df["Signatory"] = 0
 
-	for x in range(1, len(SIGNATORY_INDUSTRY)):
-		PATTERN_EXCLUDE = EXCLUSION_LIST_GENERATOR(SIGNATORY_INDUSTRY[x][1])
-		PATTERN_IND = '|'.join(SIGNATORY_INDUSTRY[x][1])
+		for x in range(1, len(SIGNATORY_INDUSTRY)):
+			PATTERN_EXCLUDE = EXCLUSION_LIST_GENERATOR(SIGNATORY_INDUSTRY[x][1])
+			PATTERN_IND = '|'.join(SIGNATORY_INDUSTRY[x][1])
 
-		foundIt_sig = ( 
-			(
-				df['legal_nm'].str.contains(PATTERN_IND, flags=re.IGNORECASE, regex = True) &
-				~df['legal_nm'].str.contains(PATTERN_EXCLUDE, flags=re.IGNORECASE, regex = True) )|
-			(	
-				df['trade_nm'].str.contains(PATTERN_IND, flags=re.IGNORECASE, regex = True) &
-				~df['trade_nm'].str.contains(PATTERN_EXCLUDE, flags=re.IGNORECASE, regex = True) )
-			)
-		df["Signatory"][foundIt_sig] = 1
+			foundIt_sig = ( 
+				(
+					df['legal_nm'].str.contains(PATTERN_IND, flags=re.IGNORECASE, regex = True) &
+					~df['legal_nm'].str.contains(PATTERN_EXCLUDE, flags=re.IGNORECASE, regex = True) )|
+				(	
+					df['trade_nm'].str.contains(PATTERN_IND, flags=re.IGNORECASE, regex = True) &
+					~df['trade_nm'].str.contains(PATTERN_EXCLUDE, flags=re.IGNORECASE, regex = True) )
+				)
+			df["Signatory"][foundIt_sig] = 1
 
 	return df
 
@@ -1269,7 +1275,7 @@ def Label_Industry(df, INFER, TARGET_INDUSTRY):
 	if 'industry' not in df.columns: df['industry'] = ""
 	if 'trade2' not in df.columns: df['trade2'] = ""
 
-	if not df.empty: #filter out industry rows
+	if not df.empty and 'legal_nm' and 'trade_nm' in df.columns: #filter out industry rows
 		for x in range(1, len(TARGET_INDUSTRY)): #exclude cell 0 that contains an industry label cell
 			#add a levinstein distance with distance of two and match and correct: debug 10/30/2020
 			PATTERN_IND = '|'.join(TARGET_INDUSTRY[x])
@@ -1337,7 +1343,7 @@ def Label_Industry(df, INFER, TARGET_INDUSTRY):
 def InferSignatoryIndustryAndLabel(df, SIGNATORY_INDUSTRY):
 	if 'signatory_industry' not in df.columns: df['signatory_industry'] = ""
 
-	if not df.empty: #filter out industry rows
+	if not df.empty and 'legal_nm' and 'trade_nm' in df.columns: #filter out industry rows
 		for x in range(1, len(SIGNATORY_INDUSTRY)):
 
 			PATTERN_EXCLUDE = EXCLUSION_LIST_GENERATOR(SIGNATORY_INDUSTRY[x][1])
@@ -1396,7 +1402,7 @@ def InferZipcodeFromCompanyName(df, region, region_name): #fill nan zip code by 
 
 def InferZipcodeFromJurisdictionName(df, region, region_name):
 
-	if region is not 'all' and region[0] is not 'County of Santa Clara':
+	if region is not 'all' and region[0] is not 'County of Santa Clara' and 'juris_or_proj_nm' in df.columns:
 		PATTERN_CITY = '|'.join(region)
 
 		df.st_cd = df.st_cd.astype(str)
@@ -1478,10 +1484,11 @@ def infer_wage_penalty(df):
 
 	df['assumed_backwage'] = np.where(( (df['bw_amt'] == 0) | (df['bw_amt'] == "") | (df['bw_amt'] == 0) | (df['bw_amt'] == False) ), 1, df['assumed_backwage'] )
 
-	df['bw_amt'] = df.apply(
-		lambda x: lookuplist(x['violation'], penalties, 1) 
-		if ( x['assumed_backwage'] == 1 )
-		else x['bw_amt'], axis=1 )
+	if 'violation' in df.columns:
+		df['bw_amt'] = df.apply(
+			lambda x: lookuplist(x['violation'], penalties, 1) 
+			if ( x['assumed_backwage'] == 1 )
+			else x['bw_amt'], axis=1 )
 	
 	return df
 
@@ -1515,24 +1522,25 @@ def lookuplist(trade, list_x, col):
 	return value_out
 
 def calculate_interest_owed(df):
-	df['findings_start_date'] = pd.to_datetime(df['findings_start_date'], errors = 'coerce')
-	df['findings_end_date'] = pd.to_datetime(df['findings_end_date'], errors = 'coerce' ) #crashed here 2/5/2022 "Out of bounds nanosecond timestamp: 816-09-12 00:00:00"
-	df['Calculate_start_date'] = df['findings_start_date'].fillna(df['findings_end_date'])
-	df['Days_Unpaid'] = pd.to_datetime('today') - df['Calculate_start_date']
-	# df['Days_Unpaid'] = np.where(df['Days_Unpaid'] < pd.Timedelta(0,errors='coerce'), (pd.Timedelta(0, errors='coerce')), df['Days_Unpaid'] )
+	if 'findings_start_date' and 'findings_end_date' in df.columns:
+		df['findings_start_date'] = pd.to_datetime(df['findings_start_date'], errors = 'coerce')
+		df['findings_end_date'] = pd.to_datetime(df['findings_end_date'], errors = 'coerce' ) #crashed here 2/5/2022 "Out of bounds nanosecond timestamp: 816-09-12 00:00:00"
+		df['Calculate_start_date'] = df['findings_start_date'].fillna(df['findings_end_date'])
+		df['Days_Unpaid'] = pd.to_datetime('today') - df['Calculate_start_date']
+		# df['Days_Unpaid'] = np.where(df['Days_Unpaid'] < pd.Timedelta(0,errors='coerce'), (pd.Timedelta(0, errors='coerce')), df['Days_Unpaid'] )
 
-	df['Years_Unpaid'] = df['Days_Unpaid'].dt.days.div(365)
-	r = 10
-	n = 365
-	df['Interest_Accrued'] = (df['wages_owed'] * (((1 + ((r/100.0)/n)) ** (n*df['Years_Unpaid']))) ) - df['wages_owed']
-	df['Interest_Accrued'] = df['Interest_Accrued'].fillna(df['Interest_Accrued'])
-	df['Interest_Balance_Due'] = np.where(df['Interest_Balance_Due'] == "", df['Interest_Accrued'], df['Interest_Balance_Due'] )
-	#df['Interest_Balance_Due'] = np.where(df['Interest_Balance_Due'] == 0, df['Interest_Accrued'], df['Interest_Balance_Due'] ) #<--careful this does not overwite fully paid cases
-	df['Interest_Balance_Due'] = np.where(df['Interest_Balance_Due'] == False, df['Interest_Accrued'], df['Interest_Balance_Due'] )
-	
-	df['interest_owed'] = (df['Interest_Balance_Due'] - df["Interest_Payments_Recd"])
-	df['interest_owed'] = np.where(df['interest_owed'] < 0, 0, df['interest_owed'] )
-	#total_int_bal = df['interest_owed'].sum()
+		df['Years_Unpaid'] = df['Days_Unpaid'].dt.days.div(365)
+		r = 10
+		n = 365
+		df['Interest_Accrued'] = (df['wages_owed'] * (((1 + ((r/100.0)/n)) ** (n*df['Years_Unpaid']))) ) - df['wages_owed']
+		df['Interest_Accrued'] = df['Interest_Accrued'].fillna(df['Interest_Accrued'])
+		df['Interest_Balance_Due'] = np.where(df['Interest_Balance_Due'] == "", df['Interest_Accrued'], df['Interest_Balance_Due'] )
+		#df['Interest_Balance_Due'] = np.where(df['Interest_Balance_Due'] == 0, df['Interest_Accrued'], df['Interest_Balance_Due'] ) #<--careful this does not overwite fully paid cases
+		df['Interest_Balance_Due'] = np.where(df['Interest_Balance_Due'] == False, df['Interest_Accrued'], df['Interest_Balance_Due'] )
+		
+		df['interest_owed'] = (df['Interest_Balance_Due'] - df["Interest_Payments_Recd"])
+		df['interest_owed'] = np.where(df['interest_owed'] < 0, 0, df['interest_owed'] )
+		#total_int_bal = df['interest_owed'].sum()
 	return df
 
 
@@ -1542,67 +1550,67 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
 
 	liability_terms0 = ['(a California)', '(a Californi)', '(a Californ)']
 	pattern_liability0 = '|'.join(liability_terms0)
-	foundIt0=(df['legal_nm'].str.contains(pattern_liability0, flags=re.IGNORECASE, regex = True) | 
-	df['trade_nm'].str.contains(pattern_liability0, flags=re.IGNORECASE, regex = True) )
+	if 'legal_nm' and 'trade_nm' in df.columns:
+		foundIt0=(df['legal_nm'].str.contains(pattern_liability0, flags=re.IGNORECASE, regex = True) | 
+		df['trade_nm'].str.contains(pattern_liability0, flags=re.IGNORECASE, regex = True) )
 
-	df['Liabilitytype'][foundIt0] = 'California'
+		df['Liabilitytype'][foundIt0] = 'California'
 
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a California', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a Californi', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a California', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a Californi', '', regex=True, case=False)
-
-
-	liability_terms1 = ['(a Delaware)']
-	pattern_liability1 = '|'.join(liability_terms1)
-	foundIt1=(
-		df['legal_nm'].str.contains(pattern_liability1, flags=re.IGNORECASE, regex = True) | 
-		df['trade_nm'].str.contains(pattern_liability1, flags=re.IGNORECASE, regex = True) 
-		)
-	df['Liabilitytype'][foundIt1] = 'Delaware'
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a Delaware', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a Delaware', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a California', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a Californi', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a California', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a Californi', '', regex=True, case=False)
 
 
-	liability_terms2 = ['(a Nevada)']
-	pattern_liability2 = '|'.join(liability_terms2)
-	foundIt2=(df['legal_nm'].str.contains(pattern_liability2, flags=re.IGNORECASE, regex = True) | 
-	df['trade_nm'].str.contains(pattern_liability2, flags=re.IGNORECASE, regex = True) )
-
-	df['Liabilitytype'][foundIt2] = 'Delaware'
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a Nevada', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a Nevada', '', regex=True, case=False)
-
-
-	liability_terms3 = ['(a Nebraska)']
-	pattern_liability3 = '|'.join(liability_terms3)
-	foundIt3=(df['legal_nm'].str.contains(pattern_liability3, flags=re.IGNORECASE, regex = True) | 
-	df['trade_nm'].str.contains(pattern_liability3, flags=re.IGNORECASE, regex = True) )
-
-	df['Liabilitytype'][foundIt3] = 'Nebraska'
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a Nebraska', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a Nebraska', '', regex=True, case=False)
+		liability_terms1 = ['(a Delaware)']
+		pattern_liability1 = '|'.join(liability_terms1)
+		foundIt1=(
+			df['legal_nm'].str.contains(pattern_liability1, flags=re.IGNORECASE, regex = True) | 
+			df['trade_nm'].str.contains(pattern_liability1, flags=re.IGNORECASE, regex = True) 
+			)
+		df['Liabilitytype'][foundIt1] = 'Delaware'
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a Delaware', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a Delaware', '', regex=True, case=False)
 
 
-	liability_terms4 = ['(a foreign)']
-	pattern_liability4 = '|'.join(liability_terms4)
-	foundIt4=(df['legal_nm'].str.contains(pattern_liability4, flags=re.IGNORECASE, regex = True) | 
-	df['trade_nm'].str.contains(pattern_liability4, flags=re.IGNORECASE, regex = True) )
+		liability_terms2 = ['(a Nevada)']
+		pattern_liability2 = '|'.join(liability_terms2)
+		foundIt2=(df['legal_nm'].str.contains(pattern_liability2, flags=re.IGNORECASE, regex = True) | 
+		df['trade_nm'].str.contains(pattern_liability2, flags=re.IGNORECASE, regex = True) )
 
-	df['Liabilitytype'][foundIt4] = 'Foreign'
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a Foreign', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a Foreign', '', regex=True, case=False)
+		df['Liabilitytype'][foundIt2] = 'Delaware'
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a Nevada', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a Nevada', '', regex=True, case=False)
 
 
-	liability_terms5 = ['(Which Will Be Doing Business In California)', '(Which Will Be Doing Business In California As)']
-	pattern_liability5 = '|'.join(liability_terms5)
-	foundIt5=(df['legal_nm'].str.contains(pattern_liability5, flags=re.IGNORECASE, regex = True) | 
-	df['trade_nm'].str.contains(pattern_liability5, flags=re.IGNORECASE, regex = True) )
+		liability_terms3 = ['(a Nebraska)']
+		pattern_liability3 = '|'.join(liability_terms3)
+		foundIt3=(df['legal_nm'].str.contains(pattern_liability3, flags=re.IGNORECASE, regex = True) | 
+		df['trade_nm'].str.contains(pattern_liability3, flags=re.IGNORECASE, regex = True) )
 
-	df['Liabilitytype'][foundIt5] = 'California'
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a Foreign', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a Foreign', '', regex=True, case=False)
+		df['Liabilitytype'][foundIt3] = 'Nebraska'
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a Nebraska', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a Nebraska', '', regex=True, case=False)
 
+
+		liability_terms4 = ['(a foreign)']
+		pattern_liability4 = '|'.join(liability_terms4)
+		foundIt4=(df['legal_nm'].str.contains(pattern_liability4, flags=re.IGNORECASE, regex = True) | 
+		df['trade_nm'].str.contains(pattern_liability4, flags=re.IGNORECASE, regex = True) )
+
+		df['Liabilitytype'][foundIt4] = 'Foreign'
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a Foreign', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a Foreign', '', regex=True, case=False)
+
+
+		liability_terms5 = ['(Which Will Be Doing Business In California)', '(Which Will Be Doing Business In California As)']
+		pattern_liability5 = '|'.join(liability_terms5)
+		foundIt5=(df['legal_nm'].str.contains(pattern_liability5, flags=re.IGNORECASE, regex = True) | 
+		df['trade_nm'].str.contains(pattern_liability5, flags=re.IGNORECASE, regex = True) )
+
+		df['Liabilitytype'][foundIt5] = 'California'
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a Foreign', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a Foreign', '', regex=True, case=False)
 
 	return df
 
@@ -1610,145 +1618,150 @@ def MoveBusinessTypeToBusinessTypeColumn(df):
 
 	individual_terms = ['an individual', 'individual ']
 	pattern_individual = '|'.join(individual_terms)
-	foundIt=(df['legal_nm'].str.contains(pattern_individual, flags=re.IGNORECASE, regex = True) | 
-	df['trade_nm'].str.contains(pattern_individual, flags=re.IGNORECASE, regex = True) )
+	if 'legal_nm' and 'trade_nm' in df.columns:
+		foundIt=(df['legal_nm'].str.contains(pattern_individual, flags=re.IGNORECASE, regex = True) | 
+		df['trade_nm'].str.contains(pattern_individual, flags=re.IGNORECASE, regex = True) )
 
-	#df['Businesstype'] = foundIt.replace((True,False), ('Individual',df['Businesstype']), regex=True) #fill column 'industry'
-	df['Businesstype'][foundIt] = 'Individual'
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('an individual', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('an individual', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('individual ', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('individual ', '', regex=True, case=False)
+		#df['Businesstype'] = foundIt.replace((True,False), ('Individual',df['Businesstype']), regex=True) #fill column 'industry'
+		df['Businesstype'][foundIt] = 'Individual'
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('an individual', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('an individual', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('individual ', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('individual ', '', regex=True, case=False)
 	return df
 
 def MoveLimitedLiabilityBusinessTypeToBusinessTypeColumn(df):
 	company_terms = ['LLC', 'L.L.C.','company', 'Comapany', 'a limited liability company', 'a limited liability', 'Co.', 
 	'Limited Liability', 'Limited Liability Comapany', 'Limited Liability Company']
 	pattern_company = '|'.join(company_terms)
-	foundIt=(df['legal_nm'].str.contains(pattern_company, flags=re.IGNORECASE, regex = True) | 
-	df['trade_nm'].str.contains(pattern_company, flags=re.IGNORECASE, regex = True) )
 
-	#df['Businesstype'] = foundIt.replace((True,False), ('Company',df['Businesstype']), regex=True) #fill column 'industry'
-	df['Businesstype'][foundIt] = 'Company'
+	if 'legal_nm' and 'trade_nm' in df.columns:
+		foundIt=(df['legal_nm'].str.contains(pattern_company, flags=re.IGNORECASE, regex = True) | 
+		df['trade_nm'].str.contains(pattern_company, flags=re.IGNORECASE, regex = True) )
 
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(r'\bLLC$', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(r'\bLLC$', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(r'\bL.L.C.$', '', False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(r'\bL.L.C.$', '', False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('L.L.C., ', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('L.L.C., ', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('LLC, ', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('LLC, ', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('L.L.C. ', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('L.L.C. ', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('LLC ', '', False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('LLC ', '', False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('company', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('company', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Company', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Company', '', regex=True, case=False)
+		#df['Businesstype'] = foundIt.replace((True,False), ('Company',df['Businesstype']), regex=True) #fill column 'industry'
+		df['Businesstype'][foundIt] = 'Company'
 
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('comapany', '', regex=True, case=False) #common typo
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('comapany', '', regex=True, case=False) #common typo
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Comapany', '', regex=True, case=False) #common typo
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Comapany', '', regex=True, case=False) #common typo
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(r'\bLLC$', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(r'\bLLC$', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(r'\bL.L.C.$', '', False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(r'\bL.L.C.$', '', False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('L.L.C., ', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('L.L.C., ', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('LLC, ', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('LLC, ', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('L.L.C. ', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('L.L.C. ', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('LLC ', '', False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('LLC ', '', False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('company', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('company', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Company', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Company', '', regex=True, case=False)
 
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a limited liability', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a limited liability', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a Limited Liability', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a Limited Liability', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('limited liability', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('limited liability', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Limited Liability', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Limited Liability', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('comapany', '', regex=True, case=False) #common typo
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('comapany', '', regex=True, case=False) #common typo
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Comapany', '', regex=True, case=False) #common typo
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Comapany', '', regex=True, case=False) #common typo
 
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(r'\bCo$', '', False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(r'\bCo$', '', False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Co. ', '', False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Co. ', '', False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Co ', '', False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Co ', '', False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('CO ', '', False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('CO ', '', False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a limited liability', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a limited liability', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a Limited Liability', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a Limited Liability', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('limited liability', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('limited liability', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Limited Liability', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Limited Liability', '', regex=True, case=False)
+
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(r'\bCo$', '', False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(r'\bCo$', '', False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Co. ', '', False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Co. ', '', False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Co ', '', False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Co ', '', False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('CO ', '', False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('CO ', '', False)
 	return df
 
 def MovePartnershipBusinessTypeToBusinessTypeColumn(df):
 	partnership_terms = ['as partners', 'LLP', 'individually & jointly', 'both individually & as partners','individually and as partners', 
 	'both individually and as partners', 'both individually and jointly liable']
 	pattern_partner = '|'.join(partnership_terms)
-	foundIt=(df['legal_nm'].str.contains(pattern_partner, flags=re.IGNORECASE, regex = True) | 
-	df['trade_nm'].str.contains(pattern_partner, flags=re.IGNORECASE, regex = True) )
 
-	#df['Businesstype'] = foundIt.replace((True,False), ('Partnership',df['Businesstype']), regex=True) #fill column 'industry'
-	df['Businesstype'][foundIt] = 'Partnership'
+	if 'legal_nm' and 'trade_nm' in df.columns:
+		foundIt=(df['legal_nm'].str.contains(pattern_partner, flags=re.IGNORECASE, regex = True) | 
+		df['trade_nm'].str.contains(pattern_partner, flags=re.IGNORECASE, regex = True) )
 
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('both jointly and severally as employers', '',  regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('both jointly and severally as employers', '',  regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('jointly and severally as employers', '',  regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('jointly and severally as employers', '',  regex=True, case=False)
-	
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('each individually and as partners', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('each individually and as partners', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('both individually and as partners', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('both individually and as partners', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('individually and as partners', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('individually and as partners', '', regex=True, case=False)
+		#df['Businesstype'] = foundIt.replace((True,False), ('Partnership',df['Businesstype']), regex=True) #fill column 'industry'
+		df['Businesstype'][foundIt] = 'Partnership'
 
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('each individually and jointly liable', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('each individually and jointly liable', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('both individually and jointly liable', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('both individually and jointly liable', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('individually and jointly liable', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('individually and jointly liable', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('each individually and jointly', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('each individually and jointly', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('both individually and jointly', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('both individually and jointly', '', regex=True, case=False)
-	
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('individually and jointly', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('individually and jointly', '', regex=True, case=False)
-	
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('each jointly and severally', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('each jointly and severally', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('both jointly and severally', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('both jointly and severally', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('jointly and severally', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('jointly and severally', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('both jointly and severally as employers', '',  regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('both jointly and severally as employers', '',  regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('jointly and severally as employers', '',  regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('jointly and severally as employers', '',  regex=True, case=False)
+		
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('each individually and as partners', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('each individually and as partners', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('both individually and as partners', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('both individually and as partners', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('individually and as partners', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('individually and as partners', '', regex=True, case=False)
 
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('each severally and as joint employers', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('each severally and as joint employers', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('each severally and as joint employ', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('each severally and as joint employ', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('both severally and as joint employers', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('both severally and as joint employers', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('severally and as joint employers', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('severally and as joint employers', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('each severally and as joint', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('each severally and as joint', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('severally and as joint', '',  regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('severally and as joint', '',  regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('each individually and jointly liable', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('each individually and jointly liable', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('both individually and jointly liable', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('both individually and jointly liable', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('individually and jointly liable', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('individually and jointly liable', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('each individually and jointly', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('each individually and jointly', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('both individually and jointly', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('both individually and jointly', '', regex=True, case=False)
+		
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('individually and jointly', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('individually and jointly', '', regex=True, case=False)
+		
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('each jointly and severally', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('each jointly and severally', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('both jointly and severally', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('both jointly and severally', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('jointly and severally', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('jointly and severally', '', regex=True, case=False)
 
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a general partnership', '',  regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a general partnership', '',  regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('each severally and as joint employers', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('each severally and as joint employers', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('each severally and as joint employ', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('each severally and as joint employ', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('both severally and as joint employers', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('both severally and as joint employers', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('severally and as joint employers', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('severally and as joint employers', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('each severally and as joint', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('each severally and as joint', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('severally and as joint', '',  regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('severally and as joint', '',  regex=True, case=False)
 
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('general partnership', '',  regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('general partnership', '',  regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a general partnership', '',  regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a general partnership', '',  regex=True, case=False)
 
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a limited partnership', '',  regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a limited partnership', '',  regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('general partnership', '',  regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('general partnership', '',  regex=True, case=False)
 
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('limited partnership', '',  regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('limited partnership', '',  regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a limited partnership', '',  regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a limited partnership', '',  regex=True, case=False)
 
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a partnership', '',  regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a partnership', '',  regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('limited partnership', '',  regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('limited partnership', '',  regex=True, case=False)
 
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('partnership', '',  regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('partnership', '',  regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a partnership', '',  regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a partnership', '',  regex=True, case=False)
 
-	#last ditch cleanup
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('each severally and as', '',  regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('each severally and as', '',  regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('partnership', '',  regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('partnership', '',  regex=True, case=False)
+
+		#last ditch cleanup
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('each severally and as', '',  regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('each severally and as', '',  regex=True, case=False)
 
 	return df
 
@@ -1756,275 +1769,286 @@ def MoveCorportationBusinessTypeToBusinessTypeColumn(df):
 	corporation_terms = ['inc.', 'corporation', 'corp.', 'corp', 'inc', 'a corporation', 'Incorporated', 'non-profit corporation', 
 	'nonprofit', 'non-profit']
 	pattern_corp = '|'.join(corporation_terms)
-	foundIt=(df['legal_nm'].str.contains(pattern_corp, flags=re.IGNORECASE, regex = True) | 
-	df['trade_nm'].str.contains(pattern_corp,  flags=re.IGNORECASE, regex = True) )
+	
+	if 'legal_nm' and 'trade_nm' in df.columns:
+		foundIt=(df['legal_nm'].str.contains(pattern_corp, flags=re.IGNORECASE, regex = True) | 
+		df['trade_nm'].str.contains(pattern_corp,  flags=re.IGNORECASE, regex = True) )
 
-	#df['Businesstype'] = foundIt.replace((True,False), ('Corporation', df['Businesstype']), regex=True) #fill column business type
-	df['Businesstype'][foundIt] = 'Corporation'
+		#df['Businesstype'] = foundIt.replace((True,False), ('Corporation', df['Businesstype']), regex=True) #fill column business type
+		df['Businesstype'][foundIt] = 'Corporation'
 
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a corporation', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a corporation', '', regex=True, case=False)
-	#df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('corporation', '', regex=True, case=False)
-	#df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('corporation', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('a corporation', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('a corporation', '', regex=True, case=False)
+		#df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('corporation', '', regex=True, case=False)
+		#df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('corporation', '', regex=True, case=False)
 
-	#df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('CORPORATION', '', regex=True, case=False)
+		#df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('CORPORATION', '', regex=True, case=False)
 
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Corporation', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Corporation', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Incorporated', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Incorporated', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Corp ', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Corp ', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Inc ', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Inc ', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Inc.', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Inc.', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('inc', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('inc', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Corp.', '', regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Corp.', '', regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('non-profit corporation', '',  regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('non-profit corporation', '',  regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('nonprofit', '',  regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('nonprofit', '',  regex=True, case=False)
-	df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('non-profit', '',  regex=True, case=False)
-	df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('non-profit', '',  regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Corporation', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Corporation', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Incorporated', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Incorporated', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Corp ', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Corp ', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Inc ', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Inc ', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Inc.', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Inc.', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('inc', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('inc', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('Corp.', '', regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('Corp.', '', regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('non-profit corporation', '',  regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('non-profit corporation', '',  regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('nonprofit', '',  regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('nonprofit', '',  regex=True, case=False)
+		df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace('non-profit', '',  regex=True, case=False)
+		df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace('non-profit', '',  regex=True, case=False)
 	return df
 
 
 def RemovePunctuationFromCity(df): ##text cleanup: remove double spaces
 
-	df['cty_nm'] = df['cty_nm'].str.replace(',','')
-	df['cty_nm'] = df['cty_nm'].str.replace('.','')
-	df['cty_nm'] = df['cty_nm'].str.replace(';','')
-	#df['cty_nm'] = df['cty_nm'].str.replace('-','')
-	df['cty_nm'] = df['cty_nm'].str.replace("'",'')
+	if 'cty_nm' in df.columns:
+		df['cty_nm'] = df['cty_nm'].str.replace(',','')
+		df['cty_nm'] = df['cty_nm'].str.replace('.','')
+		df['cty_nm'] = df['cty_nm'].str.replace(';','')
+		#df['cty_nm'] = df['cty_nm'].str.replace('-','')
+		df['cty_nm'] = df['cty_nm'].str.replace("'",'')
 
-	df['cty_nm'] = df['cty_nm'].str.replace('  ',' ')
-	df['cty_nm'] = df['cty_nm'].str.replace('&','')
-	df['cty_nm'] = df['cty_nm'].str.strip(';,. ')
+		df['cty_nm'] = df['cty_nm'].str.replace('  ',' ')
+		df['cty_nm'] = df['cty_nm'].str.replace('&','')
+		df['cty_nm'] = df['cty_nm'].str.strip(';,. ')
 
-	df['cty_nm'] = df['cty_nm'].str.replace('(','')
-	df['cty_nm'] = df['cty_nm'].str.replace(')','')
-	df['cty_nm'] = df['cty_nm'].str.replace('|','')
-	df['cty_nm'] = df['cty_nm'].str.replace('/','')
-	df['cty_nm'] = df['cty_nm'].str.replace('*','')
-	df['cty_nm'] = df['cty_nm'].str.replace('  ',' ')
+		df['cty_nm'] = df['cty_nm'].str.replace('(','')
+		df['cty_nm'] = df['cty_nm'].str.replace(')','')
+		df['cty_nm'] = df['cty_nm'].str.replace('|','')
+		df['cty_nm'] = df['cty_nm'].str.replace('/','')
+		df['cty_nm'] = df['cty_nm'].str.replace('*','')
+		df['cty_nm'] = df['cty_nm'].str.replace('  ',' ')
 
 	return df
 
 def RemovePunctuationFromAddresses(df): ##text cleanup: remove double spaces
 
-	df['street_addr'] = df['street_addr'].str.replace(',','')
-	df['street_addr'] = df['street_addr'].str.replace('.','')
-	df['street_addr'] = df['street_addr'].str.replace(';','')
-	df['street_addr'] = df['street_addr'].str.replace('-','')
-	df['street_addr'] = df['street_addr'].str.replace("'",'')
+	if 'street_addr' in df.columns:
+		df['street_addr'] = df['street_addr'].str.replace(',','')
+		df['street_addr'] = df['street_addr'].str.replace('.','')
+		df['street_addr'] = df['street_addr'].str.replace(';','')
+		df['street_addr'] = df['street_addr'].str.replace('-','')
+		df['street_addr'] = df['street_addr'].str.replace("'",'')
 
-	df['street_addr'] = df['street_addr'].str.replace('  ',' ')
-	df['street_addr'] = df['street_addr'].str.replace('&','and')
-	df['street_addr'] = df['street_addr'].str.strip(';,. ')
+		df['street_addr'] = df['street_addr'].str.replace('  ',' ')
+		df['street_addr'] = df['street_addr'].str.replace('&','and')
+		df['street_addr'] = df['street_addr'].str.strip(';,. ')
 
-	df['street_addr'] = df['street_addr'].str.replace('(','')
-	df['street_addr'] = df['street_addr'].str.replace(')','')
-	df['street_addr'] = df['street_addr'].str.replace('|','')
-	df['street_addr'] = df['street_addr'].str.replace('/','')
-	df['street_addr'] = df['street_addr'].str.replace('*','')
-	df['street_addr'] = df['street_addr'].str.replace('  ',' ')
+		df['street_addr'] = df['street_addr'].str.replace('(','')
+		df['street_addr'] = df['street_addr'].str.replace(')','')
+		df['street_addr'] = df['street_addr'].str.replace('|','')
+		df['street_addr'] = df['street_addr'].str.replace('/','')
+		df['street_addr'] = df['street_addr'].str.replace('*','')
+		df['street_addr'] = df['street_addr'].str.replace('  ',' ')
 
 	return df
 
 def RemoveDoubleSpacesFromAddresses(df): ##text cleanup: remove double spaces
 
-	df['street_addr'] = df['street_addr'].str.replace(',,',',')
-	df['street_addr'] = df['street_addr'].str.replace('  ',' ')
-	df['street_addr'] = df['street_addr'].str.strip()
-	df['street_addr'] = df['street_addr'].str.strip(';,. ')
-	df['legal_nm'] = df['legal_nm'].str.replace('  ',' ')
+	if 'street_addr' in df.columns:
+		df['street_addr'] = df['street_addr'].str.replace(',,',',')
+		df['street_addr'] = df['street_addr'].str.replace('  ',' ')
+		df['street_addr'] = df['street_addr'].str.strip()
+		df['street_addr'] = df['street_addr'].str.strip(';,. ')
+	if 'legal_nm' in df.columns:
+		df['legal_nm'] = df['legal_nm'].str.replace('  ',' ')
 	return df
 
 def ReplaceAddressAbreviations(df):
-	df['street_addr'] = df['street_addr'].str.replace('  ',' ')
-	df['street_addr'] = df['street_addr'].str.strip()
-	df['street_addr'] = df['street_addr'].str.strip(';,. ')
-	df['street_addr'] = df['street_addr'].astype(str) + ' ' #add a right space to differentiate 'Ave ' from 'Avenue'
-	
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('CT.', 'Court', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('WY.', 'Way', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('CTR.', 'Center', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('AVE.', 'Avenue', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(' ST.', ' Street', regex = False) #bugget with EAST
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('DR.', 'Drive', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('RD.', 'Road', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('LN.', 'Lane', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('PLZ.', 'Plaza', regex = False)
+	if 'street_addr' in df.columns:
+		df['street_addr'] = df['street_addr'].str.replace('  ',' ')
+		df['street_addr'] = df['street_addr'].str.strip()
+		df['street_addr'] = df['street_addr'].str.strip(';,. ')
+		df['street_addr'] = df['street_addr'].astype(str) + ' ' #add a right space to differentiate 'Ave ' from 'Avenue'
+		
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('CT.', 'Court', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('WY.', 'Way', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('CTR.', 'Center', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('AVE.', 'Avenue', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(' ST.', ' Street', regex = False) #bugget with EAST
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('DR.', 'Drive', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('RD.', 'Road', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('LN.', 'Lane', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('PLZ.', 'Plaza', regex = False)
 
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('CT,', 'Court', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('WY,', 'Way', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('CTR,', 'Center', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('AVE,', 'Avenue', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(' ST,', ' Street', regex = False) #bugget with EAST
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('DR,', 'Drive', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('RD,', 'Road', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('LN,', 'Lane', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('PLZ,', 'Plaza', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('CT,', 'Court', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('WY,', 'Way', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('CTR,', 'Center', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('AVE,', 'Avenue', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(' ST,', ' Street', regex = False) #bugget with EAST
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('DR,', 'Drive', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('RD,', 'Road', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('LN,', 'Lane', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('PLZ,', 'Plaza', regex = False)
 
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('CT ', 'Court ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('WY ', 'Way ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('CTR ', 'Center ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('AVE ', 'Avenue ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(' ST ', ' Street ', regex = False) #bugget with EAST
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('DR ', 'Drive ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('RD ', 'Road ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('LN ', 'Lane ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('PLZ ', 'Plaza ', regex = False)
-
-
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bCT$', 'Court', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bWY$', 'Way', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bCTR$', 'Center', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bAVE$', 'Avenue', regex = False)
-	#df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bST$', 'Street', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bDR$', 'Drive', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bRD$', 'Road', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bLN$', 'Lane', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bPLZ$', 'Plaza', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('CT ', 'Court ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('WY ', 'Way ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('CTR ', 'Center ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('AVE ', 'Avenue ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(' ST ', ' Street ', regex = False) #bugget with EAST
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('DR ', 'Drive ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('RD ', 'Road ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('LN ', 'Lane ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('PLZ ', 'Plaza ', regex = False)
 
 
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ct.', 'Court', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Wy.', 'Way', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ctr.', 'Center', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ave.', 'Avenue', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('St.', 'Street', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Dr.', 'Drive', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Rd.', 'Road', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ln.', 'Lane', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('PLZ.', 'Plaza', regex = False)
-
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ct,', 'Court', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Wy,', 'Way', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ctr,', 'Center', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ave,', 'Avenue', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('St,', 'Street', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Dr,', 'Drive', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Rd,', 'Road', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ln,', 'Lane', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('PLZ,', 'Plaza', regex = False)
-
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ct ', 'Court ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Wy ', 'Way ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ctr ', 'Center ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ave ', 'Avenue ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('St ', 'Street ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Dr ', 'Drive ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Rd ', 'Road ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ln ', 'Lane ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('PLZ ', 'Plaza ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bCT$', 'Court', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bWY$', 'Way', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bCTR$', 'Center', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bAVE$', 'Avenue', regex = False)
+		#df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bST$', 'Street', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bDR$', 'Drive', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bRD$', 'Road', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bLN$', 'Lane', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bPLZ$', 'Plaza', regex = False)
 
 
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bCt$', 'Court', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bWy$', 'Way', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bCtr$', 'Center', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bAve$', 'Avenue', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bSt$', 'Street', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bDr$', 'Drive', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bRd$', 'Road', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bLn$', 'Lane', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bPLZ$', 'Plaza', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ct.', 'Court', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Wy.', 'Way', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ctr.', 'Center', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ave.', 'Avenue', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('St.', 'Street', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Dr.', 'Drive', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Rd.', 'Road', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ln.', 'Lane', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('PLZ.', 'Plaza', regex = False)
 
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Boulevard', 'Blvd.', False, re.IGNORECASE)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Expressway', 'Expy.', False, re.IGNORECASE)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Building', 'Bldg.', False, re.IGNORECASE)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ct,', 'Court', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Wy,', 'Way', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ctr,', 'Center', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ave,', 'Avenue', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('St,', 'Street', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Dr,', 'Drive', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Rd,', 'Road', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ln,', 'Lane', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('PLZ,', 'Plaza', regex = False)
 
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('STE.', 'Suite', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ste.', 'Suite', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ste ', 'Suite ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('STE ', 'Suite ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('APT.', 'Suite', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Apt.', 'Suite', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Apt ', 'Suite ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('APT ', 'Suite ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Unit ', 'Suite ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Unit', 'Suite', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('# ', 'Suite ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('#', 'Suite ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ct ', 'Court ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Wy ', 'Way ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ctr ', 'Center ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ave ', 'Avenue ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('St ', 'Street ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Dr ', 'Drive ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Rd ', 'Road ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ln ', 'Lane ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('PLZ ', 'Plaza ', regex = False)
 
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('S. ', 'South ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('W. ', 'West ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('E. ', 'East ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('N. ', 'North ', regex = False)
 
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(' S ', ' South ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(' W ', ' West ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(' E ', ' East ', regex = False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(' N ', ' North ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bCt$', 'Court', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bWy$', 'Way', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bCtr$', 'Center', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bAve$', 'Avenue', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bSt$', 'Street', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bDr$', 'Drive', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bRd$', 'Road', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bLn$', 'Lane', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(r'\bPLZ$', 'Plaza', regex = False)
 
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('1ST ', 'First ', regex=True, case=False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('2ND ', 'Second ', regex=True, case=False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('3RD ', 'Third ', regex=True, case=False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('4TH ', 'Fourth ', regex=True, case=False)
-	df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('5TH ', 'Fifth ', regex=True, case=False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Boulevard', 'Blvd.', False, re.IGNORECASE)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Expressway', 'Expy.', False, re.IGNORECASE)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Building', 'Bldg.', False, re.IGNORECASE)
+
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('STE.', 'Suite', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ste.', 'Suite', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Ste ', 'Suite ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('STE ', 'Suite ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('APT.', 'Suite', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Apt.', 'Suite', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Apt ', 'Suite ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('APT ', 'Suite ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Unit ', 'Suite ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('Unit', 'Suite', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('# ', 'Suite ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('#', 'Suite ', regex = False)
+
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('S. ', 'South ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('W. ', 'West ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('E. ', 'East ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('N. ', 'North ', regex = False)
+
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(' S ', ' South ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(' W ', ' West ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(' E ', ' East ', regex = False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace(' N ', ' North ', regex = False)
+
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('1ST ', 'First ', regex=True, case=False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('2ND ', 'Second ', regex=True, case=False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('3RD ', 'Third ', regex=True, case=False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('4TH ', 'Fourth ', regex=True, case=False)
+		df['street_addr'] = df[df['street_addr'].notnull()]['street_addr'].str.replace('5TH ', 'Fifth ', regex=True, case=False)
 	return df
 
 def StripPunctuationFromNames(df):
-	df['legal_nm'] = df['legal_nm'].astype(str) #convert to str to catch floats
-	df['legal_nm'] = df['legal_nm'].str.replace('  ',' ')
-	df['legal_nm'] = df['legal_nm'].str.replace('&','and')
-	df['legal_nm'] = df['legal_nm'].str.strip()
-	df['legal_nm'] = df['legal_nm'].str.strip(';,. ')
+	if 'legal_nm' in df.columns:
+		df['legal_nm'] = df['legal_nm'].astype(str) #convert to str to catch floats
+		df['legal_nm'] = df['legal_nm'].str.replace('  ',' ')
+		df['legal_nm'] = df['legal_nm'].str.replace('&','and')
+		df['legal_nm'] = df['legal_nm'].str.strip()
+		df['legal_nm'] = df['legal_nm'].str.strip(';,. ')
 
-	df['legal_nm'] = df['legal_nm'].str.replace(';','')
-	df['legal_nm'] = df['legal_nm'].str.replace(',','')
-	df['legal_nm'] = df['legal_nm'].str.replace('.','')
-	df['legal_nm'] = df['legal_nm'].str.replace('-','')
-	df['legal_nm'] = df['legal_nm'].str.replace("'",'')
-	df['legal_nm'] = df['legal_nm'].str.replace('(','')
-	df['legal_nm'] = df['legal_nm'].str.replace(')','')
-	df['legal_nm'] = df['legal_nm'].str.replace('|','')
-	df['legal_nm'] = df['legal_nm'].str.replace('/','')
-	df['legal_nm'] = df['legal_nm'].str.replace('*','')
-	df['legal_nm'] = df['legal_nm'].str.replace('  ',' ')
+		df['legal_nm'] = df['legal_nm'].str.replace(';','')
+		df['legal_nm'] = df['legal_nm'].str.replace(',','')
+		df['legal_nm'] = df['legal_nm'].str.replace('.','')
+		df['legal_nm'] = df['legal_nm'].str.replace('-','')
+		df['legal_nm'] = df['legal_nm'].str.replace("'",'')
+		df['legal_nm'] = df['legal_nm'].str.replace('(','')
+		df['legal_nm'] = df['legal_nm'].str.replace(')','')
+		df['legal_nm'] = df['legal_nm'].str.replace('|','')
+		df['legal_nm'] = df['legal_nm'].str.replace('/','')
+		df['legal_nm'] = df['legal_nm'].str.replace('*','')
+		df['legal_nm'] = df['legal_nm'].str.replace('  ',' ')
 
-	df['trade_nm'] = df['trade_nm'].astype(str) #convert to str to catch floats
-	df['trade_nm'] = df['trade_nm'].str.replace('  ',' ')
-	df['trade_nm'] = df['trade_nm'].str.replace('&','and')
-	df['trade_nm'] = df['trade_nm'].str.strip()
-	df['trade_nm'] = df['trade_nm'].str.strip(';,. ')
+	if 'trade_nm' in df.columns:
+		df['trade_nm'] = df['trade_nm'].astype(str) #convert to str to catch floats
+		df['trade_nm'] = df['trade_nm'].str.replace('  ',' ')
+		df['trade_nm'] = df['trade_nm'].str.replace('&','and')
+		df['trade_nm'] = df['trade_nm'].str.strip()
+		df['trade_nm'] = df['trade_nm'].str.strip(';,. ')
 
-	df['trade_nm'] = df['trade_nm'].str.replace(';','')
-	df['trade_nm'] = df['trade_nm'].str.replace('.','')
-	df['trade_nm'] = df['trade_nm'].str.replace(',','')
-	df['trade_nm'] = df['trade_nm'].str.replace('-','')
-	df['trade_nm'] = df['trade_nm'].str.replace("'",'')
-	df['trade_nm'] = df['trade_nm'].str.replace('(','')
-	df['trade_nm'] = df['trade_nm'].str.replace(')','')
-	df['trade_nm'] = df['trade_nm'].str.replace('|','')
-	df['trade_nm'] = df['trade_nm'].str.replace('/','')
-	df['trade_nm'] = df['trade_nm'].str.replace('*','')
-	df['trade_nm'] = df['trade_nm'].str.replace('  ',' ')
+		df['trade_nm'] = df['trade_nm'].str.replace(';','')
+		df['trade_nm'] = df['trade_nm'].str.replace('.','')
+		df['trade_nm'] = df['trade_nm'].str.replace(',','')
+		df['trade_nm'] = df['trade_nm'].str.replace('-','')
+		df['trade_nm'] = df['trade_nm'].str.replace("'",'')
+		df['trade_nm'] = df['trade_nm'].str.replace('(','')
+		df['trade_nm'] = df['trade_nm'].str.replace(')','')
+		df['trade_nm'] = df['trade_nm'].str.replace('|','')
+		df['trade_nm'] = df['trade_nm'].str.replace('/','')
+		df['trade_nm'] = df['trade_nm'].str.replace('*','')
+		df['trade_nm'] = df['trade_nm'].str.replace('  ',' ')
 
 	return df
 
 def RemoveDoubleSpacesFromCompanyName(df):
-	df['legal_nm'] = df['legal_nm'].str.replace('  ',' ') #remove double spaces
-	df['legal_nm'] = df['legal_nm'].str.replace(', , ',', ')
-	df['legal_nm'] = df['legal_nm'].str.replace(', , , ',', ')
-	df['legal_nm'] = df['legal_nm'].str.strip()
-	df['legal_nm'] = df['legal_nm'].str.strip(';,. ')
+	if 'legal_nm' in df.columns:
+		df['legal_nm'] = df['legal_nm'].str.replace('  ',' ') #remove double spaces
+		df['legal_nm'] = df['legal_nm'].str.replace(', , ',', ')
+		df['legal_nm'] = df['legal_nm'].str.replace(', , , ',', ')
+		df['legal_nm'] = df['legal_nm'].str.strip()
+		df['legal_nm'] = df['legal_nm'].str.strip(';,. ')
 
-	df['trade_nm'] = df['trade_nm'].str.replace('  ',' ')
-	df['trade_nm'] = df['trade_nm'].str.replace(', , ',', ')
-	df['trade_nm'] = df['trade_nm'].str.replace(', , , ',', ')
-	df['trade_nm'] = df['trade_nm'].str.strip()
-	df['trade_nm'] = df['trade_nm'].str.strip(';,. ')
-	
-	df['legal_nm'] = df['legal_nm'].astype(str) + ' ' #add a right space to differentiate 'Inc ' from 'Incenerator'
-	df['trade_nm'] = df['trade_nm'].astype(str) + ' ' #add a right space to differentiate 'Inc ' from 'Incenerator'
+	if 'trade_nm' in df.columns:
+		df['trade_nm'] = df['trade_nm'].str.replace('  ',' ')
+		df['trade_nm'] = df['trade_nm'].str.replace(', , ',', ')
+		df['trade_nm'] = df['trade_nm'].str.replace(', , , ',', ')
+		df['trade_nm'] = df['trade_nm'].str.strip()
+		df['trade_nm'] = df['trade_nm'].str.strip(';,. ')
+		
+		df['legal_nm'] = df['legal_nm'].astype(str) + ' ' #add a right space to differentiate 'Inc ' from 'Incenerator'
+		df['trade_nm'] = df['trade_nm'].astype(str) + ' ' #add a right space to differentiate 'Inc ' from 'Incenerator'
 	return df
 
 
 def CleanUpAgency(df, COLUMN):
-	if not df.empty:
+	if not df.empty and COLUMN in df.columns:
 		#DLSE_terms = ['01','04', '05', '06', '07', '08', '09', '10', '11', '12', '13', 
 		# '14', '15', '16', '17', '18', '23','32']
 
@@ -2124,7 +2148,7 @@ def FormatNumbersHTMLRow (df):
 
 #drop duplicated backwage values, keeping the first
 def DropDuplicateBackwage(df, FLAG_DUPLICATE):
-	if not df.empty:
+	if not df.empty and 'case_id' in df.columns:
 		df['case_id'] = df['case_id'].str.strip() #remove spaces
 		df["ee_pmt_due_x"] = df["ee_pmt_due"]
 
@@ -2144,7 +2168,7 @@ def DropDuplicateBackwage(df, FLAG_DUPLICATE):
 
 def DropDuplicateRecords(df, FLAG_DUPLICATE):
 
-	if not df.empty:
+	if not df.empty and 'case_id' in df.columns:
 		df['case_id'] = df['case_id'].str.strip() #remove spaces
 
 		df = df.drop_duplicates(keep = 'first') #always remove full duplicates and nearly full duplicates
@@ -2305,31 +2329,32 @@ def Setup_Regular_headers(df_csv): #DSLE, WHD, etc headers
 def Define_Column_Types(df_csv):
 
 	#Define column types**********************
-	df_csv['naic_cd'] = df_csv['naic_cd'].astype(str)
-	df_csv['case_id'] = df_csv['case_id'].astype(str)
-	df_csv['legal_nm'] = df_csv['legal_nm'].astype(str)
-	df_csv['trade_nm'] = df_csv['trade_nm'].astype(str)
-	df_csv['street_addr'] = df_csv['street_addr'].astype(str)
-	df_csv['cty_nm'] = df_csv['cty_nm'].str.upper()
-	df_csv['st_cd'] = df_csv['st_cd'].astype(str)
-	df_csv['zip_cd'] = df_csv['zip_cd'].astype(str)
-	
-	df_csv['zip_cd'] = df_csv['zip_cd'].where( #remove zip code suffix #https://stackoverflow.com/questions/44776115/remove-four-last-digits-from-string-convert-zip4-to-zip-code/44776170
-		df_csv['zip_cd'].str.len() == 5, 
-		df_csv['zip_cd'].str[:5]
-		)
-	
-	df_csv['Prevailing'] = pd.to_numeric(df_csv['Prevailing'], errors='coerce')
-	df_csv["Signatory"] = pd.to_numeric(df_csv["Signatory"], errors='coerce')
-	df_csv['bw_amt'] = pd.to_numeric(df_csv['bw_amt'], errors='coerce')
-	df_csv['ee_pmt_recv'] = pd.to_numeric(df_csv['ee_pmt_recv'], errors='coerce')
-	df_csv['ee_pmt_due'] = pd.to_numeric(df_csv['ee_pmt_due'], errors='coerce')
+	if 'case_id' and 'legal_nm' and 'trade_nm' and 'naic_cd' in df_csv.columns:
+		df_csv['naic_cd'] = df_csv['naic_cd'].astype(str)
+		df_csv['case_id'] = df_csv['case_id'].astype(str)
+		df_csv['legal_nm'] = df_csv['legal_nm'].astype(str)
+		df_csv['trade_nm'] = df_csv['trade_nm'].astype(str)
+		df_csv['street_addr'] = df_csv['street_addr'].astype(str)
+		df_csv['cty_nm'] = df_csv['cty_nm'].str.upper()
+		df_csv['st_cd'] = df_csv['st_cd'].astype(str)
+		df_csv['zip_cd'] = df_csv['zip_cd'].astype(str)
+		
+		df_csv['zip_cd'] = df_csv['zip_cd'].where( #remove zip code suffix #https://stackoverflow.com/questions/44776115/remove-four-last-digits-from-string-convert-zip4-to-zip-code/44776170
+			df_csv['zip_cd'].str.len() == 5, 
+			df_csv['zip_cd'].str[:5]
+			)
+		
+		df_csv['Prevailing'] = pd.to_numeric(df_csv['Prevailing'], errors='coerce')
+		df_csv["Signatory"] = pd.to_numeric(df_csv["Signatory"], errors='coerce')
+		df_csv['bw_amt'] = pd.to_numeric(df_csv['bw_amt'], errors='coerce')
+		df_csv['ee_pmt_recv'] = pd.to_numeric(df_csv['ee_pmt_recv'], errors='coerce')
+		df_csv['ee_pmt_due'] = pd.to_numeric(df_csv['ee_pmt_due'], errors='coerce')
 
-	df_csv['legal_nm'] = df_csv['legal_nm'].str.upper()
-	df_csv['trade_nm'] = df_csv['trade_nm'].str.upper()
-	df_csv['street_addr'] = df_csv['street_addr'].str.upper()
-	df_csv['cty_nm'] = df_csv['cty_nm'].str.upper()
-	df_csv['st_cd'] = df_csv['st_cd'].str.upper()
+		df_csv['legal_nm'] = df_csv['legal_nm'].str.upper()
+		df_csv['trade_nm'] = df_csv['trade_nm'].str.upper()
+		df_csv['street_addr'] = df_csv['street_addr'].str.upper()
+		df_csv['cty_nm'] = df_csv['cty_nm'].str.upper()
+		df_csv['st_cd'] = df_csv['st_cd'].str.upper()
 
 	return df_csv
 
@@ -2670,6 +2695,11 @@ def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
 	read_file1 = "dlse_judgements/whd_whisard_02052022.csv" #US DOL WHD website
 	read_file2 = "dlse_judgements/ordered_HQ20009_HQ_08132019.csv" #CA DIR DSLE PRA
 
+	url1 = "https://enfxfr.dol.gov/data_catalog/WHD/whd_whisard_20220414.csv.zip"
+	#url2 = "https://www.researchgate.net/profile/Forest-Peterson/publication/357767172_California_Dept_of_Labor_Standards_Enforcement_DLSE_PRA_Wage_Claim_Adjudications_WCA_for_all_DLSE_offices_from_January_2001_to_July_2019/data/61de6b974e4aff4a643603ae/HQ20009-HQ-2nd-Production-8132019.csv"
+	#url2 = https://drive.google.com/file/d/1TRaixcwTg08bEyPSchyHntkkktG2cuc-/view?usp=sharing
+	url2 = "https://stanford.edu/~granite/HQ20009-HQ2ndProduction8.13.2019.csv"
+
 	if TEST == 2:
 		federal_data = 1
 		state_data = 1
@@ -2678,23 +2708,30 @@ def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
 
 		df_csv = pd.read_csv(read_file_test, encoding = "ISO-8859-1", low_memory=False, thousands=',', dtype={'zip_cd': 'str'} )
 		df_csv = Setup_Regular_headers(df_csv)
-	
+
 	else : #TEST == 2 (use 1000) or TEST == 0 (use 1000000000) and then limited to n==TEST_CASES rows 
-		DF0 = pd.read_csv(read_file0, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
+		#DF0 = pd.read_csv(read_file0, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
 		DF1 = pd.read_csv(read_file1, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
 		DF2 = pd.read_csv(read_file2, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
 		
-		df_csv_0 = Setup_Regular_headers(DF0)
+		DF1 = read_from_url(url1)
+		DF1.to_csv('report_output/_TEST_DOL_WHD_.csv')
+		DF2 = read_from_url(url2)
+		DF2.to_csv('report_output/_TEST_DIR_DLSE_.csv')
 		
+		#df_csv_0 = Setup_Regular_headers(DF0)
+
 		df_csv_1 = Setup_Regular_headers(DF1)
 		df_csv_1['juris_or_proj_nm'] = 'WHD' #Jurisdiction_or_Project_Name
+		
 		df_csv_2 = Setup_Regular_headers(DF2)
 		df_csv_2['juris_or_proj_nm'] = 'DLSE' #Jurisdiction_or_Project_Name
 		
 		if federal_data == 1 and state_data == 0: df_csv = df_csv_1
 		elif federal_data == 0 and state_data == 1: df_csv = df_csv_2
 		#else: df_csv = pd.concat([df_csv_1, df_csv_2], ignore_index=True) #, axis=1, sort=False) # fills non overlapping columns with NAN
-		else: df_csv = pd.concat([df_csv_0, df_csv_1, df_csv_2], ignore_index=True)
+		#else: df_csv = pd.concat([df_csv_0, df_csv_1, df_csv_2], ignore_index=True)
+		else: df_csv = pd.concat([df_csv_1, df_csv_2], ignore_index=True)
 
 		#df_csv = df_csv.replace(r'\\n\\n',' ', regex=True) 
 		#df_csv = df_csv.replace(r'\\r\\n',' ', regex=True) 
@@ -2703,6 +2740,30 @@ def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
 
 	return df_csv
 
+def read_from_url(url):
+	#from urllib.request import urlopen
+	import urllib
+	from urllib.request import Request, urlopen
+	
+	import io
+
+	class AppURLopener(urllib.request.FancyURLopener):
+		version = "Mozilla/102.0"
+	
+	opener = AppURLopener()
+	resp = opener.open(url)
+
+	#req = Request(url)
+	#resp = urlopen(resp)
+
+	x = resp.read()
+	buf = io.BytesIO(x)
+	if url[-3:] == 'zip':
+		df_csv = pd.read_csv(buf, compression='zip', low_memory=False, thousands=',', encoding = "ISO-8859-1", sep=',', error_bad_lines=False)
+	else:
+		df_csv = pd.read_csv(buf, low_memory=False, thousands=',', encoding = "ISO-8859-1", sep=',', error_bad_lines=False)
+
+	return df_csv
 
 def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_city, TARGET_INDUSTRY, prevailing_wage_report, federal_data, state_data, textFile):
 	textFile.write(f"<h1>DRAFT REPORT: Wage Theft in the Jurisdiction of {target_city} for {TARGET_INDUSTRY[0][0]} Industry</h1> \n") 
