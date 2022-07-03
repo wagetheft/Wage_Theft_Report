@@ -35,7 +35,7 @@
 # 3/7/2022 by F. Peterson added county of San Diego
 # 6/28/2022 by F. Peterson started adding API (does not run)
 # 6/29/2022 by I. Kolli added parameters to API code
-# 7/2/2022 by F. Peterson added several more parameters to API code
+# 7/2/2022 by F. Peterson added several more parameters to API code and create output folder if missing: tested and works
 
 
 # Note: add an edit distance comparison
@@ -101,19 +101,8 @@ def main():
 	San_Diego_City_Zipcode = ['San Diego', '92105', '92106', '92107', '92108', '92113', '92114', '92115', '92116', '92117', '92122', '92123', '92124', '92126', '92127', '92101', '92102', '92103', '92104', '92109', '92110', '92111', '92112', '92119', '92120', '92121', '92128', '92129', '92130', '92131', '92136', '92137', '92145', '92147', '92132', '92134', '92135', '92138', '92139', '92140', '92142', '92149', '92150', '92152', '92158', '92159', '92160', '92161', '92162', '92163', '92164', '92165', '92171', '92172', '92174', '92179', '92182', '92184', '92192', '92193', '92195', '92196', '92197', '92153', '92154', '92155', '92166', '92167', '92168', '92169', '92170', '92175', '92176', '92177', '92186', '92187', '92190', '92191', '92198', '92199']
 	San_Diego_Unincorporated_Zipcode = ['San Diego Unincorporated','92672', '92592', '92194', '92178', '92173', '92143', '92133', '92118', '92096', '92093', '92092', '92091', '92090', '92088', '92086', '92085', '92084', '92083', '92082', '92081', '92079', '92078', '92075', '92074', '92072', '92071', '92070', '92069', '92068', '92067', '92066', '92065', '92064', '92061', '92060', '92059', '92058', '92057', '92056', '92055', '92054', '92052', '92051', '92049', '92046', '92040', '92039', '92038', '92037', '92036', '92033', '92030', '92029', '92028', '92027', '92026', '92025', '92024', '92023', '92022', '92021', '92020', '92019', '92018', '92014', '92013', '92011', '92010', '92009', '92008', '92007', '92004', '92003', '91990', '91987', '91980', '91979', '91978', '91977', '91976', '91963', '91962', '91951', '91950', '91948', '91947', '91946', '91945', '91944', '91943', '91942', '91941', '91935', '91934', '91933', '91932', '91931', '91921', '91917', '91916', '91915', '91914', '91913', '91912', '91911', '91910', '91909', '91908', '91906', '91905', '91903', '91902', '91901'] 
 
-	zipcode = {} # add a function to read jurisdiction and zipode list from csv file
-
-	
-	
 	SAN_DIEGO_COUNTY_ZIPCODE = ['San Diego County'] + San_Diego_City_Zipcode + San_Diego_Unincorporated_Zipcode + inferred_zipcode
 	san_diego_county_cities = ['County of San Diego', 'ALPINE','WARNER SPRINGS', 'VISTA', 'VALLEY CENTER', 'TEMECULA', 'TECATE', 'SPRING VALLEY', 'SOLANA BEACH', 'SANTEE', 'SANTA YSABEL', 'SANTA CLARITA', 'SAN YSIDRO', 'SAN MARCOS', 'SAN LUIS REY', 'SAN DIEGO', 'SAN CLEMENTE', 'RANCHO SANTA FE', 'RAMONA', 'RAINBOW', 'POWAY', 'PAUMA VALLEY', 'PALA', 'OCEANSIDE', 'NATIONAL CITY', 'MIRA MESA', 'LEUCADIA', 'LEMON GROVE', 'LAKESIDE', 'LA MESA', 'LA JOLLA', 'JULIAN', 'JAMUL', 'JACUMBA', 'IMPERIAL BEACH', 'IMPERIAL BCH', 'FALLBROOK', 'ESCONDIDO', 'ENCINITAS', 'EL CAJON', 'DULZURA', 'DEL MAR', 'CUDAHY', 'CORONADO', 'CHULA VISTA', 'CARLSBAD', 'CARDIFF BY THE SEA', 'CARDIFF', 'CAMPO', 'CAMP PENDLETON', 'BOULEVARD', 'BORREGO SPRINGS', 'BONSALL', 'BONITA']
-
-	zip_codes_backup = { 
-		"san_diego_city_zipcode": San_Diego_City_Zipcode, 
-		"san_diego_unincorporated_zipcode": San_Diego_Unincorporated_Zipcode,
-		"santa_clara_county_cities": santa_clara_county_cities,
-		"san_diego_county_cities": san_diego_county_cities,
-		}
 
 	Stockton_City_Zipcode = ['Stockton', '95201', '95202', '95203', '95204', '95205', '95206', '95207', '95208', '95209', '95210', '95211', '95212', '95213', '95215', '95219', '95267', '95269', '95296', '95297']
 	Fresno_City_Zipcode = ['Fresno', '93611', '93612', '93619', '93650', '93701', '93702', '93703', '93704', '93705', '93706', '93710', '93711', '93720', '93721', '93722', '93723', '93725', '93726', '93727', '93728', '93730']
@@ -121,10 +110,20 @@ def main():
 	ALL_ZIPCODES = ['00000']
 	Custom_Zipcode = ['95112', '95113']
 
+	zip_codes_backup = { 
+		"san_diego_city_zipcode": San_Diego_City_Zipcode, 
+		"san_diego_unincorporated_zipcode": San_Diego_Unincorporated_Zipcode,
+		"san_diego_county_cities": san_diego_county_cities,
+		"san_diego_county_zipcode":SAN_DIEGO_COUNTY_ZIPCODE,
+		"santa_clara_county_cities": santa_clara_county_cities,
+		"santa_clara_county_zipcode": SANTA_CLARA_COUNTY_ZIPCODE,
+		}
+	zipcode = {} # add a function to read jurisdiction and zipode list from csv file
+
 	delete_terms = ['County of Santa Clara']
 
 	#organizations
-	TARGET_ORGANIZATION = [['organizations'],['GOODWILL']] #use uppercase
+	TARGET_ORGANIZATIONS = [['organizations'],['GOODWILL']] #use uppercase
 	#state
 	TARGET_STATES = [['states'],['CA']]
 
@@ -133,54 +132,29 @@ def main():
 
 
 	#settings****************************************************
-	TARGET_ZIPCODE = SAN_DIEGO_COUNTY_ZIPCODE #SANTA_CLARA_COUNTY_ZIPCODE #enter *_zipcode list; use ALL_ZIPCODES for all zip codes
-	PARAM_1_TARGET_ZIPCODE = zip_codes_backup["san_diego_city_zipcode"]
-
-	TARGET_INDUSTRY = ALL_NAICS_LIBRARY() #NAICS Industies -- change in ALL_NAICS_LIBRARY()
-	PARAM_2_TARGET_INDUSTRY = ALL_NAICS_LIBRARY() #NAICS Industies -- change in ALL_NAICS_LIBRARY()
-
-	STATE_FILTER = 0 #1 for all of california, else 0 for just santa_clara_county_cities
-	ORGANIZATION_FILTER  = False # True to filter, False no filter for specific organizantion name, see TARGET_ORGANIZATION
-
 	TEST = 0 #0 for normal run; 1 for custom test dataset (unified_test); 2 for small dataset (first 1,000 of each file)
 	
-	prevailing_wage_report = 0 #1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
-	signatories_report = 0 #1 to include signatories (typically, this report is only for union compliance officers) 0 to exclude signatories
+	#TARGET_ZIPCODE = SAN_DIEGO_COUNTY_ZIPCODE #SANTA_CLARA_COUNTY_ZIPCODE #enter *_zipcode list; use ALL_ZIPCODES for all zip codes
+	PARAM_1_TARGET_ZIPCODE = zip_codes_backup["santa_clara_county_zipcode"]
 	
-	All_Industry_Summary_Block = False
-	Nonsignatory_Ratio_Block = False
+	PARAM_2_TARGET_INDUSTRY = ALL_NAICS_LIBRARY() #NAICS Industies -- change in ALL_NAICS_LIBRARY()
 
+	STATE_FILTER = False #True for all of california, else False for just santa_clara_county_cities
+	ORGANIZATION_FILTER  = False # True to filter, False no filter for specific organizantion name, see TARGET_ORGANIZATIONS
+	
 	CLEAN_OUTPUT = 0 #1 to output cleaned files for violations and suppliers ## this is a draft and does nothing for now
 	FLAG_DUPLICATE = 0 #1 FLAG_DUPLICATE duplicate, #0 drop duplicates
 	OPEN_CASES = 0 #1 for open cases only (or nearly paid off), 0 for all cases
 	
-	TABLES = 1 #1 for tables and 0 for just text description
-	SUMMARY = 1 #1 for summaries and 0 for none
-	SUMMARY_SIG = 1 #1 for summaries only of regions with significant wage theft (more than $10,000)
-	TOP_VIOLATORS = 1 #1 for tables of top violators and 0 for none
-
 	USE_ASSUMPTIONS = 1 #1 to fill violation and ee gaps with assumed values
 	INFER_NAICS = 1 #1 to infer code by industry NAICS sector
 	INFER_ZIP = 1 #1 to infer zip code
-	
+
 	federal_data = 1 #1 to include federal data
 	state_data = 1 #1 to include state data
 
-	default_region = santa_clara_county_cities # santa_clara_county_cities #cities: leave blank "" for cities, which extract the region from the zip code list, this is only used for a list of cities in a county list
-
 	#unused YEAR_START_FILTER = '01/01/2000' #1995 is earliest case -- this does not work
 	#unused YEAR_END_FILTER = '09/01/2019'
-	
-	#!!!manually add to report***********************************************************
-		# (1)generate report from http://wagetheftincitieslikemine.site/
-		# (2)geocode data https://www.geocod.io
-		# (3)generate Tableau bubble plot with location data https://public.tableau.com/profile/forest.peterson#!
-
-	#checks
-		#https://webapps.dol.gov/wow/
-		#https://www.goodjobsfirst.org/violation-tracker
-
-	#Signatory and prevailing libraries*********************************************************
 
 	prevailing_wage_terms = [ #https://www.dir.ca.gov/public-works/californiaprevailingwagelaws.pdf
 		"(L.C. 223)", "(section 223)", "(LC 223)", #frequently used
@@ -320,19 +294,38 @@ def main():
 
 	SIGNATORY_INDUSTRY = Signatory_Library()
 
-	TEMP_PARAM_LIST = [PARAM_1_TARGET_ZIPCODE, PARAM_2_TARGET_INDUSTRY] #temp line of code while I figure out Alex instructions
-	#***************************************************************************
-	#API call
-	generateWageReport(TEST, PARAM_1_TARGET_ZIPCODE, PARAM_2_TARGET_INDUSTRY, prevailing_wage_terms, SIGNATORY_INDUSTRY, TARGET_ORGANIZATION, 
-	federal_data, state_data, 
-	FLAG_DUPLICATE, STATE_FILTER, ORGANIZATION_FILTER, TARGET_STATES, INFER_ZIP, prevailing_wage_report, signatories_report, All_Industry_Summary_Block, 
-	Nonsignatory_Ratio_Block, CLEAN_OUTPUT, OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG,TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS)
+	#report output block settings****************************************************
+	prevailing_wage_report = 0 #1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
+	signatories_report = 0 #1 to include signatories (typically, this report is only for union compliance officers) 0 to exclude signatories
+
+	All_Industry_Summary_Block = False
+	Nonsignatory_Ratio_Block = False
+	
+	TABLES = 1 #1 for tables and 0 for just text description
+	SUMMARY = 1 #1 for summaries and 0 for none
+	SUMMARY_SIG = 1 #1 for summaries only of regions with significant wage theft (more than $10,000)
+	TOP_VIOLATORS = 1 #1 for tables of top violators and 0 for none
+	
+	#!!!manually add to report***********************************************************
+		# (1)generate report from http://wagetheftincitieslikemine.site/
+		# (2)geocode data https://www.geocod.io
+		# (3)generate Tableau bubble plot with location data https://public.tableau.com/profile/forest.peterson#!
+
+	#checks
+		#https://webapps.dol.gov/wow/
+		#https://www.goodjobsfirst.org/violation-tracker
+
+
+	#API call***************************************************************************
+	generateWageReport(TEST, zip_codes_backup, PARAM_1_TARGET_ZIPCODE, PARAM_2_TARGET_INDUSTRY, prevailing_wage_terms, SIGNATORY_INDUSTRY, TARGET_ORGANIZATIONS, 
+	federal_data, state_data, FLAG_DUPLICATE, STATE_FILTER, ORGANIZATION_FILTER, TARGET_STATES, INFER_ZIP, prevailing_wage_report, signatories_report, 
+	All_Industry_Summary_Block, Nonsignatory_Ratio_Block, CLEAN_OUTPUT, OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG, 
+	TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS)
 
 #Functions*************************************************
 	
-def generateWageReport(TEST, zip_codes_backup, TARGET_ZIPCODE, TARGET_INDUSTRY, prevailing_wage_terms, SIGNATORY_INDUSTRY, TARGET_ORGANIZATION, 
-federal_data, state_data, 
-FLAG_DUPLICATE, STATE_FILTER, ORGANIZATION_FILTER, TARGET_STATES, INFER_ZIP, prevailing_wage_report, signatories_report, 
+def generateWageReport(TEST, zip_codes_backup, TARGET_ZIPCODE, TARGET_INDUSTRY, prevailing_wage_terms, SIGNATORY_INDUSTRY, TARGET_ORGANIZATIONS, 
+federal_data, state_data, FLAG_DUPLICATE, STATE_FILTER, ORGANIZATION_FILTER, TARGET_STATES, INFER_ZIP, prevailing_wage_report, signatories_report, 
 All_Industry_Summary_Block, Nonsignatory_Ratio_Block, CLEAN_OUTPUT, OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG, 
 TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS):
 	#3/7/2022 bugFile = open('report_output/debug.html', 'w')
@@ -370,6 +363,8 @@ TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS):
 	target_industry = TARGET_INDUSTRY[0][0]
 
 	temp_file_name = 'report_output/' + target_city.replace(' ','_') +'_theft_summary_'+ target_industry.replace(' ','_') +'.html'
+	if not os.path.exists('report_output/'):
+		os.makedirs('report_output/')
 
 	#Concat data***************************************************************************
 	df_csv = Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data) # file names hard punched in function
@@ -403,7 +398,7 @@ TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS):
 		##CLEAN
 		df_csv['zip_cd'] = df_csv['zip_cd'].replace('nan', False, regex=True) #clean out string 'nan' so they don't mess stuff up
 		##FILTER
-		if STATE_FILTER is 1:
+		if STATE_FILTER is True:
 			df_csv = Filter_for_State(df_csv, TARGET_STATES)
 		
 		if INFER_ZIP == 1: #infer zip codes
@@ -528,7 +523,7 @@ TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS):
 	##filter for reporting************************************
 	out_target = Filter_for_Target_Industry(out_target,TARGET_INDUSTRY)
 	if OPEN_CASES == 1: out_target = RemoveCompletedCases(out_target)
-	if ORGANIZATION_FILTER: out_target = Filter_for_Target_Organization(out_target,TARGET_ORGANIZATION)
+	if ORGANIZATION_FILTER: out_target = Filter_for_Target_Organization(out_target,TARGET_ORGANIZATIONS)
 	
 	##filter
 	unique_legalname_sig = GroupByX(out_target, 'legal_nm')
@@ -1123,10 +1118,10 @@ def Filter_for_Target_Industry(df, TARGET_INDUSTRY):
 		appended_data = appended_data.append(df_temp)
 	return appended_data
 
-def Filter_for_Target_Organization(df, TARGET_ORGANIZATION):
+def Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS):
 
-	df_temp_0 = df.loc[df['legal_nm'].str.contains('|'.join(TARGET_ORGANIZATION[1] )) ]
-	df_temp_1 = df.loc[df['trade_nm'].str.contains('|'.join(TARGET_ORGANIZATION[1] )) ]
+	df_temp_0 = df.loc[df['legal_nm'].str.contains('|'.join(TARGET_ORGANIZATIONS[1] )) ]
+	df_temp_1 = df.loc[df['trade_nm'].str.contains('|'.join(TARGET_ORGANIZATIONS[1] )) ]
 
 	df_temp = pd.concat([df_temp_0, df_temp_1], ignore_index=True)
 	return df_temp
