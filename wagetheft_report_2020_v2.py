@@ -38,6 +38,7 @@
 # 7/2/2022 by F. Peterson added several more parameters to API code and create output folder if missing: tested and works
 # 7/2/2022 by F. Peterson added url pulls for WHD and DOL violations
 # 7/14/2022 by F. Peterson add test 3 as a fix
+# 7/14/2022 by F. Peterson messy fix for missing folder--should work now
 
 # Note: add an edit distance comparison
 # to fix replace() https://stackoverflow.com/questions/64843109/compiler-issue-assertionerror-on-replace-given-t-or-f-condition-with-string/64856554#64856554
@@ -2692,11 +2693,11 @@ def ALL_NAICS_LIBRARY():
 
 def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
 
-	read_file_test = "dlse_judgements/unified_test.csv"
+	#read_file_test = "dlse_judgements/unified_test.csv"
 
-	read_file0 = "dlse_judgements/unified_no_WHD_20190629.csv" #mixed SJOE, SCCBTC, DLSE
-	read_file1 = "dlse_judgements/whd_whisard_02052022.csv" #US DOL WHD website
-	read_file2 = "dlse_judgements/ordered_HQ20009_HQ_08132019.csv" #CA DIR DSLE PRA
+	#read_file0 = "dlse_judgements/unified_no_WHD_20190629.csv" #mixed SJOE, SCCBTC, DLSE
+	#read_file1 = "dlse_judgements/whd_whisard_02052022.csv" #US DOL WHD website
+	#read_file2 = "dlse_judgements/ordered_HQ20009_HQ_08132019.csv" #CA DIR DSLE PRA
 
 	url1 = "https://enfxfr.dol.gov/data_catalog/WHD/whd_whisard_20220414.csv.zip"
 	#url2 = "https://www.researchgate.net/profile/Forest-Peterson/publication/357767172_California_Dept_of_Labor_Standards_Enforcement_DLSE_PRA_Wage_Claim_Adjudications_WCA_for_all_DLSE_offices_from_January_2001_to_July_2019/data/61de6b974e4aff4a643603ae/HQ20009-HQ-2nd-Production-8132019.csv"
@@ -2709,13 +2710,13 @@ def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
 
 	if TEST == 1: # read test file
 
-		df_csv = pd.read_csv(read_file_test, encoding = "ISO-8859-1", low_memory=False, thousands=',', dtype={'zip_cd': 'str'} )
+		#df_csv = pd.read_csv(read_file_test, encoding = "ISO-8859-1", low_memory=False, thousands=',', dtype={'zip_cd': 'str'} )
 		df_csv = Setup_Regular_headers(df_csv)
 
 	else : #TEST == 2 (use 1000) or TEST == 0 (use 1000000000) and then limited to n==TEST_CASES rows 
 		#DF0 = pd.read_csv(read_file0, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
-		DF1 = pd.read_csv(read_file1, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
-		DF2 = pd.read_csv(read_file2, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
+		#DF1 = pd.read_csv(read_file1, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
+		#DF2 = pd.read_csv(read_file2, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
 		
 		DF1 = read_from_url(url1)
 		DF1.to_csv('report_output/_TEST_DOL_WHD_.csv')
