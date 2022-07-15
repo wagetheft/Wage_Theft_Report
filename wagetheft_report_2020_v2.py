@@ -37,6 +37,7 @@
 # 6/29/2022 by I. Kolli added parameters to API code
 # 7/2/2022 by F. Peterson added several more parameters to API code and create output folder if missing: tested and works
 # 7/2/2022 by F. Peterson added url pulls for WHD and DOL violations
+# 7/14/2022 by F. Peterson add test 3 as a fix
 
 # Note: add an edit distance comparison
 # to fix replace() https://stackoverflow.com/questions/64843109/compiler-issue-assertionerror-on-replace-given-t-or-f-condition-with-string/64856554#64856554
@@ -334,6 +335,8 @@ TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS):
 	#TEST
 	if TEST == 0 or TEST == 1: 
 		TEST_CASES = 1000000000 # read all records
+	if TEST == 3: 
+		TEST_CASES = 1000 #quick test
 	else: #TEST == 2 #short set--use first 1000 for debugging 
 		TEST_CASES = 10000 
 
