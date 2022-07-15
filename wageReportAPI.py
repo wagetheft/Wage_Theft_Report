@@ -3,6 +3,7 @@
 #Last updated
 # 6/28/2022 by F. Peterson first file creation 30 lines of code
 # 7/11/2022 by I. Kolli API code fixed
+# 7/14/2022 by F. Peterson added temprary parameters to test API
 
 # from requests import request as req
 from requests import request as rq
