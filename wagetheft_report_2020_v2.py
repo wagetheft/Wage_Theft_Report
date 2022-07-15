@@ -37,8 +37,7 @@
 # 6/29/2022 by I. Kolli added parameters to API code
 # 7/2/2022 by F. Peterson added several more parameters to API code and create output folder if missing: tested and works
 # 7/2/2022 by F. Peterson added url pulls for WHD and DOL violations
-# 7/14/2022 by F. Peterson add test 3 as a fix
-# 7/14/2022 by F. Peterson messy fix for missing folder--should work now
+# 7/14/2022 by F. Peterson update DOL WHD url to updated url 7/13/2022
 
 # Note: add an edit distance comparison
 # to fix replace() https://stackoverflow.com/questions/64843109/compiler-issue-assertionerror-on-replace-given-t-or-f-condition-with-string/64856554#64856554
@@ -134,7 +133,7 @@ def main():
 
 
 	#settings****************************************************
-	TEST = 0 #0 for normal run; 1 for custom test dataset (unified_test); 2 for small dataset (first 1,000 of each file)
+	TEST = 2 #0 for normal run; 1 for custom test dataset (unified_test); 2 for small dataset (first 1,000 of each file)
 	
 	#TARGET_ZIPCODE = SAN_DIEGO_COUNTY_ZIPCODE #SANTA_CLARA_COUNTY_ZIPCODE #enter *_zipcode list; use ALL_ZIPCODES for all zip codes
 	PARAM_1_TARGET_ZIPCODE = zip_codes_backup["santa_clara_county_zipcode"]
@@ -336,10 +335,8 @@ TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS):
 	#TEST
 	if TEST == 0 or TEST == 1: 
 		TEST_CASES = 1000000000 # read all records
-	if TEST == 3: 
-		TEST_CASES = 1000 #quick test
 	else: #TEST == 2 #short set--use first 1000 for debugging 
-		TEST_CASES = 10000 
+		TEST_CASES = 100
 
 	#region definition
 	#default
@@ -2692,14 +2689,16 @@ def ALL_NAICS_LIBRARY():
 
 
 def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
+	from os.path import exists
+	
+	if exists("dlse_judgements/unified_no_WHD_20190629.csv"):
+		read_file0 = "dlse_judgements/unified_no_WHD_20190629.csv" #mixed SJOE, SCCBTC, DLSE
+	if exists("dlse_judgements/whd_whisard_02052022.csv"):
+		read_file1 = "dlse_judgements/whd_whisard_02052022.csv" #US DOL WHD website
+	if exists("dlse_judgements/ordered_HQ20009_HQ_08132019.csv"):
+		read_file2 = "dlse_judgements/ordered_HQ20009_HQ_08132019.csv" #CA DIR DSLE PRA
 
-	#read_file_test = "dlse_judgements/unified_test.csv"
-
-	#read_file0 = "dlse_judgements/unified_no_WHD_20190629.csv" #mixed SJOE, SCCBTC, DLSE
-	#read_file1 = "dlse_judgements/whd_whisard_02052022.csv" #US DOL WHD website
-	#read_file2 = "dlse_judgements/ordered_HQ20009_HQ_08132019.csv" #CA DIR DSLE PRA
-
-	url1 = "https://enfxfr.dol.gov/data_catalog/WHD/whd_whisard_20220414.csv.zip"
+	url1 = "https://enfxfr.dol.gov/data_catalog/WHD/whd_whisard_20220713.csv.zip"
 	#url2 = "https://www.researchgate.net/profile/Forest-Peterson/publication/357767172_California_Dept_of_Labor_Standards_Enforcement_DLSE_PRA_Wage_Claim_Adjudications_WCA_for_all_DLSE_offices_from_January_2001_to_July_2019/data/61de6b974e4aff4a643603ae/HQ20009-HQ-2nd-Production-8132019.csv"
 	#url2 = https://drive.google.com/file/d/1TRaixcwTg08bEyPSchyHntkkktG2cuc-/view?usp=sharing
 	url2 = "https://stanford.edu/~granite/HQ20009-HQ2ndProduction8.13.2019.csv"
@@ -2710,8 +2709,10 @@ def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
 
 	if TEST == 1: # read test file
 
-		#df_csv = pd.read_csv(read_file_test, encoding = "ISO-8859-1", low_memory=False, thousands=',', dtype={'zip_cd': 'str'} )
-		df_csv = Setup_Regular_headers(df_csv)
+		if exists("dlse_judgements/unified_test.csv"):
+			read_file_test = "dlse_judgements/unified_test.csv"
+			df_csv = pd.read_csv(read_file_test, encoding = "ISO-8859-1", low_memory=False, thousands=',', dtype={'zip_cd': 'str'} )
+			df_csv = Setup_Regular_headers(df_csv)
 
 	else : #TEST == 2 (use 1000) or TEST == 0 (use 1000000000) and then limited to n==TEST_CASES rows 
 		#DF0 = pd.read_csv(read_file0, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
@@ -2761,6 +2762,7 @@ def read_from_url(url):
 	#resp = urlopen(resp)
 
 	x = resp.read()
+	
 	buf = io.BytesIO(x)
 	if url[-3:] == 'zip':
 		df_csv = pd.read_csv(buf, compression='zip', low_memory=False, thousands=',', encoding = "ISO-8859-1", sep=',', error_bad_lines=False)
