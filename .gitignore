@@ -11,3 +11,11 @@
 /Untitled.ipynb
 /wage_theft_reporter.graphml
 /Hospitals_data.csv
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+.venv
