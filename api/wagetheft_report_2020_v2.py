@@ -1010,13 +1010,13 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
 
             # 	do_nothing = ""
     time_2 = time.time()
-    print("Time to finish section 28 %.5f" % (time_2 - time_1))
+    print("Time to finish section 28 %.5f".format(time_2 - time_1) ) #updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
     # end indent
 
     # 3/7/2022 bugFile.write("<h1>Done</h1> \n")
     # 3/7/2022 bugFile.write("</html></body> \n")
     # 3/7/2022 bugFile.close()
-    print("Time to finish program" % (time_2 - start_time))
+    print("Time to finish program".format(time_2 - start_time) ) #updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
     return temp_file_name  # the temp json returned from API
 
 
@@ -3671,6 +3671,8 @@ def Footer_Block(TEST, textFile):
 
 # https://stackoverflow.com/questions/47704441/applying-styling-to-pandas-dataframe-saved-to-html-file
 def write_to_html_file(df, header_HTML, title, filename):
+    import pandas.io.formats.style #added this line to avoid error 8/10/2022 f. peterson
+    import os #added this line to avoid error 8/10/2022 f. peterso
 
     result = '''
 		<html>
@@ -3716,6 +3718,8 @@ def write_to_html_file(df, header_HTML, title, filename):
 		</html>
 		'''
     # with open(filename, mode='a') as f:
+    # added this line to avoid error 8/10/2022 f. peterson
+    os.makedirs(os.path.dirname(filename), exist_ok=True) #create directory if it doesn't exist
     # https://stackoverflow.com/questions/27092833/unicodeencodeerror-charmap-codec-cant-encode-characters
     with open(filename, mode='a', encoding="utf-8") as f:
         f.write(result)
