@@ -1309,7 +1309,7 @@ def InferSignatoriesFromNameAndFlag(df, SIGNATORY_INDUSTRY):
                     df['trade_nm'].str.contains(PATTERN_IND, flags=re.IGNORECASE, regex=True) &
                     ~df['trade_nm'].str.contains(PATTERN_EXCLUDE, flags=re.IGNORECASE, regex=True))
             )
-            df["Signatory"][foundIt_sig] = 1
+            df.loc["Signatory", foundIt_sig] = 1
 
     return df
 
@@ -1385,7 +1385,7 @@ def Label_Industry(df, INFER, TARGET_INDUSTRY):
 
                 )
 
-                df['industry'][foundIt_ind1] = TARGET_INDUSTRY[x][0]
+                df.loc['industry', foundIt_ind1] = TARGET_INDUSTRY[x][0]
 
             # second round fills in anything missed with the exisiting NAICS coding
             foundIt_ind2 = (
@@ -1394,7 +1394,7 @@ def Label_Industry(df, INFER, TARGET_INDUSTRY):
                 ~df['naic_cd'].astype(str).str.contains(
                     PATTERN_EXCLUDE, flags=re.IGNORECASE, regex=True)
             )
-            df['trade2'][foundIt_ind2] = TARGET_INDUSTRY[x][0]
+            df.loc['trade2', foundIt_ind2] = TARGET_INDUSTRY[x][0]
 
             foundIt_ind3 = (  # commented out 12/24/2020 because the decriptions are too easily miscoded
                 (df['trade2'] == "") &
@@ -1402,7 +1402,7 @@ def Label_Industry(df, INFER, TARGET_INDUSTRY):
                 ~df['naics_desc.'].astype(str).str.contains(
                     PATTERN_EXCLUDE, flags=re.IGNORECASE, regex=True)
             )
-            df['trade2'][foundIt_ind3] = TARGET_INDUSTRY[x][0]
+            df.loc['trade2', foundIt_ind3] = TARGET_INDUSTRY[x][0]
 
             # foundIt_ind4=( #commented out 12/24/2020 because the labels were just not useful
             # 	(#pd.isna(df['industry']) &
@@ -1479,7 +1479,7 @@ def InferZipcodeFromCityName(df, region, region_name):
             ((df['cty_nm'].astype(str).str.contains(PATTERN_CITY,
                                                     case=False, flags=re.IGNORECASE)))  # flags=re.IGNORECASE
         )
-        df["zip_cd"][foundZipbyCity1 * foundZipbyCity2] = region_name
+        df.loc["zip_cd", foundZipbyCity1 * foundZipbyCity2] = region_name
     return df
 
 
@@ -1682,7 +1682,7 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
         foundIt0 = (df['legal_nm'].str.contains(pattern_liability0, flags=re.IGNORECASE, regex=True) |
                     df['trade_nm'].str.contains(pattern_liability0, flags=re.IGNORECASE, regex=True))
 
-        df['Liabilitytype'][foundIt0] = 'California'
+        df.loc['Liabilitytype', foundIt0] = 'California'
 
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'a California', '', regex=True, case=False)
@@ -1700,7 +1700,7 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
             df['trade_nm'].str.contains(
                 pattern_liability1, flags=re.IGNORECASE, regex=True)
         )
-        df['Liabilitytype'][foundIt1] = 'Delaware'
+        df.loc['Liabilitytype', foundIt1] = 'Delaware'
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'a Delaware', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
@@ -1711,7 +1711,7 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
         foundIt2 = (df['legal_nm'].str.contains(pattern_liability2, flags=re.IGNORECASE, regex=True) |
                     df['trade_nm'].str.contains(pattern_liability2, flags=re.IGNORECASE, regex=True))
 
-        df['Liabilitytype'][foundIt2] = 'Delaware'
+        df.loc['Liabilitytype', foundIt2] = 'Delaware'
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'a Nevada', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
@@ -1722,7 +1722,7 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
         foundIt3 = (df['legal_nm'].str.contains(pattern_liability3, flags=re.IGNORECASE, regex=True) |
                     df['trade_nm'].str.contains(pattern_liability3, flags=re.IGNORECASE, regex=True))
 
-        df['Liabilitytype'][foundIt3] = 'Nebraska'
+        df.loc['Liabilitytype', foundIt3] = 'Nebraska'
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'a Nebraska', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
@@ -1733,7 +1733,7 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
         foundIt4 = (df['legal_nm'].str.contains(pattern_liability4, flags=re.IGNORECASE, regex=True) |
                     df['trade_nm'].str.contains(pattern_liability4, flags=re.IGNORECASE, regex=True))
 
-        df['Liabilitytype'][foundIt4] = 'Foreign'
+        df.loc['Liabilitytype', foundIt4] = 'Foreign'
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'a Foreign', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
@@ -1745,7 +1745,7 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
         foundIt5 = (df['legal_nm'].str.contains(pattern_liability5, flags=re.IGNORECASE, regex=True) |
                     df['trade_nm'].str.contains(pattern_liability5, flags=re.IGNORECASE, regex=True))
 
-        df['Liabilitytype'][foundIt5] = 'California'
+        df.loc['Liabilitytype', foundIt5] = 'California'
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'a Foreign', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
@@ -1763,7 +1763,7 @@ def MoveBusinessTypeToBusinessTypeColumn(df):
                    df['trade_nm'].str.contains(pattern_individual, flags=re.IGNORECASE, regex=True))
 
         # df['Businesstype'] = foundIt.replace((True,False), ('Individual',df['Businesstype']), regex=True) #fill column 'industry'
-        df['Businesstype'][foundIt] = 'Individual'
+        df.loc['Businesstype', foundIt] = 'Individual'
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'an individual', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
@@ -1785,7 +1785,7 @@ def MoveLimitedLiabilityBusinessTypeToBusinessTypeColumn(df):
                    df['trade_nm'].str.contains(pattern_company, flags=re.IGNORECASE, regex=True))
 
         # df['Businesstype'] = foundIt.replace((True,False), ('Company',df['Businesstype']), regex=True) #fill column 'industry'
-        df['Businesstype'][foundIt] = 'Company'
+        df.loc['Businesstype', foundIt] = 'Company'
 
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             r'\bLLC$', '', regex=True, case=False)
@@ -1875,7 +1875,7 @@ def MovePartnershipBusinessTypeToBusinessTypeColumn(df):
                    df['trade_nm'].str.contains(pattern_partner, flags=re.IGNORECASE, regex=True))
 
         # df['Businesstype'] = foundIt.replace((True,False), ('Partnership',df['Businesstype']), regex=True) #fill column 'industry'
-        df['Businesstype'][foundIt] = 'Partnership'
+        df.loc['Businesstype', foundIt] = 'Partnership'
 
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'both jointly and severally as employers', '',  regex=True, case=False)
@@ -2012,7 +2012,7 @@ def MoveCorportationBusinessTypeToBusinessTypeColumn(df):
                    df['trade_nm'].str.contains(pattern_corp,  flags=re.IGNORECASE, regex=True))
 
         # df['Businesstype'] = foundIt.replace((True,False), ('Corporation', df['Businesstype']), regex=True) #fill column business type
-        df['Businesstype'][foundIt] = 'Corporation'
+        df.loc['Businesstype', foundIt] = 'Corporation'
 
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'a corporation', '', regex=True, case=False)
