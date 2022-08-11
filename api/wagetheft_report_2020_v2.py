@@ -1792,9 +1792,9 @@ def MoveLimitedLiabilityBusinessTypeToBusinessTypeColumn(df):
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
             r'\bLLC$', '', regex=True, case=False)
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
-            r'\bL.L.C.$', '', False)
+            r'\bL.L.C.$', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
-            r'\bL.L.C.$', '', False)
+            r'\bL.L.C.$', '', regex=True, case=False)
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'L.L.C., ', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
@@ -1808,9 +1808,9 @@ def MoveLimitedLiabilityBusinessTypeToBusinessTypeColumn(df):
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
             'L.L.C. ', '', regex=True, case=False)
         df['legal_nm'] = df[df['legal_nm'].notnull(
-        )]['legal_nm'].str.replace('LLC ', '', False)
+        )]['legal_nm'].str.replace('LLC ', '', regex=False, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull(
-        )]['trade_nm'].str.replace('LLC ', '', False)
+        )]['trade_nm'].str.replace('LLC ', '', regex=False, case=False)
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'company', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
@@ -1847,21 +1847,21 @@ def MoveLimitedLiabilityBusinessTypeToBusinessTypeColumn(df):
             'Limited Liability', '', regex=True, case=False)
 
         df['legal_nm'] = df[df['legal_nm'].notnull(
-        )]['legal_nm'].str.replace(r'\bCo$', '', False)
+        )]['legal_nm'].str.replace(r'\bCo$', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull(
-        )]['trade_nm'].str.replace(r'\bCo$', '', False)
+        )]['trade_nm'].str.replace(r'\bCo$', '', regex=True, case=False)
         df['legal_nm'] = df[df['legal_nm'].notnull(
-        )]['legal_nm'].str.replace('Co. ', '', False)
+        )]['legal_nm'].str.replace('Co. ', '', regex=False, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull(
-        )]['trade_nm'].str.replace('Co. ', '', False)
+        )]['trade_nm'].str.replace('Co. ', '', regex=False, case=False)
         df['legal_nm'] = df[df['legal_nm'].notnull(
-        )]['legal_nm'].str.replace('Co ', '', False)
+        )]['legal_nm'].str.replace('Co ', '', regex=False, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull(
-        )]['trade_nm'].str.replace('Co ', '', False)
+        )]['trade_nm'].str.replace('Co ', '', regex=False, case=False)
         df['legal_nm'] = df[df['legal_nm'].notnull(
-        )]['legal_nm'].str.replace('CO ', '', False)
+        )]['legal_nm'].str.replace('CO ', '', regex=False, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull(
-        )]['trade_nm'].str.replace('CO ', '', False)
+        )]['trade_nm'].str.replace('CO ', '', regex=False, case=False)
     return df
 
 
