@@ -38,6 +38,7 @@
 # 7/2/2022 by F. Peterson added several more parameters to API code and create output folder if missing: tested and works
 # 7/2/2022 by F. Peterson added url pulls for WHD and DOL violations
 # 7/14/2022 by F. Peterson update DOL WHD url to updated url 7/13/2022
+# 8/10/2022 by F. Peterson resolve several bugs-- incomplete but runs without crash
 
 # Note: add an edit distance comparison
 # to fix replace() https://stackoverflow.com/questions/64843109/compiler-issue-assertionerror-on-replace-given-t-or-f-condition-with-string/64856554#64856554
