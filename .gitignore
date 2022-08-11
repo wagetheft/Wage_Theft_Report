@@ -17,5 +17,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Report code
+/api/report_output/*
+/api/report_output/
+report_output/
+api/report_output
+
 # Virtual Environment
 .venv
