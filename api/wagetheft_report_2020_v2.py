@@ -242,7 +242,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
             # df_csv = InferZipcodeFromCompanyName(df_csv, default_region, default_region_name) #zipcodes by company name
             # df_csv = InferZipcodeFromJurisdictionName(df_csv, default_region, default_region_name) #zipcodes by jurisdiction name
 
-        if TARGET_ZIPCODE[0] is not '00000':
+        if TARGET_ZIPCODE[0] != '00000':
             df_csv = Filter_for_Zipcode(df_csv, TARGET_ZIPCODE)
     time_2 = time.time()
     print("Time to finish section 6 %.5f" % (time_2 - time_1))
@@ -556,7 +556,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
 
     prevailing_header = header + ["juris_or_proj_nm", "Note"]
 
-    if signatories_report is 1:
+    if signatories_report == 1:
         header += ["Signatory"]
         prevailing_header += ["Signatory"]
 
@@ -1011,13 +1011,15 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
 
             # 	do_nothing = ""
     time_2 = time.time()
-    print("Time to finish section 28 %.5f".format(time_2 - time_1) ) #updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
+    # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
+    print("Time to finish section 28 %.5f".format(time_2 - time_1))
     # end indent
 
     # 3/7/2022 bugFile.write("<h1>Done</h1> \n")
     # 3/7/2022 bugFile.write("</html></body> \n")
     # 3/7/2022 bugFile.close()
-    print("Time to finish program".format(time_2 - start_time) ) #updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
+    # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
+    print("Time to finish program".format(time_2 - start_time))
     return temp_file_name  # the temp json returned from API
 
 
@@ -1188,7 +1190,7 @@ def Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS):
 
 
 def Filter_for_Zipcode(df_csv, TARGET_ZIPCODE):
-    if TARGET_ZIPCODE[0] is not '00000':
+    if TARGET_ZIPCODE[0] != '00000':
         # Filter on region by zip code
         df_csv = df_csv.loc[df_csv['zip_cd'].isin(TARGET_ZIPCODE)]
     return df_csv
@@ -1466,7 +1468,7 @@ def InferSignatoryIndustryAndLabel(df, SIGNATORY_INDUSTRY):
 
 
 def InferZipcodeFromCityName(df, region, region_name):
-    if region is not 'all':
+    if region != 'all':
         upper_region = [x.upper() for x in region]
         PATTERN_CITY = '|'.join(upper_region)
         foundZipbyCity1 = (
@@ -1484,7 +1486,7 @@ def InferZipcodeFromCityName(df, region, region_name):
 # fill nan zip code by assumed zip by city name in trade name; ex. "Cupertino Elec."
 def InferZipcodeFromCompanyName(df, region, region_name):
 
-    if region is not 'all':
+    if region != 'all':
         PATTERN_CITY = '|'.join(region)
         foundZipbyCompany1 = (
             (pd.isna(df['cty_nm'])) &
@@ -1502,7 +1504,7 @@ def InferZipcodeFromCompanyName(df, region, region_name):
 
 def InferZipcodeFromJurisdictionName(df, region, region_name):
 
-    if region is not 'all' and region[0] is not 'County of Santa Clara' and 'juris_or_proj_nm' in df.columns:
+    if region != 'all' and region[0] != 'County of Santa Clara' and 'juris_or_proj_nm' in df.columns:
         PATTERN_CITY = '|'.join(region)
 
         df.st_cd = df.st_cd.astype(str)
@@ -3672,8 +3674,9 @@ def Footer_Block(TEST, textFile):
 
 # https://stackoverflow.com/questions/47704441/applying-styling-to-pandas-dataframe-saved-to-html-file
 def write_to_html_file(df, header_HTML, title, filename):
-    import pandas.io.formats.style #added this line to avoid error 8/10/2022 f. peterson
-    import os #added this line to avoid error 8/10/2022 f. peterso
+    # added this line to avoid error 8/10/2022 f. peterson
+    import pandas.io.formats.style
+    import os  # added this line to avoid error 8/10/2022 f. peterso
 
     result = '''
 		<html>
@@ -3720,7 +3723,8 @@ def write_to_html_file(df, header_HTML, title, filename):
 		'''
     # with open(filename, mode='a') as f:
     # added this line to avoid error 8/10/2022 f. peterson
-    os.makedirs(os.path.dirname(filename), exist_ok=True) #create directory if it doesn't exist
+    # create directory if it doesn't exist
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     # https://stackoverflow.com/questions/27092833/unicodeencodeerror-charmap-codec-cant-encode-characters
     with open(filename, mode='a', encoding="utf-8") as f:
         f.write(result)
