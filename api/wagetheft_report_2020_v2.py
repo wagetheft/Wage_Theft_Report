@@ -1174,7 +1174,7 @@ def Filter_for_Target_Industry(df, TARGET_INDUSTRY):
     for x in range(len(TARGET_INDUSTRY)):
         temp_term = TARGET_INDUSTRY[x][0]
         df_temp = df.loc[df['industry'].str.upper() == temp_term.upper()]
-        appended_data = appended_data.append(df_temp)
+        appended_data = pd.concat([appended_data, df_temp])
     return appended_data
 
 
