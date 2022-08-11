@@ -2069,22 +2069,22 @@ def MoveCorportationBusinessTypeToBusinessTypeColumn(df):
 def RemovePunctuationFromCity(df):  # text cleanup: remove double spaces
 
     if 'cty_nm' in df.columns:
-        df['cty_nm'] = df['cty_nm'].str.replace(',', '')
-        df['cty_nm'] = df['cty_nm'].str.replace('.', '')
-        df['cty_nm'] = df['cty_nm'].str.replace(';', '')
+        df['cty_nm'] = df['cty_nm'].str.replace(',', '', regex=False)
+        df['cty_nm'] = df['cty_nm'].str.replace('.', '', regex=False)
+        df['cty_nm'] = df['cty_nm'].str.replace(';', '', regex=False)
         #df['cty_nm'] = df['cty_nm'].str.replace('-','')
-        df['cty_nm'] = df['cty_nm'].str.replace("'", '')
+        df['cty_nm'] = df['cty_nm'].str.replace("'", '', regex=False)
 
-        df['cty_nm'] = df['cty_nm'].str.replace('  ', ' ')
-        df['cty_nm'] = df['cty_nm'].str.replace('&', '')
+        df['cty_nm'] = df['cty_nm'].str.replace('  ', ' ', regex=False)
+        df['cty_nm'] = df['cty_nm'].str.replace('&', '', regex=False)
         df['cty_nm'] = df['cty_nm'].str.strip(';,. ')
 
-        df['cty_nm'] = df['cty_nm'].str.replace('(', '')
-        df['cty_nm'] = df['cty_nm'].str.replace(')', '')
-        df['cty_nm'] = df['cty_nm'].str.replace('|', '')
-        df['cty_nm'] = df['cty_nm'].str.replace('/', '')
-        df['cty_nm'] = df['cty_nm'].str.replace('*', '')
-        df['cty_nm'] = df['cty_nm'].str.replace('  ', ' ')
+        df['cty_nm'] = df['cty_nm'].str.replace('(', '', regex=False)
+        df['cty_nm'] = df['cty_nm'].str.replace(')', '', regex=False)
+        df['cty_nm'] = df['cty_nm'].str.replace('|', '', regex=False)
+        df['cty_nm'] = df['cty_nm'].str.replace('/', '', regex=False)
+        df['cty_nm'] = df['cty_nm'].str.replace('*', '', regex=False)
+        df['cty_nm'] = df['cty_nm'].str.replace('  ', ' ', regex=False)
 
     return df
 
@@ -2092,22 +2092,25 @@ def RemovePunctuationFromCity(df):  # text cleanup: remove double spaces
 def RemovePunctuationFromAddresses(df):  # text cleanup: remove double spaces
 
     if 'street_addr' in df.columns:
-        df['street_addr'] = df['street_addr'].str.replace(',', '')
-        df['street_addr'] = df['street_addr'].str.replace('.', '')
-        df['street_addr'] = df['street_addr'].str.replace(';', '')
-        df['street_addr'] = df['street_addr'].str.replace('-', '')
-        df['street_addr'] = df['street_addr'].str.replace("'", '')
+        df['street_addr'] = df['street_addr'].str.replace(',', '', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace('.', '', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace(';', '', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace('-', '', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace("'", '', regex=False)
 
-        df['street_addr'] = df['street_addr'].str.replace('  ', ' ')
-        df['street_addr'] = df['street_addr'].str.replace('&', 'and')
+        df['street_addr'] = df['street_addr'].str.replace(
+            '  ', ' ', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace(
+            '&', 'and', regex=False)
         df['street_addr'] = df['street_addr'].str.strip(';,. ')
 
-        df['street_addr'] = df['street_addr'].str.replace('(', '')
-        df['street_addr'] = df['street_addr'].str.replace(')', '')
-        df['street_addr'] = df['street_addr'].str.replace('|', '')
-        df['street_addr'] = df['street_addr'].str.replace('/', '')
-        df['street_addr'] = df['street_addr'].str.replace('*', '')
-        df['street_addr'] = df['street_addr'].str.replace('  ', ' ')
+        df['street_addr'] = df['street_addr'].str.replace('(', '', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace(')', '', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace('|', '', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace('/', '', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace('*', '', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace(
+            '  ', ' ', regex=False)
 
     return df
 
@@ -2350,42 +2353,42 @@ def StripPunctuationFromNames(df):
     if 'legal_nm' in df.columns:
         df['legal_nm'] = df['legal_nm'].astype(
             str)  # convert to str to catch floats
-        df['legal_nm'] = df['legal_nm'].str.replace('  ', ' ')
-        df['legal_nm'] = df['legal_nm'].str.replace('&', 'and')
+        df['legal_nm'] = df['legal_nm'].str.replace('  ', ' ', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace('&', 'and', regex=False)
         df['legal_nm'] = df['legal_nm'].str.strip()
         df['legal_nm'] = df['legal_nm'].str.strip(';,. ')
 
-        df['legal_nm'] = df['legal_nm'].str.replace(';', '')
-        df['legal_nm'] = df['legal_nm'].str.replace(',', '')
-        df['legal_nm'] = df['legal_nm'].str.replace('.', '')
-        df['legal_nm'] = df['legal_nm'].str.replace('-', '')
-        df['legal_nm'] = df['legal_nm'].str.replace("'", '')
-        df['legal_nm'] = df['legal_nm'].str.replace('(', '')
-        df['legal_nm'] = df['legal_nm'].str.replace(')', '')
-        df['legal_nm'] = df['legal_nm'].str.replace('|', '')
-        df['legal_nm'] = df['legal_nm'].str.replace('/', '')
-        df['legal_nm'] = df['legal_nm'].str.replace('*', '')
-        df['legal_nm'] = df['legal_nm'].str.replace('  ', ' ')
+        df['legal_nm'] = df['legal_nm'].str.replace(';', '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace(',', '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace('.', '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace('-', '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace("'", '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace('(', '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace(')', '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace('|', '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace('/', '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace('*', '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace('  ', ' ', regex=False)
 
     if 'trade_nm' in df.columns:
         df['trade_nm'] = df['trade_nm'].astype(
             str)  # convert to str to catch floats
-        df['trade_nm'] = df['trade_nm'].str.replace('  ', ' ')
-        df['trade_nm'] = df['trade_nm'].str.replace('&', 'and')
+        df['trade_nm'] = df['trade_nm'].str.replace('  ', ' ', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace('&', 'and', regex=False)
         df['trade_nm'] = df['trade_nm'].str.strip()
         df['trade_nm'] = df['trade_nm'].str.strip(';,. ')
 
-        df['trade_nm'] = df['trade_nm'].str.replace(';', '')
-        df['trade_nm'] = df['trade_nm'].str.replace('.', '')
-        df['trade_nm'] = df['trade_nm'].str.replace(',', '')
-        df['trade_nm'] = df['trade_nm'].str.replace('-', '')
-        df['trade_nm'] = df['trade_nm'].str.replace("'", '')
-        df['trade_nm'] = df['trade_nm'].str.replace('(', '')
-        df['trade_nm'] = df['trade_nm'].str.replace(')', '')
-        df['trade_nm'] = df['trade_nm'].str.replace('|', '')
-        df['trade_nm'] = df['trade_nm'].str.replace('/', '')
-        df['trade_nm'] = df['trade_nm'].str.replace('*', '')
-        df['trade_nm'] = df['trade_nm'].str.replace('  ', ' ')
+        df['trade_nm'] = df['trade_nm'].str.replace(';', '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace('.', '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace(',', '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace('-', '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace("'", '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace('(', '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace(')', '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace('|', '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace('/', '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace('*', '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace('  ', ' ', regex=False)
 
     return df
 
