@@ -1270,13 +1270,13 @@ def InferAgencyFromCaseIDAndLabel(df, LABEL_COLUMN):
         foundAgencybyCaseID_1 = pd.isna(df[LABEL_COLUMN])
         # df[LABEL_COLUMN] = df[LABEL_COLUMN].fillna(foundAgencybyCaseID_1.replace( (True,False), (df['case_id'].astype(str).apply(lambda st: st[:st.find("-")]), df[LABEL_COLUMN]) ) ) #https://stackoverflow.com/questions/51660357/extract-substring-between-two-characters-in-pandas
         # https://stackoverflow.com/questions/51660357/extract-substring-between-two-characters-in-pandas
-        df[LABEL_COLUMN][foundAgencybyCaseID_1] = df['case_id'].astype(
+        df.loc[LABEL_COLUMN, foundAgencybyCaseID_1] = df['case_id'].astype(
             str).apply(lambda st: st[:st.find("-")])
 
         # cind case ID when no hyphen
         foundAgencybyCaseID_2 = pd.isna(df[LABEL_COLUMN])
         #df[LABEL_COLUMN] = df[LABEL_COLUMN].fillna(foundAgencybyCaseID_2.replace( (True,False), (df['case_id'].astype(str).str[:3], df[LABEL_COLUMN]) ) )
-        df[LABEL_COLUMN][foundAgencybyCaseID_2] = df['case_id'].astype(
+        df.loc[LABEL_COLUMN, foundAgencybyCaseID_2] = df['case_id'].astype(
             str).str[:3]
 
         # hardcode for DLSE nomemclature with a note * for assumed
@@ -1285,7 +1285,7 @@ def InferAgencyFromCaseIDAndLabel(df, LABEL_COLUMN):
         pattern_DLSE = '|'.join(DLSE_terms)
         found_DLSE = (df[LABEL_COLUMN].str.contains(pattern_DLSE))
         #df[LABEL_COLUMN] = found_DLSE.replace( (True,False), ("DLSE", df[LABEL_COLUMN] ) )
-        df[LABEL_COLUMN][found_DLSE] = "DLSE"
+        df.loc[LABEL_COLUMN, found_DLSE] = "DLSE"
 
     return df
 
@@ -1455,7 +1455,8 @@ def InferSignatoryIndustryAndLabel(df, SIGNATORY_INDUSTRY):
                 (df['Signatory'] == 1) &
                 (df['industry'] == SIGNATORY_INDUSTRY[x][0][0])
             )
-            df['signatory_industry'][foundIt_ind1] = SIGNATORY_INDUSTRY[x][0][0]
+            df.loc['signatory_industry',
+                   foundIt_ind1] = SIGNATORY_INDUSTRY[x][0][0]
 
         # if all fails, assign 'other' so it gets counted
         df['signatory_industry'] = df['signatory_industry'].replace(
