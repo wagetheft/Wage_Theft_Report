@@ -1012,14 +1012,14 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
             # 	do_nothing = ""
     time_2 = time.time()
     # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
-    print("Time to finish section 28 %.5f".format(time_2 - time_1))
+    print("Time to finish section 28 %.5f" % (time_2 - time_1))
     # end indent
 
     # 3/7/2022 bugFile.write("<h1>Done</h1> \n")
     # 3/7/2022 bugFile.write("</html></body> \n")
     # 3/7/2022 bugFile.close()
     # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
-    print("Time to finish program".format(time_2 - start_time))
+    print("Time to finish program" % (time_2 - start_time))
     return temp_file_name  # the temp json returned from API
 
 
