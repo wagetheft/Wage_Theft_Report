@@ -2970,10 +2970,10 @@ def read_from_url(url):
     buf = io.BytesIO(req.content)
     if url[-3:] == 'zip':
         df_csv = pd.read_csv(buf, compression='zip', low_memory=False,
-                             thousands=',', encoding="ISO-8859-1", sep=',', error_bad_lines=False)
+                             thousands=',', encoding="ISO-8859-1", sep=',', on_bad_lines="skip")
     else:
         df_csv = pd.read_csv(buf, low_memory=False, thousands=',',
-                             encoding="ISO-8859-1", sep=',', error_bad_lines=False)
+                             encoding="ISO-8859-1", sep=',', on_bad_lines="skip")
     return df_csv
 
 
