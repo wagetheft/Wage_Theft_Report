@@ -118,6 +118,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
                        include_top_viol_tables, use_assumptions, infer_by_naics):
     # 3/7/2022 bugFile = open('report_output/debug.html', 'w')
     # 3/7/2022 debug_fileSetup_def(bugFile)
+    warnings.filterwarnings("ignore", category=UserWarning)
     start_time = time.time()
 
     # Settings External - start
@@ -1019,7 +1020,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     # 3/7/2022 bugFile.write("</html></body> \n")
     # 3/7/2022 bugFile.close()
     # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
-    print("Time to finish program" % (time_2 - start_time))
+    print("Time to finish program %.5f" % (time_2 - start_time))
     return temp_file_name  # the temp json returned from API
 
 
