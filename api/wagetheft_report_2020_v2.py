@@ -1030,10 +1030,9 @@ def Clean_Repeat_Violator_HTML_Row(df, COLUMN_NAME):
     df = df[df.records > 1]
 
     if df.empty:
-        df = df.append({
+        df = pd.concat([df, {
             COLUMN_NAME: "no records",
-        }, ignore_index=True)
-
+        }], ignore_index=True)
     return df
 
 
