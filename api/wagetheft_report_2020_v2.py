@@ -118,6 +118,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
                        include_top_viol_tables, use_assumptions, infer_by_naics):
     # 3/7/2022 bugFile = open('report_output/debug.html', 'w')
     # 3/7/2022 debug_fileSetup_def(bugFile)
+    warnings.filterwarnings("ignore", category=UserWarning)
     start_time = time.time()
 
     # Settings External - start
@@ -242,7 +243,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
             # df_csv = InferZipcodeFromCompanyName(df_csv, default_region, default_region_name) #zipcodes by company name
             # df_csv = InferZipcodeFromJurisdictionName(df_csv, default_region, default_region_name) #zipcodes by jurisdiction name
 
-        if TARGET_ZIPCODE[0] is not '00000':
+        if TARGET_ZIPCODE[0] != '00000':
             df_csv = Filter_for_Zipcode(df_csv, TARGET_ZIPCODE)
     time_2 = time.time()
     print("Time to finish section 6 %.5f" % (time_2 - time_1))
@@ -556,7 +557,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
 
     prevailing_header = header + ["juris_or_proj_nm", "Note"]
 
-    if signatories_report is 1:
+    if signatories_report == 1:
         header += ["Signatory"]
         prevailing_header += ["Signatory"]
 
@@ -1011,13 +1012,15 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
 
             # 	do_nothing = ""
     time_2 = time.time()
-    print("Time to finish section 28 %.5f".format(time_2 - time_1) ) #updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
+    # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
+    print("Time to finish section 28 %.5f" % (time_2 - time_1))
     # end indent
 
     # 3/7/2022 bugFile.write("<h1>Done</h1> \n")
     # 3/7/2022 bugFile.write("</html></body> \n")
     # 3/7/2022 bugFile.close()
-    print("Time to finish program".format(time_2 - start_time) ) #updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
+    # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
+    print("Time to finish program %.5f" % (time_2 - start_time))
     return temp_file_name  # the temp json returned from API
 
 
@@ -1027,10 +1030,9 @@ def Clean_Repeat_Violator_HTML_Row(df, COLUMN_NAME):
     df = df[df.records > 1]
 
     if df.empty:
-        df = df.append({
+        df = pd.concat([df, {
             COLUMN_NAME: "no records",
-        }, ignore_index=True)
-
+        }], ignore_index=True)
     return df
 
 
@@ -1172,7 +1174,7 @@ def Filter_for_Target_Industry(df, TARGET_INDUSTRY):
     for x in range(len(TARGET_INDUSTRY)):
         temp_term = TARGET_INDUSTRY[x][0]
         df_temp = df.loc[df['industry'].str.upper() == temp_term.upper()]
-        appended_data = appended_data.append(df_temp)
+        appended_data = pd.concat([appended_data, df_temp])
     return appended_data
 
 
@@ -1188,7 +1190,7 @@ def Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS):
 
 
 def Filter_for_Zipcode(df_csv, TARGET_ZIPCODE):
-    if TARGET_ZIPCODE[0] is not '00000':
+    if TARGET_ZIPCODE[0] != '00000':
         # Filter on region by zip code
         df_csv = df_csv.loc[df_csv['zip_cd'].isin(TARGET_ZIPCODE)]
     return df_csv
@@ -1268,13 +1270,13 @@ def InferAgencyFromCaseIDAndLabel(df, LABEL_COLUMN):
         foundAgencybyCaseID_1 = pd.isna(df[LABEL_COLUMN])
         # df[LABEL_COLUMN] = df[LABEL_COLUMN].fillna(foundAgencybyCaseID_1.replace( (True,False), (df['case_id'].astype(str).apply(lambda st: st[:st.find("-")]), df[LABEL_COLUMN]) ) ) #https://stackoverflow.com/questions/51660357/extract-substring-between-two-characters-in-pandas
         # https://stackoverflow.com/questions/51660357/extract-substring-between-two-characters-in-pandas
-        df[LABEL_COLUMN][foundAgencybyCaseID_1] = df['case_id'].astype(
+        df.loc[foundAgencybyCaseID_1, LABEL_COLUMN] = df['case_id'].astype(
             str).apply(lambda st: st[:st.find("-")])
 
         # cind case ID when no hyphen
         foundAgencybyCaseID_2 = pd.isna(df[LABEL_COLUMN])
         #df[LABEL_COLUMN] = df[LABEL_COLUMN].fillna(foundAgencybyCaseID_2.replace( (True,False), (df['case_id'].astype(str).str[:3], df[LABEL_COLUMN]) ) )
-        df[LABEL_COLUMN][foundAgencybyCaseID_2] = df['case_id'].astype(
+        df.loc[foundAgencybyCaseID_2, LABEL_COLUMN] = df['case_id'].astype(
             str).str[:3]
 
         # hardcode for DLSE nomemclature with a note * for assumed
@@ -1283,7 +1285,7 @@ def InferAgencyFromCaseIDAndLabel(df, LABEL_COLUMN):
         pattern_DLSE = '|'.join(DLSE_terms)
         found_DLSE = (df[LABEL_COLUMN].str.contains(pattern_DLSE))
         #df[LABEL_COLUMN] = found_DLSE.replace( (True,False), ("DLSE", df[LABEL_COLUMN] ) )
-        df[LABEL_COLUMN][found_DLSE] = "DLSE"
+        df.loc[found_DLSE, LABEL_COLUMN] = "DLSE"
 
     return df
 
@@ -1307,7 +1309,7 @@ def InferSignatoriesFromNameAndFlag(df, SIGNATORY_INDUSTRY):
                     df['trade_nm'].str.contains(PATTERN_IND, flags=re.IGNORECASE, regex=True) &
                     ~df['trade_nm'].str.contains(PATTERN_EXCLUDE, flags=re.IGNORECASE, regex=True))
             )
-            df["Signatory"][foundIt_sig] = 1
+            df.loc[foundIt_sig, "Signatory"] = 1
 
     return df
 
@@ -1383,7 +1385,7 @@ def Label_Industry(df, INFER, TARGET_INDUSTRY):
 
                 )
 
-                df['industry'][foundIt_ind1] = TARGET_INDUSTRY[x][0]
+                df.loc[foundIt_ind1, 'industry'] = TARGET_INDUSTRY[x][0]
 
             # second round fills in anything missed with the exisiting NAICS coding
             foundIt_ind2 = (
@@ -1392,7 +1394,7 @@ def Label_Industry(df, INFER, TARGET_INDUSTRY):
                 ~df['naic_cd'].astype(str).str.contains(
                     PATTERN_EXCLUDE, flags=re.IGNORECASE, regex=True)
             )
-            df['trade2'][foundIt_ind2] = TARGET_INDUSTRY[x][0]
+            df.loc[foundIt_ind2, 'trade2'] = TARGET_INDUSTRY[x][0]
 
             foundIt_ind3 = (  # commented out 12/24/2020 because the decriptions are too easily miscoded
                 (df['trade2'] == "") &
@@ -1400,7 +1402,7 @@ def Label_Industry(df, INFER, TARGET_INDUSTRY):
                 ~df['naics_desc.'].astype(str).str.contains(
                     PATTERN_EXCLUDE, flags=re.IGNORECASE, regex=True)
             )
-            df['trade2'][foundIt_ind3] = TARGET_INDUSTRY[x][0]
+            df.loc[foundIt_ind3, 'trade2'] = TARGET_INDUSTRY[x][0]
 
             # foundIt_ind4=( #commented out 12/24/2020 because the labels were just not useful
             # 	(#pd.isna(df['industry']) &
@@ -1453,7 +1455,7 @@ def InferSignatoryIndustryAndLabel(df, SIGNATORY_INDUSTRY):
                 (df['Signatory'] == 1) &
                 (df['industry'] == SIGNATORY_INDUSTRY[x][0][0])
             )
-            df['signatory_industry'][foundIt_ind1] = SIGNATORY_INDUSTRY[x][0][0]
+            df.loc[foundIt_ind1, 'signatory_industry'] = SIGNATORY_INDUSTRY[x][0][0]
 
         # if all fails, assign 'other' so it gets counted
         df['signatory_industry'] = df['signatory_industry'].replace(
@@ -1466,7 +1468,7 @@ def InferSignatoryIndustryAndLabel(df, SIGNATORY_INDUSTRY):
 
 
 def InferZipcodeFromCityName(df, region, region_name):
-    if region is not 'all':
+    if region != 'all':
         upper_region = [x.upper() for x in region]
         PATTERN_CITY = '|'.join(upper_region)
         foundZipbyCity1 = (
@@ -1477,14 +1479,14 @@ def InferZipcodeFromCityName(df, region, region_name):
             ((df['cty_nm'].astype(str).str.contains(PATTERN_CITY,
                                                     case=False, flags=re.IGNORECASE)))  # flags=re.IGNORECASE
         )
-        df["zip_cd"][foundZipbyCity1 * foundZipbyCity2] = region_name
+        df.loc[foundZipbyCity1 * foundZipbyCity2, "zip_cd"] = region_name
     return df
 
 
 # fill nan zip code by assumed zip by city name in trade name; ex. "Cupertino Elec."
 def InferZipcodeFromCompanyName(df, region, region_name):
 
-    if region is not 'all':
+    if region != 'all':
         PATTERN_CITY = '|'.join(region)
         foundZipbyCompany1 = (
             (pd.isna(df['cty_nm'])) &
@@ -1502,7 +1504,7 @@ def InferZipcodeFromCompanyName(df, region, region_name):
 
 def InferZipcodeFromJurisdictionName(df, region, region_name):
 
-    if region is not 'all' and region[0] is not 'County of Santa Clara' and 'juris_or_proj_nm' in df.columns:
+    if region != 'all' and region[0] != 'County of Santa Clara' and 'juris_or_proj_nm' in df.columns:
         PATTERN_CITY = '|'.join(region)
 
         df.st_cd = df.st_cd.astype(str)
@@ -1680,7 +1682,7 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
         foundIt0 = (df['legal_nm'].str.contains(pattern_liability0, flags=re.IGNORECASE, regex=True) |
                     df['trade_nm'].str.contains(pattern_liability0, flags=re.IGNORECASE, regex=True))
 
-        df['Liabilitytype'][foundIt0] = 'California'
+        df.loc[foundIt0, 'Liabilitytype'] = 'California'
 
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'a California', '', regex=True, case=False)
@@ -1698,7 +1700,7 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
             df['trade_nm'].str.contains(
                 pattern_liability1, flags=re.IGNORECASE, regex=True)
         )
-        df['Liabilitytype'][foundIt1] = 'Delaware'
+        df.loc[foundIt1, 'Liabilitytype'] = 'Delaware'
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'a Delaware', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
@@ -1709,7 +1711,7 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
         foundIt2 = (df['legal_nm'].str.contains(pattern_liability2, flags=re.IGNORECASE, regex=True) |
                     df['trade_nm'].str.contains(pattern_liability2, flags=re.IGNORECASE, regex=True))
 
-        df['Liabilitytype'][foundIt2] = 'Delaware'
+        df.loc[foundIt2, 'Liabilitytype'] = 'Delaware'
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'a Nevada', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
@@ -1720,7 +1722,7 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
         foundIt3 = (df['legal_nm'].str.contains(pattern_liability3, flags=re.IGNORECASE, regex=True) |
                     df['trade_nm'].str.contains(pattern_liability3, flags=re.IGNORECASE, regex=True))
 
-        df['Liabilitytype'][foundIt3] = 'Nebraska'
+        df.loc[foundIt3, 'Liabilitytype'] = 'Nebraska'
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'a Nebraska', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
@@ -1731,7 +1733,7 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
         foundIt4 = (df['legal_nm'].str.contains(pattern_liability4, flags=re.IGNORECASE, regex=True) |
                     df['trade_nm'].str.contains(pattern_liability4, flags=re.IGNORECASE, regex=True))
 
-        df['Liabilitytype'][foundIt4] = 'Foreign'
+        df.loc[foundIt4, 'Liabilitytype'] = 'Foreign'
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'a Foreign', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
@@ -1743,7 +1745,7 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
         foundIt5 = (df['legal_nm'].str.contains(pattern_liability5, flags=re.IGNORECASE, regex=True) |
                     df['trade_nm'].str.contains(pattern_liability5, flags=re.IGNORECASE, regex=True))
 
-        df['Liabilitytype'][foundIt5] = 'California'
+        df.loc[foundIt5, 'Liabilitytype'] = 'California'
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'a Foreign', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
@@ -1761,7 +1763,7 @@ def MoveBusinessTypeToBusinessTypeColumn(df):
                    df['trade_nm'].str.contains(pattern_individual, flags=re.IGNORECASE, regex=True))
 
         # df['Businesstype'] = foundIt.replace((True,False), ('Individual',df['Businesstype']), regex=True) #fill column 'industry'
-        df['Businesstype'][foundIt] = 'Individual'
+        df.loc[foundIt, 'Businesstype'] = 'Individual'
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'an individual', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
@@ -1783,16 +1785,16 @@ def MoveLimitedLiabilityBusinessTypeToBusinessTypeColumn(df):
                    df['trade_nm'].str.contains(pattern_company, flags=re.IGNORECASE, regex=True))
 
         # df['Businesstype'] = foundIt.replace((True,False), ('Company',df['Businesstype']), regex=True) #fill column 'industry'
-        df['Businesstype'][foundIt] = 'Company'
+        df.loc[foundIt, 'Businesstype'] = 'Company'
 
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             r'\bLLC$', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
             r'\bLLC$', '', regex=True, case=False)
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
-            r'\bL.L.C.$', '', False)
+            r'\bL.L.C.$', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
-            r'\bL.L.C.$', '', False)
+            r'\bL.L.C.$', '', regex=True, case=False)
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'L.L.C., ', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
@@ -1806,9 +1808,9 @@ def MoveLimitedLiabilityBusinessTypeToBusinessTypeColumn(df):
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
             'L.L.C. ', '', regex=True, case=False)
         df['legal_nm'] = df[df['legal_nm'].notnull(
-        )]['legal_nm'].str.replace('LLC ', '', False)
+        )]['legal_nm'].str.replace('LLC ', '', regex=False, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull(
-        )]['trade_nm'].str.replace('LLC ', '', False)
+        )]['trade_nm'].str.replace('LLC ', '', regex=False, case=False)
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'company', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull()]['trade_nm'].str.replace(
@@ -1845,21 +1847,21 @@ def MoveLimitedLiabilityBusinessTypeToBusinessTypeColumn(df):
             'Limited Liability', '', regex=True, case=False)
 
         df['legal_nm'] = df[df['legal_nm'].notnull(
-        )]['legal_nm'].str.replace(r'\bCo$', '', False)
+        )]['legal_nm'].str.replace(r'\bCo$', '', regex=True, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull(
-        )]['trade_nm'].str.replace(r'\bCo$', '', False)
+        )]['trade_nm'].str.replace(r'\bCo$', '', regex=True, case=False)
         df['legal_nm'] = df[df['legal_nm'].notnull(
-        )]['legal_nm'].str.replace('Co. ', '', False)
+        )]['legal_nm'].str.replace('Co. ', '', regex=False, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull(
-        )]['trade_nm'].str.replace('Co. ', '', False)
+        )]['trade_nm'].str.replace('Co. ', '', regex=False, case=False)
         df['legal_nm'] = df[df['legal_nm'].notnull(
-        )]['legal_nm'].str.replace('Co ', '', False)
+        )]['legal_nm'].str.replace('Co ', '', regex=False, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull(
-        )]['trade_nm'].str.replace('Co ', '', False)
+        )]['trade_nm'].str.replace('Co ', '', regex=False, case=False)
         df['legal_nm'] = df[df['legal_nm'].notnull(
-        )]['legal_nm'].str.replace('CO ', '', False)
+        )]['legal_nm'].str.replace('CO ', '', regex=False, case=False)
         df['trade_nm'] = df[df['trade_nm'].notnull(
-        )]['trade_nm'].str.replace('CO ', '', False)
+        )]['trade_nm'].str.replace('CO ', '', regex=False, case=False)
     return df
 
 
@@ -1873,7 +1875,7 @@ def MovePartnershipBusinessTypeToBusinessTypeColumn(df):
                    df['trade_nm'].str.contains(pattern_partner, flags=re.IGNORECASE, regex=True))
 
         # df['Businesstype'] = foundIt.replace((True,False), ('Partnership',df['Businesstype']), regex=True) #fill column 'industry'
-        df['Businesstype'][foundIt] = 'Partnership'
+        df.loc[foundIt, 'Businesstype'] = 'Partnership'
 
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'both jointly and severally as employers', '',  regex=True, case=False)
@@ -2010,7 +2012,7 @@ def MoveCorportationBusinessTypeToBusinessTypeColumn(df):
                    df['trade_nm'].str.contains(pattern_corp,  flags=re.IGNORECASE, regex=True))
 
         # df['Businesstype'] = foundIt.replace((True,False), ('Corporation', df['Businesstype']), regex=True) #fill column business type
-        df['Businesstype'][foundIt] = 'Corporation'
+        df.loc[foundIt, 'Businesstype'] = 'Corporation'
 
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
             'a corporation', '', regex=True, case=False)
@@ -2067,22 +2069,22 @@ def MoveCorportationBusinessTypeToBusinessTypeColumn(df):
 def RemovePunctuationFromCity(df):  # text cleanup: remove double spaces
 
     if 'cty_nm' in df.columns:
-        df['cty_nm'] = df['cty_nm'].str.replace(',', '')
-        df['cty_nm'] = df['cty_nm'].str.replace('.', '')
-        df['cty_nm'] = df['cty_nm'].str.replace(';', '')
+        df['cty_nm'] = df['cty_nm'].str.replace(',', '', regex=False)
+        df['cty_nm'] = df['cty_nm'].str.replace('.', '', regex=False)
+        df['cty_nm'] = df['cty_nm'].str.replace(';', '', regex=False)
         #df['cty_nm'] = df['cty_nm'].str.replace('-','')
-        df['cty_nm'] = df['cty_nm'].str.replace("'", '')
+        df['cty_nm'] = df['cty_nm'].str.replace("'", '', regex=False)
 
-        df['cty_nm'] = df['cty_nm'].str.replace('  ', ' ')
-        df['cty_nm'] = df['cty_nm'].str.replace('&', '')
+        df['cty_nm'] = df['cty_nm'].str.replace('  ', ' ', regex=False)
+        df['cty_nm'] = df['cty_nm'].str.replace('&', '', regex=False)
         df['cty_nm'] = df['cty_nm'].str.strip(';,. ')
 
-        df['cty_nm'] = df['cty_nm'].str.replace('(', '')
-        df['cty_nm'] = df['cty_nm'].str.replace(')', '')
-        df['cty_nm'] = df['cty_nm'].str.replace('|', '')
-        df['cty_nm'] = df['cty_nm'].str.replace('/', '')
-        df['cty_nm'] = df['cty_nm'].str.replace('*', '')
-        df['cty_nm'] = df['cty_nm'].str.replace('  ', ' ')
+        df['cty_nm'] = df['cty_nm'].str.replace('(', '', regex=False)
+        df['cty_nm'] = df['cty_nm'].str.replace(')', '', regex=False)
+        df['cty_nm'] = df['cty_nm'].str.replace('|', '', regex=False)
+        df['cty_nm'] = df['cty_nm'].str.replace('/', '', regex=False)
+        df['cty_nm'] = df['cty_nm'].str.replace('*', '', regex=False)
+        df['cty_nm'] = df['cty_nm'].str.replace('  ', ' ', regex=False)
 
     return df
 
@@ -2090,22 +2092,25 @@ def RemovePunctuationFromCity(df):  # text cleanup: remove double spaces
 def RemovePunctuationFromAddresses(df):  # text cleanup: remove double spaces
 
     if 'street_addr' in df.columns:
-        df['street_addr'] = df['street_addr'].str.replace(',', '')
-        df['street_addr'] = df['street_addr'].str.replace('.', '')
-        df['street_addr'] = df['street_addr'].str.replace(';', '')
-        df['street_addr'] = df['street_addr'].str.replace('-', '')
-        df['street_addr'] = df['street_addr'].str.replace("'", '')
+        df['street_addr'] = df['street_addr'].str.replace(',', '', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace('.', '', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace(';', '', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace('-', '', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace("'", '', regex=False)
 
-        df['street_addr'] = df['street_addr'].str.replace('  ', ' ')
-        df['street_addr'] = df['street_addr'].str.replace('&', 'and')
+        df['street_addr'] = df['street_addr'].str.replace(
+            '  ', ' ', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace(
+            '&', 'and', regex=False)
         df['street_addr'] = df['street_addr'].str.strip(';,. ')
 
-        df['street_addr'] = df['street_addr'].str.replace('(', '')
-        df['street_addr'] = df['street_addr'].str.replace(')', '')
-        df['street_addr'] = df['street_addr'].str.replace('|', '')
-        df['street_addr'] = df['street_addr'].str.replace('/', '')
-        df['street_addr'] = df['street_addr'].str.replace('*', '')
-        df['street_addr'] = df['street_addr'].str.replace('  ', ' ')
+        df['street_addr'] = df['street_addr'].str.replace('(', '', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace(')', '', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace('|', '', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace('/', '', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace('*', '', regex=False)
+        df['street_addr'] = df['street_addr'].str.replace(
+            '  ', ' ', regex=False)
 
     return df
 
@@ -2348,42 +2353,42 @@ def StripPunctuationFromNames(df):
     if 'legal_nm' in df.columns:
         df['legal_nm'] = df['legal_nm'].astype(
             str)  # convert to str to catch floats
-        df['legal_nm'] = df['legal_nm'].str.replace('  ', ' ')
-        df['legal_nm'] = df['legal_nm'].str.replace('&', 'and')
+        df['legal_nm'] = df['legal_nm'].str.replace('  ', ' ', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace('&', 'and', regex=False)
         df['legal_nm'] = df['legal_nm'].str.strip()
         df['legal_nm'] = df['legal_nm'].str.strip(';,. ')
 
-        df['legal_nm'] = df['legal_nm'].str.replace(';', '')
-        df['legal_nm'] = df['legal_nm'].str.replace(',', '')
-        df['legal_nm'] = df['legal_nm'].str.replace('.', '')
-        df['legal_nm'] = df['legal_nm'].str.replace('-', '')
-        df['legal_nm'] = df['legal_nm'].str.replace("'", '')
-        df['legal_nm'] = df['legal_nm'].str.replace('(', '')
-        df['legal_nm'] = df['legal_nm'].str.replace(')', '')
-        df['legal_nm'] = df['legal_nm'].str.replace('|', '')
-        df['legal_nm'] = df['legal_nm'].str.replace('/', '')
-        df['legal_nm'] = df['legal_nm'].str.replace('*', '')
-        df['legal_nm'] = df['legal_nm'].str.replace('  ', ' ')
+        df['legal_nm'] = df['legal_nm'].str.replace(';', '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace(',', '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace('.', '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace('-', '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace("'", '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace('(', '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace(')', '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace('|', '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace('/', '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace('*', '', regex=False)
+        df['legal_nm'] = df['legal_nm'].str.replace('  ', ' ', regex=False)
 
     if 'trade_nm' in df.columns:
         df['trade_nm'] = df['trade_nm'].astype(
             str)  # convert to str to catch floats
-        df['trade_nm'] = df['trade_nm'].str.replace('  ', ' ')
-        df['trade_nm'] = df['trade_nm'].str.replace('&', 'and')
+        df['trade_nm'] = df['trade_nm'].str.replace('  ', ' ', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace('&', 'and', regex=False)
         df['trade_nm'] = df['trade_nm'].str.strip()
         df['trade_nm'] = df['trade_nm'].str.strip(';,. ')
 
-        df['trade_nm'] = df['trade_nm'].str.replace(';', '')
-        df['trade_nm'] = df['trade_nm'].str.replace('.', '')
-        df['trade_nm'] = df['trade_nm'].str.replace(',', '')
-        df['trade_nm'] = df['trade_nm'].str.replace('-', '')
-        df['trade_nm'] = df['trade_nm'].str.replace("'", '')
-        df['trade_nm'] = df['trade_nm'].str.replace('(', '')
-        df['trade_nm'] = df['trade_nm'].str.replace(')', '')
-        df['trade_nm'] = df['trade_nm'].str.replace('|', '')
-        df['trade_nm'] = df['trade_nm'].str.replace('/', '')
-        df['trade_nm'] = df['trade_nm'].str.replace('*', '')
-        df['trade_nm'] = df['trade_nm'].str.replace('  ', ' ')
+        df['trade_nm'] = df['trade_nm'].str.replace(';', '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace('.', '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace(',', '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace('-', '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace("'", '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace('(', '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace(')', '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace('|', '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace('/', '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace('*', '', regex=False)
+        df['trade_nm'] = df['trade_nm'].str.replace('  ', ' ', regex=False)
 
     return df
 
@@ -2968,10 +2973,10 @@ def read_from_url(url):
     buf = io.BytesIO(req.content)
     if url[-3:] == 'zip':
         df_csv = pd.read_csv(buf, compression='zip', low_memory=False,
-                             thousands=',', encoding="ISO-8859-1", sep=',', error_bad_lines=False)
+                             thousands=',', encoding="ISO-8859-1", sep=',', on_bad_lines="skip")
     else:
         df_csv = pd.read_csv(buf, low_memory=False, thousands=',',
-                             encoding="ISO-8859-1", sep=',', error_bad_lines=False)
+                             encoding="ISO-8859-1", sep=',', on_bad_lines="skip")
     return df_csv
 
 
@@ -3672,8 +3677,9 @@ def Footer_Block(TEST, textFile):
 
 # https://stackoverflow.com/questions/47704441/applying-styling-to-pandas-dataframe-saved-to-html-file
 def write_to_html_file(df, header_HTML, title, filename):
-    import pandas.io.formats.style #added this line to avoid error 8/10/2022 f. peterson
-    import os #added this line to avoid error 8/10/2022 f. peterso
+    # added this line to avoid error 8/10/2022 f. peterson
+    import pandas.io.formats.style
+    import os  # added this line to avoid error 8/10/2022 f. peterso
 
     result = '''
 		<html>
@@ -3720,7 +3726,8 @@ def write_to_html_file(df, header_HTML, title, filename):
 		'''
     # with open(filename, mode='a') as f:
     # added this line to avoid error 8/10/2022 f. peterson
-    os.makedirs(os.path.dirname(filename), exist_ok=True) #create directory if it doesn't exist
+    # create directory if it doesn't exist
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     # https://stackoverflow.com/questions/27092833/unicodeencodeerror-charmap-codec-cant-encode-characters
     with open(filename, mode='a', encoding="utf-8") as f:
         f.write(result)
