@@ -62,11 +62,10 @@ import warnings
 import time
 import requests
 import io
-from constants.zipcodes import zipcodesDict
-from constants.industries import industriesDict
-from constants.prevailingWageTerms import prevailingWageTermsList
-from constants.signatories import signatories
-
+from api.constants.zipcodes import zipcodesDict
+from api.constants.industries import industriesDict
+from api.constants.prevailingWageTerms import prevailingWageTermsList
+from api.constants.signatories import signatories
 
 warnings.filterwarnings("ignore", 'This pattern has match groups')
 
@@ -117,7 +116,7 @@ def main():
 def generateWageReport(target_city, target_industry, includeFedData, includeStateData, infer_zip, prevailing_wage_report, signatories_report,
                        all_industry_summary_block, open_cases_only, include_tables, include_summaries, only_sig_summaries,
                        include_top_viol_tables, use_assumptions, infer_by_naics):
-    
+
     warnings.filterwarnings("ignore", category=UserWarning)
     start_time = time.time()
 
@@ -129,7 +128,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     # Settings Internal - start
     # 0 for normal run; 1 for custom test dataset (unified_test); 2 for small dataset (first 1,000 of each file); 3 for small dataset (first 1,000 one file)
     TEST = 0
-    RunFast = False #True skip slow formating; False run normal
+    RunFast = False  # True skip slow formating; False run normal
     # True for all of california, else False for just santa_clara_county_cities
     STATE_FILTER = False
     # True to filter, False no filter for specific organizantion name, see TARGET_ORGANIZATIONS
@@ -142,36 +141,45 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     Nonsignatory_Ratio_Block = False
     # Settings Internal - end
 
-    #SET OUTPUT FILE NAME AND PATH: ALL FILE NAMES AND PATHS DEFINED HERE
-    #report main output file -- change to PDF option
-    #relative path
+    # SET OUTPUT FILE NAME AND PATH: ALL FILE NAMES AND PATHS DEFINED HERE
+    # report main output file -- change to PDF option
+    # relative path
     rel_path = 'report_output_/'
-    script_dir = os.path.dirname(os.path.dirname(__file__)) #<-- dir the script is in (import os) plus up one
+    # <-- dir the script is in (import os) plus up one
+    script_dir = os.path.dirname(os.path.dirname(__file__))
     abs_path = os.path.join(script_dir, rel_path)
-    if not os.path.exists(script_dir): #create folder if necessary
+    if not os.path.exists(script_dir):  # create folder if necessary
         os.makedirs(script_dir)
-    
+
     file_name = target_city + "_" + target_industry
 
     file_type = '.html'
     out_file_report = '_theft_summary_'
-    temp_file_name  = os.path.join(abs_path, (file_name+out_file_report).replace(' ', '_') + file_type) #<-- absolute dir and file name
-    
+    temp_file_name = os.path.join(abs_path, (file_name+out_file_report).replace(
+        ' ', '_') + file_type)  # <-- absolute dir and file name
+
     file_type = '.csv'
-    temp_file_name_csv = os.path.join(abs_path, (file_name+out_file_report).replace(' ', '_') + file_type) #<-- absolute dir and file name
-    
+    temp_file_name_csv = os.path.join(abs_path, (file_name+out_file_report).replace(
+        ' ', '_') + file_type)  # <-- absolute dir and file name
+
     out_file_report = '_signatory_wage_theft_'
-    sig_file_name_csv = os.path.join(abs_path, (file_name+out_file_report).replace(' ', '_') + file_type) #<-- absolute dir and file name
-    
+    sig_file_name_csv = os.path.join(abs_path, (file_name+out_file_report).replace(
+        ' ', '_') + file_type)  # <-- absolute dir and file name
+
     out_file_report = '_prevailing_wage_theft_'
-    prev_file_name_csv = os.path.join(abs_path, (file_name+out_file_report).replace(' ', '_') + file_type) #<-- absolute dir and file name
+    prev_file_name_csv = os.path.join(abs_path, (file_name+out_file_report).replace(
+        ' ', '_') + file_type)  # <-- absolute dir and file name
 
     file_name = 'log_'
     out_file_report = '_bug_'
     file_type = '.txt'
-    bug_log = os.path.join(abs_path, (file_name+out_file_report).replace(' ', '_') + file_type) #<-- absolute dir and file name
+    # <-- absolute dir and file name
+    bug_log = os.path.join(
+        abs_path, (file_name+out_file_report).replace(' ', '_') + file_type)
     file_type = '.csv'
-    bug_log_csv = os.path.join(abs_path, (file_name+out_file_report).replace(' ', '_') + file_type) #<-- absolute dir and file name
+    # <-- absolute dir and file name
+    bug_log_csv = os.path.join(
+        abs_path, (file_name+out_file_report).replace(' ', '_') + file_type)
 
     # 3/7/2022 bugFile = open(bug_log, 'w')
     # 3/7/2022 debug_fileSetup_def(bugFile)
@@ -186,7 +194,8 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     # default
     print("Starting section 1...")
     time_1 = time.time()
-    JURISDICTON_NAME = "City of " #<--revise to include other juriscition types such as County
+    # <--revise to include other juriscition types such as County
+    JURISDICTON_NAME = "City of "
     default_region_name = TARGET_ZIPCODE[len(TARGET_ZIPCODE) - 1]
     default_region_name = default_region_name.replace(
         default_region_name[len(default_region_name) - 3], "XXX")
@@ -216,7 +225,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
 
     print("Starting section 2...")
     time_1 = time.time()
-    
+
     time_2 = time.time()
     print("Time to finish section 2 %.5f" % (time_2 - time_1))
     # Concat data***************************************************************************
@@ -611,7 +620,8 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     print("Starting section 26...")
     time_1 = time.time()
 
-    textFile = open(temp_file_name, 'w') #report main file--`w' create/zero text file for writing: the stream is positioned at the beginning of the file.
+    # report main file--`w' create/zero text file for writing: the stream is positioned at the beginning of the file.
+    textFile = open(temp_file_name, 'w')
     textFile.write("<!DOCTYPE html> \n")
     textFile.write("<html><body> \n")
 
@@ -655,7 +665,8 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     time_1 = time.time()
     if include_tables == 1:
 
-        textFile = open(temp_file_name, 'a') #report main file--`a' Append, the file is created if it does not exist: stream is positioned at the end of the file.
+        # report main file--`a' Append, the file is created if it does not exist: stream is positioned at the end of the file.
+        textFile = open(temp_file_name, 'a')
         textFile.write("<h2>Wage theft by industry and city region</h2> \n")
         textFile.close()
 
@@ -695,7 +706,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
 
     if include_tables == 1:
 
-        textFile = open(temp_file_name, 'a') #append to main report file
+        textFile = open(temp_file_name, 'a')  # append to main report file
         textFile.write(
             "<h2>Wage theft by zip code region and industry</h2> \n")
         textFile.close()
@@ -737,7 +748,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
 
     if include_tables == 1:
 
-        textFile = open(temp_file_name, 'a') #append to report main file
+        textFile = open(temp_file_name, 'a')  # append to report main file
         textFile.write("<h2>Wage theft by city and industry</h2> \n")
         textFile.close()
 
@@ -850,7 +861,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
 
         # tables top 10 violators
 
-        with open(temp_file_name, 'a', encoding='utf-8') as f: #append to report main file
+        with open(temp_file_name, 'a', encoding='utf-8') as f:  # append to report main file
 
             if not out_sort_bw_amt.empty:
                 # by backwages
@@ -1670,18 +1681,21 @@ def lookuplist(trade, list_x, col):
         value_out = Other[col]
 
         rel_path = 'report_output_/'
-        script_dir = os.path.dirname(os.path.dirname(__file__)) #<-- dir the script is in (import os) plus up one
+        # <-- dir the script is in (import os) plus up one
+        script_dir = os.path.dirname(os.path.dirname(__file__))
         abs_path = os.path.join(script_dir, rel_path)
-        if not os.path.exists(abs_path): #create folder if necessary
+        if not os.path.exists(abs_path):  # create folder if necessary
             os.makedirs(abs_path)
 
         log_name = 'log_'
         out_log_report = 'new_trade_names_'
         log_type = '.txt'
-        log_name_trades = os.path.join(abs_path, log_name.replace(' ', '_')+out_log_report + log_type) #<-- absolute dir and file name
+        log_name_trades = os.path.join(abs_path, log_name.replace(
+            ' ', '_')+out_log_report + log_type)  # <-- absolute dir and file name
 
-        tradenames = open(log_name_trades, 'a') #append/create log file with new trade names
-        
+        # append/create log file with new trade names
+        tradenames = open(log_name_trades, 'a')
+
         tradenames.write(trade)
         tradenames.write("\n")
         tradenames.close()
@@ -2964,26 +2978,30 @@ def Signatory_Library():
 
 def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
     from os.path import exists
-    #for relative path
+    # for relative path
     import os
-    
+
     violation_report_folder = "dlse_judgements/"
     if exists(violation_report_folder + "unified_no_WHD_20190629.csv"):
-        read_file0 = violation_report_folder + "unified_no_WHD_20190629.csv"  # mixed SJOE, SCCBTC, DLSE
+        read_file0 = violation_report_folder + \
+            "unified_no_WHD_20190629.csv"  # mixed SJOE, SCCBTC, DLSE
     if exists(violation_report_folder + "whd_whisard_02052022.csv"):
-        read_file1 = violation_report_folder + "whd_whisard_02052022.csv"  # US DOL WHD website
+        read_file1 = violation_report_folder + \
+            "whd_whisard_02052022.csv"  # US DOL WHD website
     if exists(violation_report_folder + "HQ20009-HQ2ndProduction8.13.2019_no_returns.csv"):
-        read_file2 = violation_report_folder + "HQ20009-HQ2ndProduction8.13.2019_no_returns.csv" # CA DIR DSLE PRA
-        
+        read_file2 = violation_report_folder + \
+            "HQ20009-HQ2ndProduction8.13.2019_no_returns.csv"  # CA DIR DSLE PRA
+
     url1 = "https://enfxfr.dol.gov/data_catalog/WHD/whd_whisard_20220713.csv.zip"
     #url2 = "https://www.researchgate.net/profile/Forest-Peterson/publication/357767172_California_Dept_of_Labor_Standards_Enforcement_DLSE_PRA_Wage_Claim_Adjudications_WCA_for_all_DLSE_offices_from_January_2001_to_July_2019/data/61de6b974e4aff4a643603ae/HQ20009-HQ-2nd-Production-8132019.csv"
-    #url2 = https://drive.google.com/file/d/1TRaixcwTg08bEyPSchyHntkkktG2cuc-/view?usp=sharing
+    # url2 = https://drive.google.com/file/d/1TRaixcwTg08bEyPSchyHntkkktG2cuc-/view?usp=sharing
     url2 = "https://stanford.edu/~granite/HQ20009-HQ2ndProduction8.13.2019_no_returns.csv"
 
     rel_path = 'report_output_/'
-    script_dir = os.path.dirname(os.path.dirname(__file__)) #<-- dir the script is in (import os) plus up one
+    # <-- dir the script is in (import os) plus up one
+    script_dir = os.path.dirname(os.path.dirname(__file__))
     abs_path = os.path.join(script_dir, rel_path)
-    if not os.path.exists(abs_path): #create folder if necessary
+    if not os.path.exists(abs_path):  # create folder if necessary
         os.makedirs(abs_path)
 
     file_name = 'backup_TEST_'
@@ -3000,8 +3018,8 @@ def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
                                  low_memory=False, thousands=',', dtype={'zip_cd': 'str'})
             df_csv = Setup_Regular_headers(df_csv)
     else:  # TEST == 2/3 (use 1000) or TEST == 0 (use 1000000000) then limited to n==TEST_CASES rows
-        
-        #DF0 is/are private dataset(s)
+
+        # DF0 is/are private dataset(s)
         #DF0 = pd.read_csv(read_file0, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
         #df_csv_0 = Setup_Regular_headers(DF0)
 
@@ -3010,20 +3028,24 @@ def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
             #DF1 = pd.read_csv(read_file1, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
             DF1 = read_from_url(url1, TEST_CASES)
             out_file_report = 'DOL_WHD'
-            file_name_backup = os.path.join(abs_path, (file_name+out_file_report).replace(' ', '_') + file_type) #<-- absolute dir and file name
+            file_name_backup = os.path.join(abs_path, (file_name+out_file_report).replace(
+                ' ', '_') + file_type)  # <-- absolute dir and file name
             DF1.to_csv(file_name_backup)
             df_csv_1 = Setup_Regular_headers(DF1)
-            df_csv_1['juris_or_proj_nm'] = 'WHD'  # Jurisdiction_or_Project_Name
-        
+            # Jurisdiction_or_Project_Name
+            df_csv_1['juris_or_proj_nm'] = 'WHD'
+
         df_csv_2 = pd.DataFrame()
         if state_data == 1:
-            #DF2 = pd.read_csv(read_file2, encoding = "ISO-8859-1", lineterminator='\n', sep=',', low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} ) #, on_bad_lines='skip' )
+            # DF2 = pd.read_csv(read_file2, encoding = "ISO-8859-1", lineterminator='\n', sep=',', low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} ) #, on_bad_lines='skip' )
             DF2 = read_from_url(url2, TEST_CASES)
             out_file_report = 'DIR_DLSE'
-            file_name_backup = os.path.join(abs_path, (file_name+out_file_report).replace(' ', '_') + file_type) #<-- absolute dir and file name
+            file_name_backup = os.path.join(abs_path, (file_name+out_file_report).replace(
+                ' ', '_') + file_type)  # <-- absolute dir and file name
             DF2.to_csv(file_name_backup)
             df_csv_2 = Setup_Regular_headers(DF2)
-            df_csv_2['juris_or_proj_nm'] = 'DLSE'  # Jurisdiction_or_Project_Name
+            # Jurisdiction_or_Project_Name
+            df_csv_2['juris_or_proj_nm'] = 'DLSE'
 
         if federal_data == 1 and state_data == 0:
             df_csv = df_csv_1

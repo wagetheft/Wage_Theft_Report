@@ -21,6 +21,8 @@ __pycache__/
 /api/report_output/*
 /api/report_output/
 report_output/
+report_output/*
+*/report_output
 api/report_output
 
 # Virtual Environment
