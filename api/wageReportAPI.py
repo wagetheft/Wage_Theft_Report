@@ -1,6 +1,6 @@
 from requests import request as rq
 from flask import Flask, request, send_file
-from api.wagetheft_report_2020_v3 import generateWageReport, generateFakeFile
+from api.wagetheft_report_2020_v3 import generateWageReport
 import os
 
 app = Flask(__name__)
