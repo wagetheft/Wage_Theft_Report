@@ -38,11 +38,7 @@ def generateFile():
                                           all_industry_summary_block, open_cases_only, include_tables, include_summaries, only_sig_summaries, include_top_viol_tables, use_assumptions, infer_by_naics)
 
     try:
-        rel_path = 'report_output_/'
-        script_dir = os.path.dirname(os.path.dirname(__file__))
-        abs_path = os.path.join(script_dir, rel_path)
-        pathName = abs_path + report_file_name
-        return send_file(pathName, as_attachment=True)
+        return send_file(report_file_name, as_attachment=True)
     except Exception as e:
         return "Server error", 500
 
