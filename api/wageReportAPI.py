@@ -41,6 +41,7 @@ def generateFile():
         return send_file(report_file_name, as_attachment=True)
     except Exception as e:
         return "Server error", 500
+    else: send_file(report_file_name, as_attachment=True)
 
 
 def checkValidInput(inputDict) -> bool:
