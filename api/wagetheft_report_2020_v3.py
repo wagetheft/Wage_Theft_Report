@@ -3840,6 +3840,8 @@ def debug_fileSetup_def(bug_filename):
 
 
 def file_path(relative_path):
+    if os.path.isabs(relative_path):
+        return relative_path
     dir = os.path.dirname(os.path.abspath(__file__))
     split_path = relative_path.split("/")
     new_path = os.path.join(dir, *split_path)
