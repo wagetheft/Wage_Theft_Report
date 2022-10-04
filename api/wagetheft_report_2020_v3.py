@@ -1,4 +1,5 @@
 # wagetheft_report_2020_v2
+# Python 3.9.7
 # Last updated
 # 3/3/2019 by F. Peterson first file--170 lines
 # 7/8/2019 by F. Peterson
@@ -62,10 +63,18 @@ import warnings
 import time
 import requests
 import io
+
+#moved down one directory
 from api.constants.zipcodes import zipcodesDict
 from api.constants.industries import industriesDict
 from api.constants.prevailingWageTerms import prevailingWageTermsList
 from api.constants.signatories import signatories
+
+#for sesktop testing--comment out above API
+#from constants.zipcodes import zipcodesDict
+#from constants.industries import industriesDict
+#from constants.prevailingWageTerms import prevailingWageTermsList
+#from constants.signatories import signatories
 
 warnings.filterwarnings("ignore", 'This pattern has match groups')
 
@@ -73,19 +82,19 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 def main():
     # settings****************************************************
     # TARGET_ZIPCODE = SAN_DIEGO_COUNTY_ZIPCODE #SANTA_CLARA_COUNTY_ZIPCODE #enter *_zipcode list; use ALL_ZIPCODES for all zip codes
-    PARAM_1_TARGET_ZIPCODE = "Sunnyvale_Zipcode"
+    PARAM_1_TARGET_ZIPCODE = "San_Jose_Zipcode"
     # NAICS Industies -- change in ALL_NAICS_LIBRARY()
     PARAM_2_TARGET_INDUSTRY = "Construction"
     # 1 for open cases only (or nearly paid off), 0 for all cases
     OPEN_CASES = 0
-    USE_ASSUMPTIONS = 0  # 1 to fill violation and ee gaps with assumed values
+    USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
     INFER_NAICS = 1  # 1 to infer code by industry NAICS sector
     INFER_ZIP = 1  # 1 to infer zip code
     federal_data = 1  # 1 to include federal data
     state_data = 1  # 1 to include state data
     All_Industry_Summary_Block = False
     TABLES = 1  # 1 for tables and 0 for just text description
-    SUMMARY = 1  # 1 for summaries and 0 for none
+    SUMMARY = 0  # 1 for summaries and 0 for none
     # 1 for summaries only of regions with significant wage theft (more than $10,000)
     SUMMARY_SIG = 1
     TOP_VIOLATORS = 1  # 1 for tables of top violators and 0 for none
@@ -127,7 +136,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
 
     # Settings Internal - start
     # 0 for normal run; 1 for custom test dataset (unified_test); 2 for small dataset (first 1,000 of each file); 3 for small dataset (first 1,000 one file)
-    TEST = 0
+    TEST = 0 # see Read_Violation_Data()
     RunFast = False  # True skip slow formating; False run normal
     # True for all of california, else False for just santa_clara_county_cities
     STATE_FILTER = False
@@ -140,6 +149,12 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     SIGNATORY_INDUSTRY = signatories
     Nonsignatory_Ratio_Block = False
     # Settings Internal - end
+
+    # TEST
+    if TEST == 0 or TEST == 1:
+        TEST_CASES = 1000000000  # read all records
+    else:  # TEST == 2 #short set--use first 1000 for debugging
+        TEST_CASES = 100
 
     # SET OUTPUT FILE NAME AND PATH: ALL FILE NAMES AND PATHS DEFINED HERE
     # report main output file -- change to PDF option
@@ -184,12 +199,6 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     # 3/7/2022 bugFile = open(bug_log, 'w')
     # 3/7/2022 debug_fileSetup_def(bugFile)
 
-    # TEST
-    if TEST == 0 or TEST == 1:
-        TEST_CASES = 1000000000  # read all records
-    else:  # TEST == 2 #short set--use first 1000 for debugging
-        TEST_CASES = 100
-
     # region definition
     # default
     print("Starting section 1...")
@@ -198,7 +207,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     JURISDICTON_NAME = "City of "
     default_region_name = TARGET_ZIPCODE[len(TARGET_ZIPCODE) - 1]
     default_region_name = default_region_name.replace(
-        default_region_name[len(default_region_name) - 3], "XXX")
+        default_region_name[len(default_region_name) - 3:], "XXX")
     # options: santa_clara_county_cities for region or for a city use the city name "san jose"; this constant is used to search for missing zip codes
     default_region = [TARGET_ZIPCODE[0], TARGET_ZIPCODE[0]]
 
@@ -261,6 +270,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     # zip codes
     print("Starting section 6...")
     time_1 = time.time()
+    
     if not df_csv.empty and 'zip_cd' in df_csv.columns:
         #df_csv['zip_cd'] = df_raw['zip_cd'].astype(str).str.zfill(5)
 
@@ -278,15 +288,17 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
         # FILTER
         if STATE_FILTER is True:
             df_csv = Filter_for_State(df_csv, TARGET_STATES)
-
+        
         if infer_zip == 1:  # infer zip codes
+            TARGET_ZIPCODE.append(default_region_name)
             df_csv = InferZipcodeFromCityName(
                 df_csv, default_region, default_region_name)  # zipcodes by city name
             # df_csv = InferZipcodeFromCompanyName(df_csv, default_region, default_region_name) #zipcodes by company name
             # df_csv = InferZipcodeFromJurisdictionName(df_csv, default_region, default_region_name) #zipcodes by jurisdiction name
-
+        #df_csv.to_csv(bug_log_csv) #<-- HERE DEBUG LINE OF CODE
         if TARGET_ZIPCODE[0] != '00000':
             df_csv = Filter_for_Zipcode(df_csv, TARGET_ZIPCODE)
+    
     time_2 = time.time()
     print("Time to finish section 6 %.5f" % (time_2 - time_1))
     # PREVAILING WAGE
@@ -1514,18 +1526,21 @@ def InferSignatoryIndustryAndLabel(df, SIGNATORY_INDUSTRY):
 
 
 def InferZipcodeFromCityName(df, region, region_name):
-    if region != 'all':
-        upper_region = [x.upper() for x in region]
-        PATTERN_CITY = '|'.join(upper_region)
-        foundZipbyCity1 = (
-            ((df['zip_cd'] == "") | pd.isna(df['zip_cd']) | (df['zip_cd'] == False)) &
-            (df['st_cd'].str.match('CA'))
-        )
-        foundZipbyCity2 = (
-            ((df['cty_nm'].astype(str).str.contains(PATTERN_CITY,
-                                                    case=False, flags=re.IGNORECASE)))  # flags=re.IGNORECASE
-        )
-        df.loc[foundZipbyCity1 * foundZipbyCity2, "zip_cd"] = region_name
+
+    upper_region = [x.upper() for x in region]
+    PATTERN_CITY = '|'.join(upper_region)
+
+    zipcode_is_empty = (
+        ((df['zip_cd'] == "") | pd.isna(df['zip_cd']) | (df['zip_cd'] == False) | (df['zip_cd'] == '0' ) )  
+    )
+    foundZipbyCity = (
+        ((df['cty_nm'].astype(str).str.contains(PATTERN_CITY,
+                                                case=False, flags=re.IGNORECASE)))  # flags=re.IGNORECASE
+    )
+    df.loc[zipcode_is_empty * foundZipbyCity, "zip_cd"] = region_name
+    #df.loc[zipcode_is_empty, "zip_cd"] = region_name
+    #df.loc[zipcode_is_empty & foundZipbyCity, "zip_cd"] = region_name
+    
     return df
 
 
@@ -2789,14 +2804,37 @@ def Setup_Regular_headers(df_csv):  # DSLE, WHD, etc headers
     df_csv = df_csv.rename(columns={
         'naics_code_description': 'naics_desc.',
         'EE_Payments_Received': 'ee_pmt_recv',  # causing trouble 11/1/2020
-        # causing trouble 11/1/2020
         'Balance_Due_to_Employee(s)': 'ee_pmt_due',
         'street_addr_1_txt': 'street_addr',
         'legal_name': 'legal_nm',
         'Jurisdiction_or_Project_Name': 'juris_or_proj_nm',
         'case_violtn_cnt': 'violtn_cnt',
         'bw_atp_amt': 'bw_amt',
-        'trade': 'industry'
+        'trade': 'industry',
+
+        #DLSE specific to conform to WHD -- added 10/2/2022
+        'Case Number': 'case_id',
+        'Account - DBA':'trade_nm',
+        'Employer':'legal_nm',
+
+        'Primary Address Street':'street_addr',
+        'Primary Address City': 'cty_nm',
+        'Primary Address State': 'st_cd',
+        
+        'NAICS Code': 'naic_cd',
+        'NAICS Code Title': 'naics_desc.', #'naics_desc.',
+
+        #'':'case_violtn_cnt',
+        #'':'cmp_assd_cnt',
+        #'':'ee_violtd_cnt',
+        'EE(s) Amt Assessed':'bw_amt',
+        "EE Payments Rec'd":'ee_pmt_recv',
+
+        'Date of Docket':'findings_start_date',
+        'Case Closed Date':'findings_end_date',
+
+        'Case Issue Type':'violation',
+        'DIR Office':'Jurisdiction_region_or_General_Contractor'
     })
 
     if 'trade_nm' not in df_csv.columns:
@@ -2988,14 +3026,15 @@ def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
     if exists(violation_report_folder + "whd_whisard_02052022.csv"):
         read_file1 = violation_report_folder + \
             "whd_whisard_02052022.csv"  # US DOL WHD website
-    if exists(violation_report_folder + "HQ20009-HQ2ndProduction8.13.2019_no_returns.csv"):
+    if exists(violation_report_folder + "HQ20009-HQ2ndProduction8.13.2019_no_returns_Linux.csv"): #10/2/2022 added _Linux
         read_file2 = violation_report_folder + \
             "HQ20009-HQ2ndProduction8.13.2019_no_returns.csv"  # CA DIR DSLE PRA
 
     url1 = "https://enfxfr.dol.gov/data_catalog/WHD/whd_whisard_20220713.csv.zip"
     #url2 = "https://www.researchgate.net/profile/Forest-Peterson/publication/357767172_California_Dept_of_Labor_Standards_Enforcement_DLSE_PRA_Wage_Claim_Adjudications_WCA_for_all_DLSE_offices_from_January_2001_to_July_2019/data/61de6b974e4aff4a643603ae/HQ20009-HQ-2nd-Production-8132019.csv"
     # url2 = https://drive.google.com/file/d/1TRaixcwTg08bEyPSchyHntkkktG2cuc-/view?usp=sharing
-    url2 = "https://stanford.edu/~granite/HQ20009-HQ2ndProduction8.13.2019_no_returns.csv"
+    url2 = "https://stanford.edu/~granite/HQ20009-HQ2ndProduction8.13.2019_no_returns_Linux.csv" #10/2/2022 added _Linux
+    url3 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv"
 
     rel_path = 'report_output_/'
     # <-- dir the script is in (import os) plus up one
@@ -3012,11 +3051,24 @@ def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
         state_data = 1
 
     if TEST == 1:  # read test file
-        read_file_test = violation_report_folder + "unified_test.csv"
-        if exists(read_file_test):
-            df_csv = pd.read_csv(read_file_test, encoding="ISO-8859-1",
-                                 low_memory=False, thousands=',', dtype={'zip_cd': 'str'})
-            df_csv = Setup_Regular_headers(df_csv)
+        #read_file_test = violation_report_folder + "unified_test.csv"
+        #if exists(read_file_test):
+        #    df_csv = pd.read_csv(read_file_test, encoding="ISO-8859-1",
+        #                         low_memory=False, thousands=',', dtype={'zip_cd': 'str'})
+        #    df_csv = Setup_Regular_headers(df_csv)
+
+        DF3 = read_from_url(url3, TEST_CASES)
+        file_name_backup1 = os.path.join(abs_path, (file_name).replace(
+                ' ', '_') + file_type)  # <-- absolute dir and file name
+        DF3.to_csv(file_name_backup1)
+        df_csv = Setup_Regular_headers(DF3)
+        
+        df_csv['juris_or_proj_nm'] = 'TEST'
+        #df_csv['ee_violtd_cnt'] = 1 #temporaty --add a better solution
+        file_name_backup2 = os.path.join(abs_path, (file_name+"Regular_headers").replace(
+                ' ', '_') + file_type)  # <-- absolute dir and file name
+        df_csv.to_csv(file_name_backup2)
+       
     else:  # TEST == 2/3 (use 1000) or TEST == 0 (use 1000000000) then limited to n==TEST_CASES rows
 
         # DF0 is/are private dataset(s)
