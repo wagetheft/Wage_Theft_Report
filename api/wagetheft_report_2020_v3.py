@@ -2992,7 +2992,7 @@ def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
         read_file2 = violation_report_folder + \
             "HQ20009-HQ2ndProduction8.13.2019_no_returns.csv"  # CA DIR DSLE PRA
 
-    url1 = "https://enfxfr.dol.gov/data_catalog/WHD/whd_whisard_20220713.csv.zip"
+    url1 = "https://enfxfr.dol.gov/data_catalog/WHD/whd_whisard_20221006.csv.zip"
     #url2 = "https://www.researchgate.net/profile/Forest-Peterson/publication/357767172_California_Dept_of_Labor_Standards_Enforcement_DLSE_PRA_Wage_Claim_Adjudications_WCA_for_all_DLSE_offices_from_January_2001_to_July_2019/data/61de6b974e4aff4a643603ae/HQ20009-HQ-2nd-Production-8132019.csv"
     # url2 = https://drive.google.com/file/d/1TRaixcwTg08bEyPSchyHntkkktG2cuc-/view?usp=sharing
     url2 = "https://stanford.edu/~granite/HQ20009-HQ2ndProduction8.13.2019_no_returns.csv"
