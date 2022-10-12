@@ -36,7 +36,7 @@ manufacturing_terms = ['Manufacturing', r'Manufactur.*', 'machine', 'milling', '
                        '^(311)', '^(312)', '^(313)', '^(314)', '^(315)', '^(316)', '^(317)', '^(318)', '^(319)', '^(320)', '^(321)', '^(322)', '^(323)',
                        '^(324)', '^(325)', '^(326)', '^(327)', '^(328)', '^(329)', '^(330)', '^(331)', '^(332)', '^(333)', '^(334)', '^(335)', '^(336)',
                        '^(337)', '^(338)', '^(339)', "feed", 'hay', r'HEWLETT.PACKARD', 'PLATING', 'panaderia', 'MACHINING', 'PRECISION', 'FABRICATION',
-                       'WINERY', 'INDUSTRIES', 'TELEDEX', 'ASSEMBLY', 'ALLOYS', 'ESP SAFETY', 'WELDERS', r'METAL.*FINISH']
+                       'WINERY', 'INDUSTRIES', 'TELEDEX', 'ASSEMBLY', 'ALLOYS', 'ESP SAFETY', 'WELDERS', r'METAL.*FINISH', '^(print)', r'PRINT.*',]
 
 trade_terms = ['Trade', '^(423)', '^(424)', '^(425)', 'trading', 'trader', 'Wholesale', 'Broker', 'merchant', 'lumber', r'material.*',
                'plywood', r'millwork.*', r'home.depo', 'lowes', 'DISTRIBUTION', 'DISTRIBUTOR']
