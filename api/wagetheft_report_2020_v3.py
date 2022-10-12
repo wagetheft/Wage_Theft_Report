@@ -70,7 +70,7 @@ from api.constants.industries import industriesDict
 from api.constants.prevailingWageTerms import prevailingWageTermsList
 from api.constants.signatories import signatories
 
-#for sesktop testing--comment out above API
+#for desktop testing--comment out above API block "moved down one directory"
 #from constants.zipcodes import zipcodesDict
 #from constants.industries import industriesDict
 #from constants.prevailingWageTerms import prevailingWageTermsList
@@ -82,9 +82,9 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 def main():
     # settings****************************************************
     # TARGET_ZIPCODE = SAN_DIEGO_COUNTY_ZIPCODE #SANTA_CLARA_COUNTY_ZIPCODE #enter *_zipcode list; use ALL_ZIPCODES for all zip codes
-    PARAM_1_TARGET_ZIPCODE = "San_Jose_Zipcode"
+    PARAM_1_TARGET_ZIPCODE = "Santa_Clara_Zipcode"
     # NAICS Industies -- change in ALL_NAICS_LIBRARY()
-    PARAM_2_TARGET_INDUSTRY = "Construction"
+    PARAM_2_TARGET_INDUSTRY = "Manufacturing"
     # 1 for open cases only (or nearly paid off), 0 for all cases
     OPEN_CASES = 0
     USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
@@ -3030,7 +3030,7 @@ def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
         read_file2 = violation_report_folder + \
             "HQ20009-HQ2ndProduction8.13.2019_no_returns.csv"  # CA DIR DSLE PRA
 
-    url1 = "https://enfxfr.dol.gov/data_catalog/WHD/whd_whisard_20220713.csv.zip"
+    url1 = "https://enfxfr.dol.gov/data_catalog/WHD/whd_whisard_20221006.csv.zip"
     #url2 = "https://www.researchgate.net/profile/Forest-Peterson/publication/357767172_California_Dept_of_Labor_Standards_Enforcement_DLSE_PRA_Wage_Claim_Adjudications_WCA_for_all_DLSE_offices_from_January_2001_to_July_2019/data/61de6b974e4aff4a643603ae/HQ20009-HQ-2nd-Production-8132019.csv"
     # url2 = https://drive.google.com/file/d/1TRaixcwTg08bEyPSchyHntkkktG2cuc-/view?usp=sharing
     url2 = "https://stanford.edu/~granite/HQ20009-HQ2ndProduction8.13.2019_no_returns_Linux.csv" #10/2/2022 added _Linux
