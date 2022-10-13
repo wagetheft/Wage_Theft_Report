@@ -24,6 +24,8 @@ report_output/
 report_output/*
 */report_output
 api/report_output
+report_output_/
+*/report_output_
 
 # Virtual Environment
 .venv
