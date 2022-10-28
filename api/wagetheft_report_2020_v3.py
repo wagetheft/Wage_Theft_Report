@@ -41,6 +41,7 @@
 # 7/14/2022 by F. Peterson update DOL WHD url to updated url 7/13/2022
 # 8/10/2022 by F. Peterson resolve several bugs-- incomplete but runs without crash
 # 8/13/2022 see Git log for update record
+# 10/26/2022 by F. Peterson -- debug hang on State and Fed reports -- casued by zipcode bug (old school but I like the log here)
 
 # Note: add an edit distance comparison
 # to fix replace() https://stackoverflow.com/questions/64843109/compiler-issue-assertionerror-on-replace-given-t-or-f-condition-with-string/64856554#64856554
@@ -81,28 +82,22 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 
 def main():
     # settings****************************************************
-    # TARGET_ZIPCODE = SAN_DIEGO_COUNTY_ZIPCODE #SANTA_CLARA_COUNTY_ZIPCODE #enter *_zipcode list; use ALL_ZIPCODES for all zip codes
-    PARAM_1_TARGET_ZIPCODE = "Santa_Clara_Zipcode"
-    # NAICS Industies -- change in ALL_NAICS_LIBRARY()
-    PARAM_2_TARGET_INDUSTRY = "Manufacturing"
-    # 1 for open cases only (or nearly paid off), 0 for all cases
-    OPEN_CASES = 0
+    PARAM_1_TARGET_ZIPCODE = "Mountain_View_Zipcode" #for test use "All_Zipcode"
+    PARAM_2_TARGET_INDUSTRY = "Construction" #for test use "All NAICS"
+    OPEN_CASES = 0 # 1 for open cases only (or nearly paid off), 0 for all cases
     USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
     INFER_NAICS = 1  # 1 to infer code by industry NAICS sector
     INFER_ZIP = 1  # 1 to infer zip code
     federal_data = 1  # 1 to include federal data
     state_data = 1  # 1 to include state data
+    # report output block settings****************************************************
     All_Industry_Summary_Block = False
     TABLES = 1  # 1 for tables and 0 for just text description
-    SUMMARY = 0  # 1 for summaries and 0 for none
-    # 1 for summaries only of regions with significant wage theft (more than $10,000)
-    SUMMARY_SIG = 1
+    SUMMARY = 1  # 1 for summaries and 0 for none
+    SUMMARY_SIG = 1 # 1 for summaries only of regions with significant wage theft (more than $10,000), 0 for all
     TOP_VIOLATORS = 1  # 1 for tables of top violators and 0 for none
-    # report output block settings****************************************************
-    # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
-    prevailing_wage_report = 0
-    # 1 to include signatories (typically, this report is only for union compliance officers) 0 to exclude signatories
-    signatories_report = 0
+    prevailing_wage_report = 0 # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
+    signatories_report = 0 # 1 to include signatories (typically, this report is only for union compliance officers) 0 to exclude signatories
 
     #!!!manually add to report***********************************************************
     # (1)generate report from http://wagetheftincitieslikemine.site/
@@ -135,22 +130,25 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     # Settings External - end
 
     # Settings Internal - start
-    # 0 for normal run; 1 for custom test dataset (unified_test); 2 for small dataset (first 1,000 of each file); 3 for small dataset (first 1,000 one file)
-    TEST = 0 # see Read_Violation_Data()
+    TEST = 0 # see Read_Violation_Data() -- # 0 for normal run w/ all records; 1 for custom test dataset (unified_test); 2 for small dataset (first 100 of each file)
     RunFast = False  # True skip slow formating; False run normal
-    # True for all of california, else False for just santa_clara_county_cities
-    STATE_FILTER = False
-    # True to filter, False no filter for specific organizantion name, see TARGET_ORGANIZATIONS
-    ORGANIZATION_FILTER = False
+    # Settings Internal - end
+
+    # Settings Internal that will Move to UI Options - start
+    STATE_FILTER = False # True for all of california, else False for just santa_clara_county_cities
+    ORGANIZATION_FILTER = False # True to filter, False no filter for specific organizantion name, see TARGET_ORGANIZATIONS
     TARGET_ORGANIZATIONS = [['organizations'], ['GOODWILL']]  # use uppercase
     TARGET_STATES = [['states'], ['CA']]
     FLAG_DUPLICATE = 0  # 1 FLAG_DUPLICATE duplicate, #0 drop duplicates
-    prevailing_wage_terms = prevailingWageTermsList
-    SIGNATORY_INDUSTRY = signatories
     Nonsignatory_Ratio_Block = False
-    # Settings Internal - end
+    # Settings Internal that will Move to UI Options - end
 
-    # TEST
+    #LIBRARIES - start
+    prevailing_wage_terms = prevailingWageTermsList #from prevailingWageTerms.py
+    SIGNATORY_INDUSTRY = signatories #from signatories.py
+    #LIBRARIES - end
+    
+    # TEST PARAMETERS
     if TEST == 0 or TEST == 1:
         TEST_CASES = 1000000000  # read all records
     else:  # TEST == 2 #short set--use first 1000 for debugging
@@ -205,26 +203,12 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     time_1 = time.time()
     # <--revise to include other juriscition types such as County
     JURISDICTON_NAME = "City of "
-    default_region_name = TARGET_ZIPCODE[len(TARGET_ZIPCODE) - 1]
-    default_region_name = default_region_name.replace(
-        default_region_name[len(default_region_name) - 3:], "XXX")
+    default_region_zip_code = TARGET_ZIPCODE[len(TARGET_ZIPCODE) - 1] #take the last zipcode for region and modify w/ ending 'xx'
+    default_region_zip_code = default_region_zip_code.replace(
+        default_region_zip_code[len(default_region_zip_code) - 1:], "X")
+    TARGET_ZIPCODE.append(default_region_zip_code)
     # options: santa_clara_county_cities for region or for a city use the city name "san jose"; this constant is used to search for missing zip codes
-    default_region = [TARGET_ZIPCODE[0], TARGET_ZIPCODE[0]]
-
-    # if (TARGET_ZIPCODE[0] == "Santa Clara County"):
-    # 	JURISDICTON_NAME = " "
-    # 	default_region_name = '99999'
-    # 	default_region = zip_codes_backup["santa_clara_county_cities"] # backup in case forget to put city list
-
-    # if (TARGET_ZIPCODE[0] == "San Diego County"):
-    # 	JURISDICTON_NAME = " "
-    # 	default_region_name = '99999'
-    # 	default_region = zip_codes_backup["san_diego_county_cities"] # backup in case forget to put city list
-
-    # if (TARGET_ZIPCODE[0] == '00000'):
-    # 	JURISDICTON_NAME = "All regions "
-    # 	default_region_name = '99999'
-    # 	default_region = ""
+    default_region = [TARGET_ZIPCODE[0].upper(), TARGET_ZIPCODE[0].upper()]
 
     # target jurisdiction: Report Title block and file name "<h1>DRAFT REPORT: Wage Theft in the jurisdiction of... "
     target_city = JURISDICTON_NAME + TARGET_ZIPCODE[0]
@@ -238,7 +222,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     time_2 = time.time()
     print("Time to finish section 2 %.5f" % (time_2 - time_1))
     # Concat data***************************************************************************
-    print("Starting section 3...")
+    print("Starting section 3 [read files from url -- takes 126s]...")
     time_1 = time.time()
     # file names hard punched in function
     df_csv = Read_Violation_Data(
@@ -252,6 +236,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     if not RunFast:
         df_csv = Cleanup_Number_Columns(df_csv)
         df_csv = Cleanup_Text_Columns(df_csv)
+    df_csv = Setup_Regular_headers(df_csv) #run again just in case
     df_csv = Define_Column_Types(df_csv)
     DF_OG = df_csv.copy()  # hold a copy of the original data
     time_2 = time.time()
@@ -271,33 +256,19 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     print("Starting section 6...")
     time_1 = time.time()
     
-    if not df_csv.empty and 'zip_cd' in df_csv.columns:
-        #df_csv['zip_cd'] = df_raw['zip_cd'].astype(str).str.zfill(5)
-
-        # def generate_placeholder_zip(row): https://stackoverflow.com/questions/57048689/update-or-replace-value-in-df-when-conditions-are-met/57048934#57048934
-        # if pd.isnull(row['zip'] ):
-        #row['zip'] =row['city']+'_ZIPCODE'
-        # return row
-        #df.apply(generate_placeholder_zip, axis =1)
-
-        # unused if isinstance(df_csv['zip_cd'][len(df_csv['zip_cd'])-1], (int, float, complex)): #removed long
-
-        # CLEAN
-        # clean out string 'nan' so they don't mess stuff up
-        df_csv['zip_cd'] = df_csv['zip_cd'].replace('nan', False, regex=True)
+    if not df_csv.empty:
         # FILTER
         if STATE_FILTER is True:
             df_csv = Filter_for_State(df_csv, TARGET_STATES)
         
         if infer_zip == 1:  # infer zip codes
-            TARGET_ZIPCODE.append(default_region_name)
-            df_csv = InferZipcodeFromCityName(
-                df_csv, default_region, default_region_name)  # zipcodes by city name
-            # df_csv = InferZipcodeFromCompanyName(df_csv, default_region, default_region_name) #zipcodes by company name
-            # df_csv = InferZipcodeFromJurisdictionName(df_csv, default_region, default_region_name) #zipcodes by jurisdiction name
+            df_csv = InferZipcodeFromCityName(df_csv, default_region, default_region_zip_code)  # zipcodes by city name
+            df_csv = InferZipcodeFromCompanyName(df_csv, default_region, default_region_zip_code) #zipcodes by company name
+            df_csv = InferZipcodeFromJurisdictionName(df_csv, default_region, default_region_zip_code) #zipcodes by jurisdiction name -- many false positive -- last ditch if no city name
+        
         #df_csv.to_csv(bug_log_csv) #<-- HERE DEBUG LINE OF CODE
-        if TARGET_ZIPCODE[0] != '00000':
-            df_csv = Filter_for_Zipcode(df_csv, TARGET_ZIPCODE)
+        df_csv = Filter_for_Zipcode(df_csv, TARGET_ZIPCODE)
+        
     
     time_2 = time.time()
     print("Time to finish section 6 %.5f" % (time_2 - time_1))
@@ -655,7 +626,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
 
     textFile.write("<HR> </HR>")  # horizontal line
 
-    Notes_Block(textFile, default_region_name)
+    Notes_Block(textFile, default_region_zip_code)
 
     Methods_Block(textFile)
 
@@ -673,171 +644,170 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     print("Time to finish section 27 %.5f" % (time_2 - time_1))
 
     # TABLES
-    print("Starting section 28...")
+    print("Starting section 28 [make tables or summaries]...")
     time_1 = time.time()
-    if include_tables == 1:
-
-        # report main file--`a' Append, the file is created if it does not exist: stream is positioned at the end of the file.
-        textFile = open(temp_file_name, 'a')
-        textFile.write("<h2>Wage theft by industry and city region</h2> \n")
-        textFile.close()
-
-    df_all_industry = unique_legalname.groupby(['industry', pd.Grouper(key='cty_nm')]).agg({  # https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
-        "bw_amt": 'sum',
-        "violtn_cnt": 'sum',
-        "ee_violtd_cnt": 'sum',
-        "ee_pmt_recv": 'sum',
-        "records": 'sum',
-    }).reset_index().sort_values(['industry', 'cty_nm'], ascending=[True, True])
-
-    df_all_industry = df_all_industry.set_index(['industry', 'cty_nm'])
-    df_all_industry = df_all_industry.sort_index()
-
-    df_all_industry = df_all_industry.reindex(columns=header_two_way_table)
-    for trade, new_df in df_all_industry.groupby(level=0):
-        new_df = pd.concat([
-            new_df,
-            new_df.sum().to_frame().T.assign(
-                trade='', cty_nm='COUNTYWIDE').set_index(['trade', 'cty_nm'])
-        ], sort=True).sort_index()
-
-        new_df["bw_amt"] = new_df.apply(
-            lambda x: "{0:,.0f}".format(x["bw_amt"]), axis=1)
-        new_df["violtn_cnt"] = new_df.apply(
-            lambda x: "{0:,.0f}".format(x["violtn_cnt"]), axis=1)
-        new_df["ee_violtd_cnt"] = new_df.apply(
-            lambda x: "{0:,.0f}".format(x["ee_violtd_cnt"]), axis=1)
-        new_df["ee_pmt_recv"] = new_df.apply(
-            lambda x: "{0:,.0f}".format(x["ee_pmt_recv"]), axis=1)
-        new_df["records"] = new_df.apply(
-            lambda x: "{0:,.0f}".format(x["records"]), axis=1)
+    if include_tables == 1 or include_summaries == 1:
 
         if include_tables == 1:
-            write_to_html_file(new_df, header_two_way_table,
-                               "", file_path(temp_file_name))
+            # report main file--`a' Append, the file is created if it does not exist: stream is positioned at the end of the file.
+            textFile = open(temp_file_name, 'a')
+            textFile.write("<h2>Wage theft by industry and city region</h2> \n")
+            textFile.close()
 
-    if include_tables == 1:
+            df_all_industry = unique_legalname.groupby(['industry', pd.Grouper(key='cty_nm')]).agg({  # https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
+                "bw_amt": 'sum',
+                "violtn_cnt": 'sum',
+                "ee_violtd_cnt": 'sum',
+                "ee_pmt_recv": 'sum',
+                "records": 'sum',
+            }).reset_index().sort_values(['industry', 'cty_nm'], ascending=[True, True])
 
-        textFile = open(temp_file_name, 'a')  # append to main report file
-        textFile.write(
-            "<h2>Wage theft by zip code region and industry</h2> \n")
-        textFile.close()
+            df_all_industry = df_all_industry.set_index(['industry', 'cty_nm'])
+            df_all_industry = df_all_industry.sort_index()
 
-    df_all_industry_3 = unique_legalname.groupby(["zip_cd", pd.Grouper(key='industry')]).agg({  # https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
-        "bw_amt": 'sum',
-        "violtn_cnt": 'sum',
-        "ee_violtd_cnt": 'sum',
-        "ee_pmt_recv": 'sum',
-        "records": 'sum',
-    }).reset_index().sort_values(['zip_cd', 'industry'], ascending=[True, True])
+            df_all_industry = df_all_industry.reindex(columns=header_two_way_table)
+            for trade, new_df in df_all_industry.groupby(level=0):
+                new_df = pd.concat([
+                    new_df,
+                    new_df.sum().to_frame().T.assign(
+                        trade='', cty_nm='COUNTYWIDE').set_index(['trade', 'cty_nm'])
+                ], sort=True).sort_index()
 
-    df_all_industry_3 = df_all_industry_3.set_index(['zip_cd', 'industry'])
-    df_all_industry_3 = df_all_industry_3.sort_index()
+                new_df["bw_amt"] = new_df.apply(
+                    lambda x: "{0:,.0f}".format(x["bw_amt"]), axis=1)
+                new_df["violtn_cnt"] = new_df.apply(
+                    lambda x: "{0:,.0f}".format(x["violtn_cnt"]), axis=1)
+                new_df["ee_violtd_cnt"] = new_df.apply(
+                    lambda x: "{0:,.0f}".format(x["ee_violtd_cnt"]), axis=1)
+                new_df["ee_pmt_recv"] = new_df.apply(
+                    lambda x: "{0:,.0f}".format(x["ee_pmt_recv"]), axis=1)
+                new_df["records"] = new_df.apply(
+                    lambda x: "{0:,.0f}".format(x["records"]), axis=1)
 
-    df_all_industry_3 = df_all_industry_3.reindex(columns=header_two_way_table)
-    for zip_cd, new_df_3 in df_all_industry_3.groupby(level=0):
+                write_to_html_file(new_df, header_two_way_table,
+                                    "", file_path(temp_file_name))
 
-        new_df_3 = pd.concat([
-            new_df_3,
-            new_df_3.sum().to_frame().T.assign(
-                zip_cd='', trade='ZIPCODEWIDE').set_index(['zip_cd', 'trade'])
-        ], sort=True).sort_index()
 
-        new_df_3["bw_amt"] = new_df_3.apply(
-            lambda x: "{0:,.0f}".format(x["bw_amt"]), axis=1)
-        new_df_3["ee_pmt_recv"] = new_df_3.apply(
-            lambda x: "{0:,.0f}".format(x["ee_pmt_recv"]), axis=1)
-        new_df_3["records"] = new_df_3.apply(
-            lambda x: "{0:,.0f}".format(x["records"]), axis=1)
-        new_df_3["violtn_cnt"] = new_df_3.apply(
-            lambda x: "{0:,.0f}".format(x["violtn_cnt"]), axis=1)
-        new_df_3["ee_violtd_cnt"] = new_df_3.apply(
-            lambda x: "{0:,.0f}".format(x["ee_violtd_cnt"]), axis=1)
+            textFile = open(temp_file_name, 'a')  # append to main report file
+            textFile.write(
+                "<h2>Wage theft by zip code region and industry</h2> \n")
+            textFile.close()
 
-        if include_tables == 1:
-            write_to_html_file(new_df_3, header_two_way_table,
-                               "", file_path(temp_file_name))
+            df_all_industry_3 = unique_legalname.groupby(["zip_cd", pd.Grouper(key='industry')]).agg({  # https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
+                "bw_amt": 'sum',
+                "violtn_cnt": 'sum',
+                "ee_violtd_cnt": 'sum',
+                "ee_pmt_recv": 'sum',
+                "records": 'sum',
+            }).reset_index().sort_values(['zip_cd', 'industry'], ascending=[True, True])
 
-    if include_tables == 1:
+            df_all_industry_3 = df_all_industry_3.set_index(['zip_cd', 'industry'])
+            df_all_industry_3 = df_all_industry_3.sort_index()
+
+            df_all_industry_3 = df_all_industry_3.reindex(columns=header_two_way_table)
+            for zip_cd, new_df_3 in df_all_industry_3.groupby(level=0):
+
+                new_df_3 = pd.concat([
+                    new_df_3,
+                    new_df_3.sum().to_frame().T.assign(
+                        zip_cd='', trade='ZIPCODEWIDE').set_index(['zip_cd', 'trade'])
+                ], sort=True).sort_index()
+
+                new_df_3["bw_amt"] = new_df_3.apply(
+                    lambda x: "{0:,.0f}".format(x["bw_amt"]), axis=1)
+                new_df_3["ee_pmt_recv"] = new_df_3.apply(
+                    lambda x: "{0:,.0f}".format(x["ee_pmt_recv"]), axis=1)
+                new_df_3["records"] = new_df_3.apply(
+                    lambda x: "{0:,.0f}".format(x["records"]), axis=1)
+                new_df_3["violtn_cnt"] = new_df_3.apply(
+                    lambda x: "{0:,.0f}".format(x["violtn_cnt"]), axis=1)
+                new_df_3["ee_violtd_cnt"] = new_df_3.apply(
+                    lambda x: "{0:,.0f}".format(x["ee_violtd_cnt"]), axis=1)
+
+                write_to_html_file(new_df_3, header_two_way_table,
+                                    "", file_path(temp_file_name))
+
 
         textFile = open(temp_file_name, 'a')  # append to report main file
         textFile.write("<h2>Wage theft by city and industry</h2> \n")
         textFile.close()
 
-    df_all_industry_n = unique_legalname.groupby(["cty_nm", pd.Grouper(key="zip_cd"), pd.Grouper(key='industry'),  pd.Grouper(key='legal_nm')]).agg({  # https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
-        "bw_amt": 'sum',
-        "violtn_cnt": 'sum',
-        "ee_violtd_cnt": 'sum',
-        "ee_pmt_recv": 'sum',
-        'backwage_owed': 'sum',
-        "records": 'sum',
-    }).reset_index().sort_values(['cty_nm', "zip_cd", 'industry', 'legal_nm'], ascending=[True, True, True, True])
-
-    df_all_industry_n = df_all_industry_n.set_index(
-        ['cty_nm', "zip_cd", 'industry', 'legal_nm'])
-    df_all_industry_n = df_all_industry_n.sort_index()
-
-    df_all_industry_n = df_all_industry_n.reindex(columns=header_two_way)
-    for cty_nm, new_df_n, in df_all_industry_n.groupby(level=0):
-
-        # new_df_2 = new_df_n.reset_index(level=1, drop=True).copy() #make a copy without zipcode level 0
-        new_df_2 = new_df_n.droplevel("zip_cd").copy()
-
-        new_df_legal_nm = new_df_2.drop(
-            columns=['legal_nm'])  # delete empty column
-        # pull out legal_nm column from level
-        new_df_legal_nm = new_df_legal_nm.reset_index()
-        city_unique_legalname = GroupByX(new_df_legal_nm, 'legal_nm')
-        city_total_bw_atp = new_df_2['bw_amt'].sum()
-        # debug 10/30/2020 this is an approximation based on records which is actually an overtstated mix of case and violations counts
-        city_cases = new_df_2['records'].sum()
-
-        new_df_drop1 = new_df_n.droplevel("zip_cd").copy()
-        new_df_drop1 = new_df_drop1.droplevel('legal_nm')
-        city_agency_df = GroupByMultpleAgency(new_df_drop1)
-
-        if include_summaries == 1 and (city_cases > 10 or city_total_bw_atp > 10000):
-            City_Summary_Block(city_cases, new_df_2, total_ee_violtd, city_total_bw_atp, total_case_violtn,
-                               city_unique_legalname, city_agency_df, cty_nm, only_sig_summaries, file_path(temp_file_name))
-            City_Summary_Block_4_Zipcode_and_Industry(
-                new_df_n, df_all_industry_n, TARGET_INDUSTRY, only_sig_summaries, file_path(temp_file_name))
-
-            #Industry_Summary_Block(city_cases, new_df_2, total_ee_violtd, city_total_bw_atp, total_case_violtn, city_unique_legalname, city_agency_df, cty_nm, SUMMARY_SIG, file_path(temp_file_name))
-            #Industry_Summary_Block_4_Zipcode_and_City(new_df_n, df_all_industry_n, TARGET_INDUSTRY, SUMMARY_SIG, file_path(temp_file_name) )
-
-        new_df_2 = new_df_2.groupby(["cty_nm", 'industry']).agg({  # https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
+        df_all_industry_n = unique_legalname.groupby(["cty_nm", pd.Grouper(key="zip_cd"), pd.Grouper(key='industry'),  pd.Grouper(key='legal_nm')]).agg({  # https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
             "bw_amt": 'sum',
             "violtn_cnt": 'sum',
             "ee_violtd_cnt": 'sum',
             "ee_pmt_recv": 'sum',
+            'backwage_owed': 'sum',
             "records": 'sum',
-        }).reset_index().sort_values(['cty_nm', 'industry'], ascending=[True, True])
+        }).reset_index().sort_values(['cty_nm', "zip_cd", 'industry', 'legal_nm'], ascending=[True, True, True, True])
 
-        new_df_2 = new_df_2.set_index(['cty_nm', 'industry'])
-        new_df_2 = new_df_2.sort_index()
+        df_all_industry_n = df_all_industry_n.set_index(
+            ['cty_nm', "zip_cd", 'industry', 'legal_nm'])
+        df_all_industry_n = df_all_industry_n.sort_index()
 
-        new_df_2 = pd.concat([
-            new_df_2.sum().to_frame().T.assign(
-                cty_nm='', trade='CITYWIDE').set_index(['cty_nm', 'trade']),
-            new_df_2
-        ], sort=True).sort_index()
+        df_all_industry_n = df_all_industry_n.reindex(columns=header_two_way)
+    
+        for cty_nm, new_df_n, in df_all_industry_n.groupby(level=0):
 
-        # new_df_2 = new_df_2.loc[:,~new_df_2.columns.duplicated()] #https://stackoverflow.com/questions/14984119/python-pandas-remove-duplicate-columns
+            # new_df_2 = new_df_n.reset_index(level=1, drop=True).copy() #make a copy without zipcode level 0
+            new_df_2 = new_df_n.droplevel("zip_cd").copy()
 
-        new_df_2["bw_amt"] = new_df_2.apply(
-            lambda x: "{0:,.0f}".format(x["bw_amt"]), axis=1)
-        new_df_2["ee_pmt_recv"] = new_df_2.apply(
-            lambda x: "{0:,.0f}".format(x["ee_pmt_recv"]), axis=1)
-        new_df_2["records"] = new_df_2.apply(
-            lambda x: "{0:,.0f}".format(x["records"]), axis=1)
-        new_df_2["violtn_cnt"] = new_df_2.apply(
-            lambda x: "{0:,.0f}".format(x["violtn_cnt"]), axis=1)
-        new_df_2["ee_violtd_cnt"] = new_df_2.apply(
-            lambda x: "{0:,.0f}".format(x["ee_violtd_cnt"]), axis=1)
+            new_df_legal_nm = new_df_2.drop(
+                columns=['legal_nm'])  # delete empty column
+            # pull out legal_nm column from level
+            new_df_legal_nm = new_df_legal_nm.reset_index()
+            city_unique_legalname = GroupByX(new_df_legal_nm, 'legal_nm')
+            city_total_bw_atp = new_df_2['bw_amt'].sum()
+            # debug 10/30/2020 this is an approximation based on records which is actually an overtstated mix of case and violations counts
+            city_cases = new_df_2['records'].sum()
 
-        if include_tables == 1 and (city_cases > 10 or city_total_bw_atp > 10000):
-            write_to_html_file(new_df_2, header_two_way_table,
-                               "", file_path(temp_file_name))
+            new_df_drop1 = new_df_n.droplevel("zip_cd").copy()
+            new_df_drop1 = new_df_drop1.droplevel('legal_nm')
+            city_agency_df = GroupByMultpleAgency(new_df_drop1)
+
+            if include_summaries == 1 and (city_cases > 10 or city_total_bw_atp > 10000):
+                City_Summary_Block(city_cases, new_df_2, total_ee_violtd, city_total_bw_atp, total_case_violtn,
+                                city_unique_legalname, city_agency_df, cty_nm, only_sig_summaries, file_path(temp_file_name))
+                City_Summary_Block_4_Zipcode_and_Industry(
+                    new_df_n, df_all_industry_n, TARGET_INDUSTRY, only_sig_summaries, file_path(temp_file_name))
+
+                #Industry_Summary_Block(city_cases, new_df_2, total_ee_violtd, city_total_bw_atp, total_case_violtn, city_unique_legalname, city_agency_df, cty_nm, SUMMARY_SIG, file_path(temp_file_name))
+                #Industry_Summary_Block_4_Zipcode_and_City(new_df_n, df_all_industry_n, TARGET_INDUSTRY, SUMMARY_SIG, file_path(temp_file_name) )
+
+            if include_tables == 1:
+                new_df_2 = new_df_2.groupby(["cty_nm", 'industry']).agg({  # https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
+                    "bw_amt": 'sum',
+                    "violtn_cnt": 'sum',
+                    "ee_violtd_cnt": 'sum',
+                    "ee_pmt_recv": 'sum',
+                    "records": 'sum',
+                }).reset_index().sort_values(['cty_nm', 'industry'], ascending=[True, True])
+
+                new_df_2 = new_df_2.set_index(['cty_nm', 'industry'])
+                new_df_2 = new_df_2.sort_index()
+
+                new_df_2 = pd.concat([
+                    new_df_2.sum().to_frame().T.assign(
+                        cty_nm='', trade='CITYWIDE').set_index(['cty_nm', 'trade']),
+                    new_df_2
+                ], sort=True).sort_index()
+
+                # new_df_2 = new_df_2.loc[:,~new_df_2.columns.duplicated()] #https://stackoverflow.com/questions/14984119/python-pandas-remove-duplicate-columns
+
+                new_df_2["bw_amt"] = new_df_2.apply(
+                    lambda x: "{0:,.0f}".format(x["bw_amt"]), axis=1)
+                new_df_2["ee_pmt_recv"] = new_df_2.apply(
+                    lambda x: "{0:,.0f}".format(x["ee_pmt_recv"]), axis=1)
+                new_df_2["records"] = new_df_2.apply(
+                    lambda x: "{0:,.0f}".format(x["records"]), axis=1)
+                new_df_2["violtn_cnt"] = new_df_2.apply(
+                    lambda x: "{0:,.0f}".format(x["violtn_cnt"]), axis=1)
+                new_df_2["ee_violtd_cnt"] = new_df_2.apply(
+                    lambda x: "{0:,.0f}".format(x["ee_violtd_cnt"]), axis=1)
+
+                if (city_cases > 10 or city_total_bw_atp > 10000):
+                    write_to_html_file(new_df_2, header_two_way_table,
+                                    "", file_path(temp_file_name))
 
     # report tabless*************************************************************
     if include_top_viol_tables == 1 and not df.empty:
@@ -1060,15 +1030,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
 
                 f.write("\n")
 
-            # #clean output file
-            # if CLEAN_OUTPUT == 1:
 
-            # 	# df_signatory['legal_nm'] = df_signatory['legal_nm'].str.upper()
-            # 	# df_signatory['street_addr'] = df_signatory['street_addr'].str.upper()
-            # 	# df_signatory['cty_nm'] = df_signatory['cty_nm'].str.upper()
-            # 	# df_signatory['st_cd'] = df_signatory['st_cd'].str.upper()
-
-            # 	do_nothing = ""
     time_2 = time.time()
     # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
     print("Time to finish section 28 %.5f" % (time_2 - time_1))
@@ -1248,9 +1210,9 @@ def Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS):
 
 
 def Filter_for_Zipcode(df_csv, TARGET_ZIPCODE):
-    if TARGET_ZIPCODE[0] != '00000':
+    if TARGET_ZIPCODE[0] != '00000': # faster run for "All_Zipcode" condition
         # Filter on region by zip code
-        df_csv = df_csv.loc[df_csv['zip_cd'].isin(TARGET_ZIPCODE)]
+        df_csv = df_csv.loc[df_csv['zip_cd'].isin(TARGET_ZIPCODE)] #<-- DLSE bug here is not finding zipcodes
     return df_csv
 
 
@@ -1525,66 +1487,87 @@ def InferSignatoryIndustryAndLabel(df, SIGNATORY_INDUSTRY):
     return df
 
 
-def InferZipcodeFromCityName(df, region, region_name):
+def InferZipcodeFromCityName(df, region, default_region_zip_code):
 
-    upper_region = [x.upper() for x in region]
-    PATTERN_CITY = '|'.join(upper_region)
+    if 'cty_nm' in df.columns:
 
-    zipcode_is_empty = (
-        ((df['zip_cd'] == "") | pd.isna(df['zip_cd']) | (df['zip_cd'] == False) | (df['zip_cd'] == '0' ) )  
-    )
-    foundZipbyCity = (
-        ((df['cty_nm'].astype(str).str.contains(PATTERN_CITY,
-                                                case=False, flags=re.IGNORECASE)))  # flags=re.IGNORECASE
-    )
-    df.loc[zipcode_is_empty * foundZipbyCity, "zip_cd"] = region_name
-    #df.loc[zipcode_is_empty, "zip_cd"] = region_name
-    #df.loc[zipcode_is_empty & foundZipbyCity, "zip_cd"] = region_name
+        if 'zip_cd' not in df.columns:
+            df['zip_cd'] = '0'
+        df.zip_cd = df.zip_cd.astype(str)
+
+        upper_region = [x.upper() for x in region]
+        PATTERN_CITY = '|'.join(upper_region)
+
+        zipcode_is_empty = (
+            ((df['zip_cd'] == '0' ) | (df['zip_cd'] == 0 ) | pd.isna(df['zip_cd']) | 
+                (df['zip_cd'] == False) | (df['zip_cd'] == "" ) )  
+        )
+
+        foundZipbyCity = (
+            ((df['cty_nm'].astype(str).str.contains(PATTERN_CITY, 
+                case=False, flags=re.IGNORECASE)))  # flags=re.IGNORECASE
+        )
+
+        df.loc[zipcode_is_empty * foundZipbyCity, "zip_cd"] = default_region_zip_code
     
     return df
 
 
-# fill nan zip code by assumed zip by city name in trade name; ex. "Cupertino Elec."
-def InferZipcodeFromCompanyName(df, region, region_name):
-
-    if region != 'all':
+def InferZipcodeFromCompanyName(df, region, default_region_zip_code):
+    # fill nan zip code by assumed zip by city name in trade name; ex. "Cupertino Elec."
+    if 'cty_nm' in df.columns:
         PATTERN_CITY = '|'.join(region)
-        foundZipbyCompany1 = (
+
+        if 'trade_nm' not in df.columns:
+            df['trade_nm'] = ""
+        if 'legal_nm' not in df.columns:
+            df['legal_nm'] = ""
+        if 'zip_cd' not in df.columns:
+            df['zip_cd'] = '0'
+
+        zipcode_is_empty = (
             (pd.isna(df['cty_nm'])) &
-            ((df['zip_cd'] == "") | pd.isna(df['zip_cd']) | (df['zip_cd'] == False)) &
-            (df['st_cd'].str.match('CA'))
+            ((df['zip_cd'] == '0') | (df['zip_cd'] == "") | pd.isna(df['zip_cd']) | (df['zip_cd'] == 0)) #10/27/2022 changed False to 0
         )
+        
         foundZipbyCompany2 = (
             ((df['trade_nm'].astype(str).str.contains(PATTERN_CITY, case=False, flags=re.IGNORECASE))) |
             ((df['legal_nm'].astype(str).str.contains(
                 PATTERN_CITY, case=False, flags=re.IGNORECASE)))
         )
-        df['zip_cd'][foundZipbyCompany1 * foundZipbyCompany2] = region_name
+        df.loc[zipcode_is_empty * foundZipbyCompany2,'zip_cd'] = default_region_zip_code
+
     return df
 
 
-def InferZipcodeFromJurisdictionName(df, region, region_name):
+def InferZipcodeFromJurisdictionName(df, region, default_region_zip_code):
 
-    if region != 'all' and region[0] != 'County of Santa Clara' and 'juris_or_proj_nm' in df.columns:
+    if 'cty_nm' in df.columns:
         PATTERN_CITY = '|'.join(region)
 
-        df.st_cd = df.st_cd.astype(str)
+        if 'juris_or_proj_nm' not in df.columns:
+            df['juris_or_proj_nm'] = ""
+        if 'Jurisdiction_region_or_General_Contractor' not in df.columns:
+            df['Jurisdiction_region_or_General_Contractor'] = ""
+        if 'zip_cd' not in df.columns:
+            df['zip_cd'] = '0'
+
         df.juris_or_proj_nm = df.juris_or_proj_nm.astype(str)
         df.Jurisdiction_region_or_General_Contractor = df.Jurisdiction_region_or_General_Contractor.astype(
             str)
 
-        foundZipbyCompany = (
-            (
-                ((df['zip_cd'] == "") | pd.isna(df['cty_nm']) | (df['zip_cd'] == False)) &
-                (df['st_cd'].str.match('CA'))
-            ) &
-            (
-                (df['juris_or_proj_nm'].str.contains(PATTERN_CITY, flags=re.IGNORECASE, regex=True)) |
-                (df['Jurisdiction_region_or_General_Contractor'].str.contains(
-                    PATTERN_CITY, flags=re.IGNORECASE, regex=True))
-            )
+        zipcode_is_empty = (
+            (pd.isna(df['cty_nm'])) &
+            ((df['zip_cd'] == '0') | (df['zip_cd'] == "") | (df['zip_cd'] == 0)) #10/27/2022 changed False to 0
         )
-        df['zip_cd'][foundZipbyCompany] = region_name
+
+        foundZipbyCompany2 = (
+            (df['juris_or_proj_nm'].str.contains(PATTERN_CITY, flags=re.IGNORECASE, regex=True)) |
+            (df['Jurisdiction_region_or_General_Contractor'].str.contains(
+                    PATTERN_CITY, flags=re.IGNORECASE, regex=True))
+        )
+
+        df.loc[zipcode_is_empty * foundZipbyCompany2, 'zip_cd'] = default_region_zip_code
         # add logic to overwire zip codes from outside target region
 
     return df
@@ -2847,7 +2830,7 @@ def Setup_Regular_headers(df_csv):  # DSLE, WHD, etc headers
     if 'street_addr' not in df_csv.columns:
         df_csv['street_addr'] = ""
     if 'zip_cd' not in df_csv.columns:
-        df_csv['zip_cd'] = 0
+        df_csv['zip_cd'] = '0' #10/27/2022 change from 0 to False -- then to '0'
 
     if 'Prevailing' not in df_csv.columns:
         df_csv['Prevailing'] = ""
@@ -2907,6 +2890,7 @@ def Define_Column_Types(df_csv):
             df_csv['zip_cd'].str.len() == 5,
             df_csv['zip_cd'].str[:5]
         )
+        df_csv['zip_cd'] = df_csv['zip_cd'].replace('nan', '0', regex=True)
 
         df_csv['Prevailing'] = pd.to_numeric(
             df_csv['Prevailing'], errors='coerce')
@@ -3060,7 +3044,7 @@ def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
         DF3 = read_from_url(url3, TEST_CASES)
         file_name_backup1 = os.path.join(abs_path, (file_name).replace(
                 ' ', '_') + file_type)  # <-- absolute dir and file name
-        DF3.to_csv(file_name_backup1)
+        #DF3.to_csv(file_name_backup1) #uncomment for testing
         df_csv = Setup_Regular_headers(DF3)
         
         df_csv['juris_or_proj_nm'] = 'TEST'
@@ -3082,7 +3066,7 @@ def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
             out_file_report = 'DOL_WHD'
             file_name_backup = os.path.join(abs_path, (file_name+out_file_report).replace(
                 ' ', '_') + file_type)  # <-- absolute dir and file name
-            DF1.to_csv(file_name_backup)
+            #DF1.to_csv(file_name_backup) #uncomment for testing
             df_csv_1 = Setup_Regular_headers(DF1)
             # Jurisdiction_or_Project_Name
             df_csv_1['juris_or_proj_nm'] = 'WHD'
@@ -3094,7 +3078,7 @@ def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
             out_file_report = 'DIR_DLSE'
             file_name_backup = os.path.join(abs_path, (file_name+out_file_report).replace(
                 ' ', '_') + file_type)  # <-- absolute dir and file name
-            DF2.to_csv(file_name_backup)
+            #DF2.to_csv(file_name_backup) #uncomment for testing
             df_csv_2 = Setup_Regular_headers(DF2)
             # Jurisdiction_or_Project_Name
             df_csv_2['juris_or_proj_nm'] = 'DLSE'
@@ -3108,10 +3092,12 @@ def Read_Violation_Data(TEST, TEST_CASES, federal_data, state_data):
         # else: df_csv = pd.concat([df_csv_0, df_csv_1, df_csv_2], ignore_index=True)
         else:
             df_csv = pd.concat([df_csv_1, df_csv_2], ignore_index=True)
-        #df_csv = df_csv.replace(r'\\n\\n',' ', regex=True)
-        #df_csv = df_csv.replace(r'\\r\\n',' ', regex=True)
-        #df_csv = df_csv.replace(r'\\r',' ', regex=True)
-        # df_csv = df_csv.replace('\n', ' ') #.replace('\r', '') #replace line returns
+            
+            #df_csv = df_csv.replace(r'\\n\\n',' ', regex=True)
+            #df_csv = df_csv.replace(r'\\r\\n',' ', regex=True)
+            #df_csv = df_csv.replace(r'\\r',' ', regex=True)
+            # df_csv = df_csv.replace('\n', ' ') #.replace('\r', '') #replace line returns
+
     return df_csv
 
 
@@ -3268,7 +3254,7 @@ def City_Summary_Block_4_Zipcode_and_Industry(df, df_max_check, TARGET_INDUSTRY,
         else:
             result += "<p>"
             result += "In the "
-            result += zipcode
+            result += str(zipcode) #10/26/2022 found bug "can only concatenate str (not "bool") to str"
             result += " zip code, "
             result += (str.format('{0:,.0f}', test_num2))
             if math.isclose(test_num2, 1.0, rel_tol=0.05, abs_tol=0.0):
