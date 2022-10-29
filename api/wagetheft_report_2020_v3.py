@@ -263,8 +263,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     # zip codes
     print("Starting section 6...")
     time_1 = time.time()
-    
-    if not df_csv.empty:
+    if not df_csv.empty: #filter for region
         # FILTER
         if STATE_FILTER is True:
             df_csv = Filter_for_State(df_csv, TARGET_STATES)
@@ -276,8 +275,6 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
         
         #df_csv.to_csv(bug_log_csv) #<-- HERE DEBUG LINE OF CODE
         df_csv = Filter_for_Zipcode(df_csv, TARGET_ZIPCODE)
-        
-    
     time_2 = time.time()
     print("Time to finish section 6 %.5f" % (time_2 - time_1))
     if LOGBUG: bugFile.write("Time to finish section 6 %.5f" % (time_2 - time_1) + "\n")
@@ -307,6 +304,9 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     time_2 = time.time()
     print("Time to finish section 9 %.5f" % (time_2 - time_1))
     if LOGBUG: bugFile.write("Time to finish section 9 %.5f" % (time_2 - time_1) + "\n")
+    
+    
+    
     # infer signatories
     print("Starting section 10...")
     time_1 = time.time()
@@ -342,6 +342,21 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     print("Time to finish section 12 %.5f" % (time_2 - time_1))
     if LOGBUG: bugFile.write("Time to finish section 12 %.5f" % (time_2 - time_1) + "\n")
 
+
+    # filter (here to reduce runtime for smaller dataset************************************
+    print("Starting section 17...")
+    time_1 = time.time()
+    out_target = Filter_for_Target_Industry(out_target, TARGET_INDUSTRY)
+    if open_cases_only == 1:
+        out_target = RemoveCompletedCases(out_target)
+    if ORGANIZATION_FILTER:
+        out_target = Filter_for_Target_Organization(
+            out_target, TARGET_ORGANIZATIONS)
+    time_2 = time.time()
+    print("Time to finish section 17 %.5f" % (time_2 - time_1))
+    if LOGBUG: bugFile.write("Time to finish section 17 %.5f" % (time_2 - time_1) + "\n")
+    
+    
     # add data**********************************************************
     print("Starting section 13...")
     time_1 = time.time()
@@ -438,46 +453,13 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     if LOGBUG: bugFile.write("Time to finish section 14 %.5f" % (time_2 - time_1) + "\n")
 
     # final sum after assumptions
-    print("Starting section 15...")
+    print("Starting section 15 andd 16...")
     time_1 = time.time()
-    df['wages_owed'] = np.where(df['wages_owed'] < 0, 0, df['wages_owed'])
-
-    df['backwage_owed'] = df['wages_owed'] + \
-        df['cmp_assd_cnt'] + df['interest_owed']
-    time_2 = time.time()
-    print("Time to finish section 15 %.5f" % (time_2 - time_1))
-    if LOGBUG: bugFile.write("Time to finish section 15 %.5f" % (time_2 - time_1) + "\n")
-    # add ee_pmt_due check if equal ?
-    print("Starting section 16...")
-    time_1 = time.time()
-    if 'Paid' in df.columns:
-        # zero out if documented as paid
-        df['backwage_owed'] = np.where(
-            df['Paid'] == 'Y', 0, df['backwage_owed'])
-        # zero out if documented as paid
-        df['cmp_assd_cnt'] = np.where(df['Paid'] == 'Y', 0, df['cmp_assd_cnt'])
-        # zero out if documented as paid
-        df['interest_owed'] = np.where(
-            df['Paid'] == 'Y', 0, df['interest_owed'])
-
-    # at some point, save this file for quicker reports and only run up to here when a new dataset is introduced
+    df = compute_and_clean_backwage_columns(df)
     out_target = df.copy()
     time_2 = time.time()
-    print("Time to finish section 16 %.5f" % (time_2 - time_1))
-    if LOGBUG: bugFile.write("Time to finish section 16 %.5f" % (time_2 - time_1) + "\n")
-
-    # filter for reporting************************************
-    print("Starting section 17...")
-    time_1 = time.time()
-    out_target = Filter_for_Target_Industry(out_target, TARGET_INDUSTRY)
-    if open_cases_only == 1:
-        out_target = RemoveCompletedCases(out_target)
-    if ORGANIZATION_FILTER:
-        out_target = Filter_for_Target_Organization(
-            out_target, TARGET_ORGANIZATIONS)
-    time_2 = time.time()
-    print("Time to finish section 17 %.5f" % (time_2 - time_1))
-    if LOGBUG: bugFile.write("Time to finish section 17 %.5f" % (time_2 - time_1) + "\n")
+    print("Time to finish section 15 and 16 %.5f" % (time_2 - time_1))
+    if LOGBUG: bugFile.write("Time to finish section 15 and 16 %.5f" % (time_2 - time_1) + "\n")
 
     # filter
     print("Starting section 18...")
@@ -692,6 +674,25 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     print("Time to finish program %.5f" % (time_2 - start_time))
     return temp_file_name  # the temp json returned from API
 
+def compute_and_clean_backwage_columns(df):
+    df['wages_owed'] = np.where(df['wages_owed'] < 0, 0, df['wages_owed']) #zero negative values
+
+    df['backwage_owed'] = df['wages_owed'] + \
+        df['cmp_assd_cnt'] + df['interest_owed'] #fill backwages as sum of wages, penalty, and interest
+
+    # add ee_pmt_due check if equal ?
+    if 'Paid' in df.columns:
+        # zero out if documented as paid
+        df['backwage_owed'] = np.where(
+            df['Paid'] == 'Y', 0, df['backwage_owed'])
+        # zero out if documented as paid
+        df['cmp_assd_cnt'] = np.where(df['Paid'] == 'Y', 0, df['cmp_assd_cnt'])
+        # zero out if documented as paid
+        df['interest_owed'] = np.where(
+            df['Paid'] == 'Y', 0, df['interest_owed'])
+
+    # at some point, save this file for quicker reports and only run up to here when a new dataset is introduced
+    return df
 
 def print_tables_html(include_tables, include_summaries, temp_file_name, unique_legalname, header_two_way_table):
     if include_tables == 1 or include_summaries == 1:
