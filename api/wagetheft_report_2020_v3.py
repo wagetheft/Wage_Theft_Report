@@ -66,16 +66,16 @@ import requests
 import io
 
 #moved down one directory
-from api.constants.zipcodes import zipcodesDict
-from api.constants.industries import industriesDict
-from api.constants.prevailingWageTerms import prevailingWageTermsList
-from api.constants.signatories import signatories
+#from api.constants.zipcodes import zipcodesDict
+#from api.constants.industries import industriesDict
+#from api.constants.prevailingWageTerms import prevailingWageTermsList
+#from api.constants.signatories import signatories
 
 #for desktop testing--comment out above API block "moved down one directory"
-#from constants.zipcodes import zipcodesDict
-#from constants.industries import industriesDict
-#from constants.prevailingWageTerms import prevailingWageTermsList
-#from constants.signatories import signatories
+from constants.zipcodes import zipcodesDict
+from constants.industries import industriesDict
+from constants.prevailingWageTerms import prevailingWageTermsList
+from constants.signatories import signatories
 
 warnings.filterwarnings("ignore", 'This pattern has match groups')
 
@@ -131,7 +131,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
 
     # Settings Internal - start
     TEST = 0 # see Read_Violation_Data() -- # 0 for normal run w/ all records; 1 for custom test dataset (unified_test); 2 for small dataset (first 100 of each file)
-    RunFast = False  # True skip slow formating; False run normal
+    RunFast = True  # True skip slow formating; False run normal
     # Settings Internal - end
 
     # Settings Internal that will Move to UI Options - start
@@ -194,8 +194,8 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     bug_log_csv = os.path.join(
         abs_path, (file_name+out_file_report).replace(' ', '_') + file_type)
 
-    # 3/7/2022 bugFile = open(bug_log, 'w')
-    # 3/7/2022 debug_fileSetup_def(bugFile)
+    bugFile = open(bug_log, 'w')
+    debug_fileSetup_def(bugFile)
 
     # region definition
     # default
@@ -215,12 +215,14 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     target_industry = TARGET_INDUSTRY[0][0]
     time_2 = time.time()
     print("Time to finish section 1 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 1 %.5f" % (time_2 - time_1) + "\n")
 
     print("Starting section 2...")
     time_1 = time.time()
 
     time_2 = time.time()
     print("Time to finish section 2 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 2 %.5f" % (time_2 - time_1) + "\n")
     # Concat data***************************************************************************
     print("Starting section 3 [read files from url -- takes 126s]...")
     time_1 = time.time()
@@ -230,6 +232,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     df_csv = df_csv.replace('\s', ' ', regex=True)  # remove line returns
     time_2 = time.time()
     print("Time to finish section 3 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 3 %.5f" % (time_2 - time_1) + "\n")
     # rename columns************************************
     print("Starting section 4...")
     time_1 = time.time()
@@ -241,6 +244,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     DF_OG = df_csv.copy()  # hold a copy of the original data
     time_2 = time.time()
     print("Time to finish section 4 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 4 %.5f" % (time_2 - time_1) + "\n")
 
     print("Starting section 5...")
     time_1 = time.time()
@@ -249,6 +253,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     df_csv = DropDuplicateBackwage(df_csv, FLAG_DUPLICATE)
     time_2 = time.time()
     print("Time to finish section 5 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 5 %.5f" % (time_2 - time_1) + "\n")
     # unused df_csv = FilterForDate(df_csv, YEAR_START, YEAR_END) #filter for date
 
     # Inferences*********************************
@@ -272,6 +277,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     
     time_2 = time.time()
     print("Time to finish section 6 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 6 %.5f" % (time_2 - time_1) + "\n")
     # PREVAILING WAGE
     print("Starting section 7...")
     time_1 = time.time()
@@ -282,11 +288,13 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
             df_csv, prevailing_wage_terms)
     time_2 = time.time()
     print("Time to finish section 7 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 7 %.5f" % (time_2 - time_1) + "\n")
     print("Starting section 8...")
     time_1 = time.time()
     df_csv = Label_Industry(df_csv, infer_by_naics, TARGET_INDUSTRY)
     time_2 = time.time()
     print("Time to finish section 8 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 8 %.5f" % (time_2 - time_1) + "\n")
     # unused df_csv = Filter_for_Target_Industry(df_csv,TARGET_INDUSTRY) ##debug 12/23/2020 <-- run here for faster time but without global summary
     print("Starting section 9...")
     time_1 = time.time()
@@ -295,6 +303,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     df_csv = DropDuplicateBackwage(df_csv, FLAG_DUPLICATE)
     time_2 = time.time()
     print("Time to finish section 9 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 9 %.5f" % (time_2 - time_1) + "\n")
     # infer signatories
     print("Starting section 10...")
     time_1 = time.time()
@@ -306,6 +315,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     df_csv = InferSignatoryIndustryAndLabel(df_csv, SIGNATORY_INDUSTRY)
     time_2 = time.time()
     print("Time to finish section 10 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 10 %.5f" % (time_2 - time_1) + "\n")
     # unused df_csv_temp_address = InferSignatoriesFromAddressAndFlag(df_csv, signatory_address_list)
     # unused df_csv = InferSignatoriesFromNameAndAddressFlag(df_csv, signatory_list, signatory_address_list)
     # unused df_csv = df_csv.append(df_csv_temp_address)
@@ -314,6 +324,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     df_csv = InferAgencyFromCaseIDAndLabel(df_csv, 'juris_or_proj_nm')
     time_2 = time.time()
     print("Time to finish section 11 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 11 %.5f" % (time_2 - time_1) + "\n")
     # use for debugging df_csv.to_csv(bug_log_csv) #debug outfile
 
     # Cleanup********************************************************
@@ -326,6 +337,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     df = CleanUpAgency(df, 'juris_or_proj_nm')
     time_2 = time.time()
     print("Time to finish section 12 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 12 %.5f" % (time_2 - time_1) + "\n")
 
     # add data**********************************************************
     print("Starting section 13...")
@@ -341,6 +353,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
         df['interest_owed'] < 0, 0, df['interest_owed'])
     time_2 = time.time()
     print("Time to finish section 13 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 13 %.5f" % (time_2 - time_1) + "\n")
 
     # make assumptions****************************************************
 
@@ -419,6 +432,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
         df = calculate_interest_owed(df)
     time_2 = time.time()
     print("Time to finish section 14 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 14 %.5f" % (time_2 - time_1) + "\n")
 
     # final sum after assumptions
     print("Starting section 15...")
@@ -429,6 +443,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
         df['cmp_assd_cnt'] + df['interest_owed']
     time_2 = time.time()
     print("Time to finish section 15 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 15 %.5f" % (time_2 - time_1) + "\n")
     # add ee_pmt_due check if equal ?
     print("Starting section 16...")
     time_1 = time.time()
@@ -446,6 +461,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     out_target = df.copy()
     time_2 = time.time()
     print("Time to finish section 16 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 16 %.5f" % (time_2 - time_1) + "\n")
 
     # filter for reporting************************************
     print("Starting section 17...")
@@ -458,6 +474,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
             out_target, TARGET_ORGANIZATIONS)
     time_2 = time.time()
     print("Time to finish section 17 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 17 %.5f" % (time_2 - time_1) + "\n")
 
     # filter
     print("Starting section 18...")
@@ -465,6 +482,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     unique_legalname_sig = GroupByX(out_target, 'legal_nm')
     time_2 = time.time()
     print("Time to finish section 18 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 18 %.5f" % (time_2 - time_1) + "\n")
 
     #unique_legalname_sig  = unique_legalname_sig[~unique_legalname_sig.index.duplicated()]
     print("Starting section 19...")
@@ -489,6 +507,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
                 out_target['Signatory'] == 1, "masked", out_target['DIR_Case_Name'])
     time_2 = time.time()
     print("Time to finish section 19 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 19 %.5f" % (time_2 - time_1) + "\n")
     # create csv output file**********************************
     # option to_csv_test_header = ['trade_nm','legal_nm','industry']
     # option out_target[to_csv_test_header]
@@ -501,6 +520,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
 
     time_2 = time.time()
     print("Time to finish section 20 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 20 %.5f" % (time_2 - time_1) + "\n")
     # summary
     print("Starting section 21...")
     time_1 = time.time()
@@ -511,6 +531,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     all_agency_df = all_agency_df.sort_values(by=['records'], ascending=False)
     time_2 = time.time()
     print("Time to finish section 21 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 21 %.5f" % (time_2 - time_1) + "\n")
 
     # group repeat offenders************************************
     print("Starting section 22...")
@@ -530,6 +551,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     out_target = unique_legalname.copy()
     time_2 = time.time()
     print("Time to finish section 22 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 22 %.5f" % (time_2 - time_1) + "\n")
 
     # sort and format************************************
 
@@ -555,6 +577,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     agency_df = agency_df.sort_values(by=['records'], ascending=False)
     time_2 = time.time()
     print("Time to finish section 23 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 23 %.5f" % (time_2 - time_1) + "\n")
 
     # Format for summary
     print("Starting section 24...")
@@ -567,6 +590,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     DF_OG_VLN = Clean_Summary_Values(DF_OG_VLN)
     time_2 = time.time()
     print("Time to finish section 24 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 24 %.5f" % (time_2 - time_1) + "\n")
 
     # report headers***************************************************
     # note that some headers have been renamed at the top of this program
@@ -595,6 +619,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     multi_agency_header = header + ["agencies", "agency_names", "street_addr"]
     time_2 = time.time()
     print("Time to finish section 25 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 25 %.5f" % (time_2 - time_1) + "\n")
 
     # textfile output***************************************
     # 3/7/2022 bugFile.write("<h1>Here 5G</h1> \n")
@@ -633,6 +658,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     Footer_Block(TEST, textFile)
     time_2 = time.time()
     print("Time to finish section 26 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 26 %.5f" % (time_2 - time_1) + "\n")
 
     # HTML closing
     print("Starting section 27...")
@@ -642,6 +668,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     textFile.close()
     time_2 = time.time()
     print("Time to finish section 27 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 27 %.5f" % (time_2 - time_1) + "\n")
 
     # TABLES
     print("Starting section 28 [make tables or summaries]...")
@@ -1034,11 +1061,12 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     time_2 = time.time()
     # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
     print("Time to finish section 28 %.5f" % (time_2 - time_1))
+    bugFile.write("Time to finish section 28 %.5f" % (time_2 - time_1) + "\n")
     # end indent
 
     # 3/7/2022 bugFile.write("<h1>Done</h1> \n")
-    # 3/7/2022 bugFile.write("</html></body> \n")
-    # 3/7/2022 bugFile.close()
+    bugFile.write("</html></body> \n")
+    bugFile.close()
     # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
     print("Time to finish program %.5f" % (time_2 - start_time))
     return temp_file_name  # the temp json returned from API
