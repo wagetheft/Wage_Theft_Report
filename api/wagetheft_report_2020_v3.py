@@ -625,8 +625,6 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     if LOGBUG: bugFile.write("Time to finish section 25 %.5f" % (time_2 - time_1) + "\n")
 
     # textfile output***************************************
-    # 3/7/2022 if LOGBUG: bugFile.write("<h1>Here 5G</h1> \n")
-
     # HTML opening
     print("Starting section 26...")
     time_1 = time.time()
@@ -676,6 +674,26 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     # TABLES
     print("Starting section 28 [make tables or summaries]...")
     time_1 = time.time()
+    print_tables_html(include_tables, include_summaries, temp_file_name, unique_legalname, header_two_way_table)
+    print_top_viol_tables_html(df,include_top_viol_tables, unique_address, unique_legalname2, 
+        unique_tradename, unique_agency, unique_owner, agency_df, out_sort_ee_violtd, 
+        out_sort_bw_amt, out_sort_repeat_violtd, temp_file_name, signatories_report,
+        out_signatory_target, sig_file_name_csv, prevailing_header)
+    time_2 = time.time()
+    # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
+    print("Time to finish section 28 %.5f" % (time_2 - time_1))
+    if LOGBUG: bugFile.write("Time to finish section 28 %.5f" % (time_2 - time_1) + "\n")
+
+    if LOGBUG: 
+        bugFile.write("<h1>DONE</h1> \n")
+        bugFile.write("</html></body> \n")
+        bugFile.close()
+    # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
+    print("Time to finish program %.5f" % (time_2 - start_time))
+    return temp_file_name  # the temp json returned from API
+
+
+def print_tables_html(include_tables, include_summaries, temp_file_name, unique_legalname, header_two_way_table):
     if include_tables == 1 or include_summaries == 1:
 
         if include_tables == 1:
@@ -839,7 +857,12 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
                     write_to_html_file(new_df_2, header_two_way_table,
                                     "", file_path(temp_file_name))
 
-    # report tabless*************************************************************
+
+def print_top_viol_tables_html(df, include_top_viol_tables, unique_address, unique_legalname2, 
+    unique_tradename, unique_agency, unique_owner, agency_df, out_sort_ee_violtd, 
+    out_sort_bw_amt, out_sort_repeat_violtd, temp_file_name, signatories_report,
+    out_signatory_target, sig_file_name_csv, prevailing_header):
+
     if include_top_viol_tables == 1 and not df.empty:
 
         # format
@@ -989,18 +1012,18 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
                         '{0:,.0f}', out_sort_signatory['bw_amt'].sum()))
                     f.write("</p> \n")
                 '''
-				if not out_sort_signatory['ee_violtd_cnt'].sum()==0:
-					f.write("<p>Signatory wage employees violated: ")
-					out_sort_signatory['ee_violtd_cnt'] = pd.to_numeric(out_sort_signatory['ee_violtd_cnt'], errors = 'corece')
-					f.write(str.format('{0:,.0f}',out_sort_signatory['ee_violtd_cnt'].sum() ) )
-					f.write("</p> \n")
+                if not out_sort_signatory['ee_violtd_cnt'].sum()==0:
+                    f.write("<p>Signatory wage employees violated: ")
+                    out_sort_signatory['ee_violtd_cnt'] = pd.to_numeric(out_sort_signatory['ee_violtd_cnt'], errors = 'corece')
+                    f.write(str.format('{0:,.0f}',out_sort_signatory['ee_violtd_cnt'].sum() ) )
+                    f.write("</p> \n")
 
-				if not out_sort_signatory['violtn_cnt'].sum()==0:
-					f.write("<p>Signatory wage violations: ")
-					out_sort_signatory['violtn_cnt'] = pd.to_numeric(out_sort_signatory['violtn_cnt'], errors = 'corece')
-					f.write(str.format('{0:,.0f}',out_sort_signatory['violtn_cnt'].sum() ) )
-					f.write("</p> \n")
-				'''
+                if not out_sort_signatory['violtn_cnt'].sum()==0:
+                    f.write("<p>Signatory wage violations: ")
+                    out_sort_signatory['violtn_cnt'] = pd.to_numeric(out_sort_signatory['violtn_cnt'], errors = 'corece')
+                    f.write(str.format('{0:,.0f}',out_sort_signatory['violtn_cnt'].sum() ) )
+                    f.write("</p> \n")
+                '''
 
                 f.write("\n")
 
@@ -1059,20 +1082,6 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
                     f, max_rows=3000, columns=prevailing_header, index=False, float_format=lambda x: '%10.2f' % x)
 
                 f.write("\n")
-
-
-    time_2 = time.time()
-    # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
-    print("Time to finish section 28 %.5f" % (time_2 - time_1))
-    if LOGBUG: bugFile.write("Time to finish section 28 %.5f" % (time_2 - time_1) + "\n")
-    # end indent
-
-    # 3/7/2022 if LOGBUG: bugFile.write("<h1>Done</h1> \n")
-    if LOGBUG: bugFile.write("</html></body> \n")
-    if LOGBUG: bugFile.close()
-    # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
-    print("Time to finish program %.5f" % (time_2 - start_time))
-    return temp_file_name  # the temp json returned from API
 
 
 def Clean_Repeat_Violator_HTML_Row(df, COLUMN_NAME):
@@ -3904,7 +3913,7 @@ def debug_fileSetup_def(bug_filename):
     bug_filename.write("<html><body>")
     bug_filename.write("\n")
 
-    bug_filename.write("<h1>Here 1</h1>")
+    bug_filename.write("<h1>START</h1>")
     bug_filename.write("\n")
 
 
