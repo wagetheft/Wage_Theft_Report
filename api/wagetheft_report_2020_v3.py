@@ -220,6 +220,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n") 
 
     # Read data***************************************************************************
+    time_0 = time.time()
     time_1 = time.time()
 
     from os.path import exists # for relative path
@@ -256,35 +257,42 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
         ]
     
     DF_OG = pd.DataFrame()
-    df_csv = pd.DataFrame()
-    
-    for n in url_list:
-        url = n[0]
-        READ = n[1]
-        out_file_report = n[2]
-        df_url = pd.DataFrame()
-        if READ:
-            df_url = Read_Violation_Data(TEST_CASES, url, out_file_report)
-            df_url = df_url.replace('\s', ' ', regex=True)  # remove line returns
-            df_url = clean_function(RunFast, df_url, FLAG_DUPLICATE, bug_log, LOGBUG, log_number)
-            df_url = inference_function(df_url, infer_zip, default_region, default_region_zip_code, infer_by_naics, TARGET_INDUSTRY, 
-                prevailing_wage_report, includeFedData, SIGNATORY_INDUSTRY, prevailing_wage_terms, bug_log, LOGBUG, log_number)
-            DF_OG = df_url.copy()
-            df_url = filter_function(df_url, STATE_FILTER, TARGET_STATES, TARGET_ZIPCODE, TARGET_INDUSTRY, open_cases_only,
-                ORGANIZATION_FILTER, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number)
-            #df_url = clean_filter_infer_calc(RunFast, df_url, FLAG_DUPLICATE, STATE_FILTER, TARGET_STATES, infer_zip,
-            #    default_region, default_region_zip_code, TARGET_ZIPCODE, infer_by_naics, TARGET_INDUSTRY, open_cases_only,
-            #    ORGANIZATION_FILTER, TARGET_ORGANIZATIONS, prevailing_wage_report, includeFedData, SIGNATORY_INDUSTRY, prevailing_wage_terms,
-            #    bug_log, LOGBUG, log_number)
-        df_csv = pd.concat([df_url, df_csv], ignore_index=True)
-        DF_OG = pd.concat([df_url, DF_OG], ignore_index=True) #full dataset for report global data
 
+    url_backup_file = 'url_backup'
+    url_backup_path = url_backup_file + '/'
+    script_dir0 = os.path.dirname(os.path.dirname(__file__))
+    abs_path0 = os.path.join(script_dir0, url_backup_path)
+    if os.path.exists(abs_path0): #cleaned files exist
+        import glob
+        csv_files = glob.glob(os.path.join(abs_path0, "*.csv"))
+        for f in csv_files:
+            df_backup = pd.read_csv(f, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
+            DF_OG = pd.concat([df_backup, DF_OG], ignore_index=True)
+        
+    else: #read new files from url source
+        count = 1
+        for n in url_list:
+            url = n[0]
+            READ = n[1]
+            out_file_report = n[2]
+            df_url = pd.DataFrame()
+            if READ:
+                df_url = Read_Violation_Data(TEST_CASES, url, out_file_report)
+                df_url = df_url.replace('\s', ' ', regex=True)  # remove line returns
+                df_url = clean_function(RunFast, df_url, FLAG_DUPLICATE, bug_log, LOGBUG, log_number)
+                df_url = inference_function(df_url, infer_zip, default_region, default_region_zip_code, infer_by_naics, TARGET_INDUSTRY, 
+                    prevailing_wage_report, includeFedData, SIGNATORY_INDUSTRY, prevailing_wage_terms, bug_log, LOGBUG, log_number)
+                save_backup_to_folder(df_url, url_backup_file+str(count), url_backup_path)
+                count += 1
+            DF_OG = pd.concat([df_url, DF_OG], ignore_index=True)
+            
     time_2 = time.time()
-    log_number+=1
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
-    
-    out_target = df_csv.copy()  # new df -- hold df_csv as a backup and only df from this point on
+    append_log(bug_log, LOGBUG, f"Time to read csv(s) " + "%.5f" % (time_2 - time_1) + "\n")
 
+    out_target = DF_OG.copy()  # new df -- hold df_csv as a backup and only df from this point on
+    out_target = filter_function(out_target, STATE_FILTER, TARGET_STATES, TARGET_ZIPCODE, TARGET_INDUSTRY, open_cases_only,
+                    ORGANIZATION_FILTER, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number)
+    
     # note--estimate back wage, penaly, and interest, based on violation
     time_1 = time.time()
     total_ee_violtd = out_target['ee_violtd_cnt'].sum()
@@ -450,15 +458,15 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
                 prevailing_wage_report, includeFedData, includeStateData, textFile)
 
     if all_industry_summary_block == True:
-        #Regional_All_Industry_Summary_Block(df_csv, df_csv, total_ee_violtd, total_bw_atp, total_case_violtn, 
+        #Regional_All_Industry_Summary_Block(DF_OG, DF_OG, total_ee_violtd, total_bw_atp, total_case_violtn, 
         #    all_unique_legalname, all_agency_df, open_cases_only, textFile)
         do_nothing = "<p>Purposful Omission of All Industry Summary Block</p>"
 
     if Nonsignatory_Ratio_Block == True:
-        #Signatory_to_Nonsignatory_Block(df_csv, df_csv, textFile)
+        #Signatory_to_Nonsignatory_Block(DF_OG, DF_OG, textFile)
         do_nothing = "<p>Purposful Omission of Nonsignatory Ratio Block</p>"
 
-    if math.isclose(df_csv['bw_amt'].sum(), out_counts['bw_amt'].sum(), rel_tol=0.03, abs_tol=0.0):
+    if math.isclose(DF_OG['bw_amt'].sum(), out_counts['bw_amt'].sum(), rel_tol=0.03, abs_tol=0.0):
         do_nothing = "<p>Purposful Omission of Industry Summary Block</p>"
     else:
         Industry_Summary_Block(out_counts, out_counts, total_ee_violtd, total_bw_atp,
@@ -501,6 +509,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
 
+    append_log(bug_log, LOGBUG, f"Time to finish report " + "%.5f" % (time_2 - time_0) + "\n")
     append_log(bug_log, LOGBUG, "<h1>DONE</h1> \n" + "</html></body> \n") #CLOSE
     # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
     return temp_file_name  # the temp json returned from API
@@ -550,7 +559,8 @@ def inference_function(df, infer_zip, default_region, default_region_zip_code, i
 
     # zip codes infer *********************************
     time_1 = time.time()
-    if infer_zip == 1: InferZipcode(df, default_region, default_region_zip_code)
+    #if infer_zip == 1: 
+    InferZipcode(df, default_region, default_region_zip_code)
     time_2 = time.time()
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -571,7 +581,7 @@ def inference_function(df, infer_zip, default_region, default_region_zip_code, i
 
     # PREVAILING WAGE
     time_1 = time.time()
-    if prevailing_wage_report == 1: df = infer_prevailing_wage_cases(df, includeFedData, prevailing_wage_report, prevailing_wage_terms)
+    df = infer_prevailing_wage_cases(df, includeFedData, prevailing_wage_terms)
     time_2 = time.time()
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -617,94 +627,6 @@ def filter_function(df, STATE_FILTER, TARGET_STATES, TARGET_ZIPCODE, TARGET_INDU
 
     return df
 
-
-def clean_filter_infer_calc(RunFast, df, FLAG_DUPLICATE, STATE_FILTER, TARGET_STATES, infer_zip,
-    default_region, default_region_zip_code, TARGET_ZIPCODE, infer_by_naics, TARGET_INDUSTRY, open_cases_only,
-    ORGANIZATION_FILTER, TARGET_ORGANIZATIONS, prevailing_wage_report, includeFedData, SIGNATORY_INDUSTRY, prevailing_wage_terms,
-    bug_log, LOGBUG, log_number):
-
-    function_name = "clean_filter_infer_calc"
-
-    if not RunFast:
-        time_1 = time.time()
-        df = Define_Column_Types(df)
-        df = Cleanup_Number_Columns(df)
-        df = Cleanup_Text_Columns(df)
-        time_2 = time.time()
-        log_number+=1
-        append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
-
-        # remove duplicate cases using case_id and violation as a unique key
-        time_1 = time.time()
-        df = DropDuplicateRecords(df, FLAG_DUPLICATE)
-        df = DropDuplicateBackwage(df, FLAG_DUPLICATE)
-        time_2 = time.time()
-        log_number+=1
-        append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
-
-    # Inferences
-    
-    # unused df = FilterForDate(df, YEAR_START, YEAR_END) #filter for date
-
-    # zip codes infer and filter *********************************
-    time_1 = time.time()
-    if STATE_FILTER: df = Filter_for_State(df, TARGET_STATES)
-    if infer_zip == 1: InferZipcode(df, default_region, default_region_zip_code)
-    #df.to_csv(bug_log_csv) #<-- HERE DEBUG LINE OF CODE
-    df = Filter_for_Zipcode(df, TARGET_ZIPCODE)
-    time_2 = time.time()
-    log_number+=1
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
-
-    time_1 = time.time()
-    df = Label_Industry(df, infer_by_naics, TARGET_INDUSTRY)
-    time_2 = time.time()
-    log_number+=1
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
-    # unused df = Filter_for_Target_Industry(df,TARGET_INDUSTRY) ##debug 12/23/2020 <-- run here for faster time but without global summary
-    
-    time_1 = time.time()
-    df = InferAgencyFromCaseIDAndLabel(df, 'juris_or_proj_nm')
-    df = CleanUpAgency(df, 'juris_or_proj_nm')
-    time_2 = time.time()
-    log_number+=1
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
-    # use for debugging df.to_csv(bug_log_csv) #debug outfile
-
-    # Filter***********************************
-    time_1 = time.time()
-    df = Filter_for_Target_Industry(df, TARGET_INDUSTRY)
-    if open_cases_only == 1: df = RemoveCompletedCases(df)
-    if ORGANIZATION_FILTER: df = Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS)
-    time_2 = time.time()
-    log_number+=1
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
-
-    # PREVAILING WAGE
-    time_1 = time.time()
-    if prevailing_wage_report == 1: df = infer_prevailing_wage_cases(df, includeFedData, prevailing_wage_report, prevailing_wage_terms)
-    time_2 = time.time()
-    log_number+=1
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
-
-    # infer signatories
-    time_1 = time.time()
-    df = infer_signatory_cases(df, SIGNATORY_INDUSTRY)
-    time_2 = time.time()
-    log_number+=1
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
-
-
-    # add data and make assumptions****************************************************
-
-    # final sum after assumptions
-    time_1 = time.time()
-    df = wages_owed(df)
-    time_2 = time.time()
-    log_number+=1
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
-
-    return df
 
 
 def InferZipcode(df, default_region, default_region_zip_code):
@@ -1362,7 +1284,7 @@ def InferPrevailingWageAndColumnFlag(df, prevailing_wage_terms):
             prevailing_wage_pattern, flags=re.IGNORECASE, regex=True)))
     )
     df['Prevailing'] = pd.to_numeric(df['Prevailing'], errors='coerce')
-    df['Prevailing'][found_prevailing] = 1
+    df.loc[found_prevailing, 'Prevailing'] = 1
 
     return df
 
@@ -1436,7 +1358,7 @@ def InferSignatoriesFromNameAndAddressFlag(df, signatory_name_list, signatory_ad
              pattern_signatory_add, flags=re.IGNORECASE, regex=True))
          )
     )
-    df["Signatory"][foundIt_sig] = 1
+    df.loc[foundIt_sig,"Signatory"] = 1
 
     return df
 
@@ -1452,7 +1374,7 @@ def InferSignatoriesFromAddressAndFlag(df, signatory_address_list):
             pattern_signatory, flags=re.IGNORECASE, regex=True))
         #(df['street_addr'].str.match(pattern_signatory, flags=re.IGNORECASE) )
     )
-    df["Signatory"][foundIt_sig] = 1
+    df.loc[foundIt_sig, "Signatory"] = 1
 
     return df
 
@@ -1697,17 +1619,17 @@ def lookuplist(trade, list_x, col):
         # if value not found then return 0 <-- maybe this should be like check or add to a lrearning file
         value_out = Other[col]
 
-        rel_path = 'report_output_/'
+        rel_path1 = 'report_output_/'
         # <-- dir the script is in (import os) plus up one
-        script_dir = os.path.dirname(os.path.dirname(__file__))
-        abs_path = os.path.join(script_dir, rel_path)
-        if not os.path.exists(abs_path):  # create folder if necessary
-            os.makedirs(abs_path)
+        script_dir1 = os.path.dirname(os.path.dirname(__file__))
+        abs_path1 = os.path.join(script_dir1, rel_path1)
+        if not os.path.exists(abs_path1):  # create folder if necessary
+            os.makedirs(abs_path1)
 
         log_name = 'log_'
         out_log_report = 'new_trade_names_'
         log_type = '.txt'
-        log_name_trades = os.path.join(abs_path, log_name.replace(
+        log_name_trades = os.path.join(abs_path1, log_name.replace(
             ' ', '_')+out_log_report + log_type)  # <-- absolute dir and file name
 
         # append/create log file with new trade names
@@ -3179,33 +3101,31 @@ def Signatory_Library():
 
 
 def Read_Violation_Data(TEST_CASES, url, out_file_report):
-    from os.path import exists
-    import os
 
     df_csv = pd.DataFrame()
     df_csv = read_from_url(url, TEST_CASES)
 
-    rel_path = 'report_output_/'
-    # <-- dir the script is in (import os) plus up one
-    script_dir = os.path.dirname(os.path.dirname(__file__))
-    abs_path = os.path.join(script_dir, rel_path)
-    if not os.path.exists(abs_path):  # create folder if necessary
-        os.makedirs(abs_path)
-    file_name = 'backup_TEST_'
-    file_type = '.csv'
-
     df_csv['juris_or_proj_nm'] = out_file_report
-    
-    file_name_backup1 = os.path.join(abs_path, (file_name+out_file_report).replace(
-        ' ', '_') + file_type)  # <-- absolute dir and file name
-    # -- df_csv.to_csv(file_name_backup1) #uncomment for testing
-    
     df_csv = Setup_Regular_headers(df_csv)
-    file_name_backup2 = os.path.join(abs_path, (file_name+out_file_report+"Regular_headers").replace(
-        ' ', '_') + file_type)  # <-- absolute dir and file name
-    #-- df_csv.to_csv(file_name_backup2) #uncomment for testing
+
+    save_backup_to_folder(df_csv, out_file_report + '_backup', "csv_read_backup/")
 
     return df_csv
+
+
+def save_backup_to_folder(df_csv, out_file_report_name = 'backup_', out_file_report_path = ""):
+    from os.path import exists
+    import os
+
+    if out_file_report_path == "": out_file_report_path = out_file_report_path + '_backup/' #defualt folder name
+    script_dir = os.path.dirname(os.path.dirname(__file__))
+    abs_path = os.path.join(script_dir, out_file_report_path)
+    if not os.path.exists(abs_path):  # create folder if necessary
+        os.makedirs(abs_path)
+    file_type = '.csv'
+    
+    file_name_backup = os.path.join(abs_path, (out_file_report_name).replace('/', '') + file_type)  # <-- absolute dir and file name
+    df_csv.to_csv(file_name_backup) #uncomment for testing
 
 
 def read_from_local(path, TEST_CASES):
