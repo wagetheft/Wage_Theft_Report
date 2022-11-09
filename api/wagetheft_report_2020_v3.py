@@ -66,16 +66,16 @@ import requests
 import io
 
 #moved down one directory
-from api.constants.zipcodes import zipcodesDict
-from api.constants.industries import industriesDict
-from api.constants.prevailingWageTerms import prevailingWageTermsList
-from api.constants.signatories import signatories
+#from api.constants.zipcodes import zipcodesDict
+#from api.constants.industries import industriesDict
+#from api.constants.prevailingWageTerms import prevailingWageTermsList
+#from api.constants.signatories import signatories
 
 #for desktop testing--comment out above API block "moved down one directory"
-#from constants.zipcodes import zipcodesDict
-#from constants.industries import industriesDict
-#from constants.prevailingWageTerms import prevailingWageTermsList
-#from constants.signatories import signatories
+from constants.zipcodes import zipcodesDict
+from constants.industries import industriesDict
+from constants.prevailingWageTerms import prevailingWageTermsList
+from constants.signatories import signatories
 
 warnings.filterwarnings("ignore", 'This pattern has match groups')
 
@@ -84,14 +84,14 @@ def main():
     # settings****************************************************
     PARAM_1_TARGET_ZIPCODE = "Mountain_View_Zipcode" #for test use "All_Zipcode"
     PARAM_2_TARGET_INDUSTRY = "Construction" #for test use "All NAICS"
-    OPEN_CASES = 0 # 1 for open cases only (or nearly paid off), 0 for all cases
+    OPEN_CASES = 1 # 1 for open cases only (or nearly paid off), 0 for all cases
     USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
     INFER_NAICS = 1  # 1 to infer code by industry NAICS sector
     INFER_ZIP = 1  # 1 to infer zip code
     federal_data = 1  # 1 to include federal data
-    state_data = 1  # 1 to include state data
+    state_data = 0  # 1 to include state data
     # report output block settings****************************************************
-    All_Industry_Summary_Block = False
+    All_Industry_Summary_Block = 0
     TABLES = 1  # 1 for tables and 0 for just text description
     SUMMARY = 1  # 1 for summaries and 0 for none
     SUMMARY_SIG = 1 # 1 for summaries only of regions with significant wage theft (more than $10,000), 0 for all
@@ -117,9 +117,10 @@ def main():
 # Functions*************************************************
 
 
-def generateWageReport(target_city, target_industry, includeFedData, includeStateData, infer_zip, prevailing_wage_report, signatories_report,
-                       all_industry_summary_block, open_cases_only, include_tables, include_summaries, only_sig_summaries,
-                       include_top_viol_tables, use_assumptions, infer_by_naics):
+def generateWageReport(target_city, target_industry, 
+                        includeFedData, includeStateData, infer_zip, prevailing_wage_report, signatories_report,
+                        all_industry_summary_block, open_cases_only, include_tables, include_summaries, only_sig_summaries,
+                        include_top_viol_tables, use_assumptions, infer_by_naics):
 
     warnings.filterwarnings("ignore", category=UserWarning)
     start_time = time.time()
@@ -223,17 +224,17 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     time_0 = time.time()
     time_1 = time.time()
 
-    from os.path import exists # for relative path
-    violation_report_folder = "dlse_judgements/"
-    if exists(violation_report_folder + "unified_no_WHD_20190629.csv"):
-        read_file0 = violation_report_folder + \
-            "unified_no_WHD_20190629.csv"  # mixed SJOE, SCCBTC, DLSE
-    if exists(violation_report_folder + "whd_whisard_02052022.csv"):
-        read_file1 = violation_report_folder + \
-            "whd_whisard_02052022.csv"  # US DOL WHD website
-    if exists(violation_report_folder + "HQ20009-HQ2ndProduction8.13.2019_no_returns_Linux.csv"): #10/2/2022 added _Linux
-        read_file2 = violation_report_folder + \
-            "HQ20009-HQ2ndProduction8.13.2019_no_returns.csv"  # CA DIR DSLE PRA
+    # from os.path import exists # for relative path
+    # violation_report_folder = "dlse_judgements/"
+    # if exists(violation_report_folder + "unified_no_WHD_20190629.csv"):
+    #     read_file0 = violation_report_folder + \
+    #         "unified_no_WHD_20190629.csv"  # mixed SJOE, SCCBTC, DLSE
+    # if exists(violation_report_folder + "whd_whisard_02052022.csv"):
+    #     read_file1 = violation_report_folder + \
+    #         "whd_whisard_02052022.csv"  # US DOL WHD website
+    # if exists(violation_report_folder + "HQ20009-HQ2ndProduction8.13.2019_no_returns_Linux.csv"): #10/2/2022 added _Linux
+    #     read_file2 = violation_report_folder + \
+    #         "HQ20009-HQ2ndProduction8.13.2019_no_returns.csv"  # CA DIR DSLE PRA
 
     url0 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv"
     url1 = "https://enfxfr.dol.gov/data_catalog/WHD/whd_whisard_20221006.csv.zip"
@@ -243,9 +244,9 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     
     includeTestData = False
     if (TEST == 1): 
-        includeTestData = True
-        includeFedData = False
-        includeStateData = False
+        includeTestData = 1
+        includeFedData = 0
+        includeStateData = 0
         #includeLocalData = False -- unused
         #includeOfficeData = False -- unused
     url_list = [
@@ -262,7 +263,18 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     url_backup_path = url_backup_file + '/'
     script_dir0 = os.path.dirname(os.path.dirname(__file__))
     abs_path0 = os.path.join(script_dir0, url_backup_path)
-    if os.path.exists(abs_path0): #cleaned files exist
+
+    OLD_DATA = False
+    PATH_EXISTS = os.path.exists(abs_path0)
+    if PATH_EXISTS: #check file age
+        import glob
+        csv_files = glob.glob(os.path.join(abs_path0, "*.csv"))
+        for f in csv_files:
+            if time.time() - os.path.getmtime(f) > (1 * 30 * 24 * 60 * 60): #if older than one month
+                OLD_DATA = True
+                os.remove(f) #remove and make new
+
+    if PATH_EXISTS and not OLD_DATA: #cleaned files exist and newer than one month
         import glob
         csv_files = glob.glob(os.path.join(abs_path0, "*.csv"))
         for f in csv_files:
@@ -273,23 +285,25 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
         count = 1
         for n in url_list:
             url = n[0]
-            READ = n[1]
             out_file_report = n[2]
             df_url = pd.DataFrame()
-            if READ:
-                df_url = Read_Violation_Data(TEST_CASES, url, out_file_report)
-                df_url = df_url.replace('\s', ' ', regex=True)  # remove line returns
-                df_url = clean_function(RunFast, df_url, FLAG_DUPLICATE, bug_log, LOGBUG, log_number)
-                df_url = inference_function(df_url, infer_zip, default_region, default_region_zip_code, infer_by_naics, TARGET_INDUSTRY, 
-                    prevailing_wage_report, includeFedData, SIGNATORY_INDUSTRY, prevailing_wage_terms, bug_log, LOGBUG, log_number)
-                save_backup_to_folder(df_url, url_backup_file+str(count), url_backup_path)
-                count += 1
+            df_url = Read_Violation_Data(TEST_CASES, url, out_file_report)
+            df_url = df_url.replace('\s', ' ', regex=True)  # remove line returns
+            df_url = clean_function(RunFast, df_url, FLAG_DUPLICATE, bug_log, LOGBUG, log_number)
+            df_url = inference_function(df_url, infer_zip, default_region, default_region_zip_code, infer_by_naics, TARGET_INDUSTRY, 
+                prevailing_wage_report, includeFedData, SIGNATORY_INDUSTRY, prevailing_wage_terms, bug_log, LOGBUG, log_number)
+            save_backup_to_folder(df_url, url_backup_file+str(count), url_backup_path)
+            count += 1
             DF_OG = pd.concat([df_url, DF_OG], ignore_index=True)
             
     time_2 = time.time()
     append_log(bug_log, LOGBUG, f"Time to read csv(s) " + "%.5f" % (time_2 - time_1) + "\n")
 
     out_target = DF_OG.copy()  # new df -- hold df_csv as a backup and only df from this point on
+    
+    for n in url_list: #filter dataset for this run -- example, remove fed and state
+        if n[1] == 0: out_target = out_target[out_target.juris_or_proj_nm != n[2]]
+
     out_target = filter_function(out_target, STATE_FILTER, TARGET_STATES, TARGET_ZIPCODE, TARGET_INDUSTRY, open_cases_only,
                     ORGANIZATION_FILTER, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number)
     
@@ -457,7 +471,7 @@ def generateWageReport(target_city, target_industry, includeFedData, includeStat
     Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_city, TARGET_INDUSTRY,
                 prevailing_wage_report, includeFedData, includeStateData, textFile)
 
-    if all_industry_summary_block == True:
+    if all_industry_summary_block == 1:
         #Regional_All_Industry_Summary_Block(DF_OG, DF_OG, total_ee_violtd, total_bw_atp, total_case_violtn, 
         #    all_unique_legalname, all_agency_df, open_cases_only, textFile)
         do_nothing = "<p>Purposful Omission of All Industry Summary Block</p>"
