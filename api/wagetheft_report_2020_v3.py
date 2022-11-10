@@ -86,7 +86,7 @@ def main():
     # settings****************************************************
     PARAM_1_TARGET_ZIPCODE = "San_Jose_Zipcode" #for test use "All_Zipcode"
     PARAM_2_TARGET_INDUSTRY = "Construction" #for test use "All NAICS"
-    OPEN_CASES = 0 # 1 for open cases only (or nearly paid off), 0 for all cases
+    OPEN_CASES = 1 # 1 for open cases only (or nearly paid off), 0 for all cases
     USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
     INFER_NAICS = 1  # 1 to infer code by industry NAICS sector
     INFER_ZIP = 1  # 1 to infer zip code
@@ -1284,7 +1284,10 @@ def RemoveCompletedCases(df):
             # if math.isclose(df['bw_amt'][i], df['ee_pmt_recv'][i], rel_tol=0.10, abs_tol=0.0): #error
             # if math.isclose(df.loc[i].at['bw_amt'], df.loc[i].at['ee_pmt_recv'], rel_tol=0.10, abs_tol=0.0): #error
             # if math.isclose(df.at[i,'bw_amt'], df.at[i,'ee_pmt_recv'], rel_tol=0.10, abs_tol=0.0): #error
-            df.drop(df.index[i], inplace=True)
+            try:
+                df.drop(df.index[i], inplace=True)
+            except IndexError:
+                dummy = ""
 
     return df
 
