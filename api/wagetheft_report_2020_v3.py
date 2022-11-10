@@ -67,7 +67,7 @@ import requests
 import io
 
 #moved down one directory
-if platform.system() == 'Windows':
+if platform.system() == 'Windows' or platform.system() =='Darwin':
     #for desktop testing--"moved down one directory"
     from constants.zipcodes import zipcodesDict
     from constants.industries import industriesDict
@@ -84,14 +84,14 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 
 def main():
     # settings****************************************************
-    PARAM_1_TARGET_ZIPCODE = "Mountain_View_Zipcode" #for test use "All_Zipcode"
+    PARAM_1_TARGET_ZIPCODE = "San_Jose_Zipcode" #for test use "All_Zipcode"
     PARAM_2_TARGET_INDUSTRY = "Construction" #for test use "All NAICS"
-    OPEN_CASES = 1 # 1 for open cases only (or nearly paid off), 0 for all cases
+    OPEN_CASES = 0 # 1 for open cases only (or nearly paid off), 0 for all cases
     USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
     INFER_NAICS = 1  # 1 to infer code by industry NAICS sector
     INFER_ZIP = 1  # 1 to infer zip code
     federal_data = 1  # 1 to include federal data
-    state_data = 0  # 1 to include state data
+    state_data = 1  # 1 to include state data
     # report output block settings****************************************************
     All_Industry_Summary_Block = 0
     TABLES = 1  # 1 for tables and 0 for just text description
@@ -269,6 +269,8 @@ def generateWageReport(target_city, target_industry,
     OLD_DATA = False
     PATH_EXISTS = os.path.exists(abs_path0)
     if PATH_EXISTS: #check file age
+        dir = os.listdir(abs_path0)
+        if len(dir) == 0: OLD_DATA = True
         import glob
         csv_files = glob.glob(os.path.join(abs_path0, "*.csv"))
         for f in csv_files:
