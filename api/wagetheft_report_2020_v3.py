@@ -59,6 +59,7 @@ import numpy as np
 import math
 from datetime import datetime
 import os
+import platform
 from string import ascii_letters
 import warnings
 import time
@@ -66,16 +67,17 @@ import requests
 import io
 
 #moved down one directory
-from api.constants.zipcodes import zipcodesDict
-from api.constants.industries import industriesDict
-from api.constants.prevailingWageTerms import prevailingWageTermsList
-from api.constants.signatories import signatories
-
-#for desktop testing--comment out above API block "moved down one directory"
-#from constants.zipcodes import zipcodesDict
-#from constants.industries import industriesDict
-#from constants.prevailingWageTerms import prevailingWageTermsList
-#from constants.signatories import signatories
+if platform.system() == 'Windows':
+    #for desktop testing--"moved down one directory"
+    from constants.zipcodes import zipcodesDict
+    from constants.industries import industriesDict
+    from constants.prevailingWageTerms import prevailingWageTermsList
+    from constants.signatories import signatories
+else:
+    from api.constants.zipcodes import zipcodesDict
+    from api.constants.industries import industriesDict
+    from api.constants.prevailingWageTerms import prevailingWageTermsList
+    from api.constants.signatories import signatories
 
 warnings.filterwarnings("ignore", 'This pattern has match groups')
 
