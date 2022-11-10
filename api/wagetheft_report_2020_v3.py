@@ -66,16 +66,16 @@ import requests
 import io
 
 #moved down one directory
-#from api.constants.zipcodes import zipcodesDict
-#from api.constants.industries import industriesDict
-#from api.constants.prevailingWageTerms import prevailingWageTermsList
-#from api.constants.signatories import signatories
+from api.constants.zipcodes import zipcodesDict
+from api.constants.industries import industriesDict
+from api.constants.prevailingWageTerms import prevailingWageTermsList
+from api.constants.signatories import signatories
 
 #for desktop testing--comment out above API block "moved down one directory"
-from constants.zipcodes import zipcodesDict
-from constants.industries import industriesDict
-from constants.prevailingWageTerms import prevailingWageTermsList
-from constants.signatories import signatories
+#from constants.zipcodes import zipcodesDict
+#from constants.industries import industriesDict
+#from constants.prevailingWageTerms import prevailingWageTermsList
+#from constants.signatories import signatories
 
 warnings.filterwarnings("ignore", 'This pattern has match groups')
 
