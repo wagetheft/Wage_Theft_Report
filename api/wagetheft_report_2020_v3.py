@@ -133,7 +133,7 @@ def generateWageReport(target_city, target_industry,
     # Settings External - end
 
     # Settings Internal - start
-    TEST = 0 # see Read_Violation_Data() -- 
+    TEST_ = 1 # see Read_Violation_Data() -- 
     # 0 for normal run w/ all records
     # 1 for custom test dataset (url0 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv" <-- open and edit this file with test data)
     # 2 for small dataset (first 100 of each file)
@@ -155,10 +155,10 @@ def generateWageReport(target_city, target_industry,
     SIGNATORY_INDUSTRY = signatories #from signatories.py
     #LIBRARIES - end
     
-    # TEST PARAMETERS
-    if TEST == 0 or TEST == 1:
+    # TEST_ PARAMETERS
+    if TEST_ == 0 or TEST_ == 1:
         TEST_CASES = 1000000000  # read all records
-    else:  # TEST == 2 #short set--use first 1000 for debugging
+    else:  # TEST_ == 2 #short set--use first 1000 for debugging
         TEST_CASES = 100
 
     # SET OUTPUT FILE NAME AND PATH: ALL FILE NAMES AND PATHS DEFINED HERE **********************************
@@ -249,7 +249,7 @@ def generateWageReport(target_city, target_industry,
     url2 = "https://stanford.edu/~granite/HQ20009-HQ2ndProduction8.13.2019_no_returns_Linux.csv" #10/2/2022 added _Linux
     
     includeTestData = False
-    if (TEST == 1): 
+    if (TEST_ == 1): 
         includeTestData = 1
         includeFedData = 0
         includeStateData = 0
@@ -476,7 +476,7 @@ def generateWageReport(target_city, target_industry,
     textFile.write("<!DOCTYPE html> \n")
     textFile.write("<html><body> \n")
 
-    Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_city, TARGET_INDUSTRY,
+    Title_Block(TEST_, DF_OG_VLN, DF_OG_ALL, target_city, TARGET_INDUSTRY,
                 prevailing_wage_report, includeFedData, includeStateData, textFile)
 
     if all_industry_summary_block == 1:
@@ -500,7 +500,7 @@ def generateWageReport(target_city, target_industry,
 
     Methods_Block(textFile)
 
-    Footer_Block(TEST, textFile)
+    Footer_Block(TEST_, textFile)
     time_2 = time.time()
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -525,7 +525,7 @@ def generateWageReport(target_city, target_industry,
                 out_sort_bw_amt, out_sort_repeat_violtd, temp_file_name, signatories_report,
                 out_signatory_target, sig_file_name_csv, prevailing_header, header, multi_agency_header, 
                 dup_agency_header, dup_header, dup_owner_header, prevailing_wage_report, out_prevailing_target, 
-                prev_file_name_csv, TEST)
+                prev_file_name_csv, TEST_)
     time_2 = time.time()
     # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
     log_number+=1
