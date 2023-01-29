@@ -133,7 +133,10 @@ def generateWageReport(target_city, target_industry,
     # Settings External - end
 
     # Settings Internal - start
-    TEST = 0 # see Read_Violation_Data() -- # 0 for normal run w/ all records; 1 for custom test dataset (unified_test); 2 for small dataset (first 100 of each file)
+    TEST = 0 # see Read_Violation_Data() -- 
+    # 0 for normal run w/ all records
+    # 1 for custom test dataset (url0 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv" <-- open and edit this file with test data)
+    # 2 for small dataset (first 100 of each file)
     RunFast = False  # True skip slow formating; False run normal
     LOGBUG = True #True to log, False to not
     FLAG_DUPLICATE = 0  # 1 FLAG_DUPLICATE duplicate, #0 drop duplicates
@@ -239,7 +242,7 @@ def generateWageReport(target_city, target_industry,
     #     read_file2 = violation_report_folder + \
     #         "HQ20009-HQ2ndProduction8.13.2019_no_returns.csv"  # CA DIR DSLE PRA
 
-    url0 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv"
+    url0 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv" #<-- open and edit this file with test data
     url1 = "https://enfxfr.dol.gov/data_catalog/WHD/whd_whisard_20221006.csv.zip"
     # url2 = "https://www.researchgate.net/profile/Forest-Peterson/publication/357767172_California_Dept_of_Labor_Standards_Enforcement_DLSE_PRA_Wage_Claim_Adjudications_WCA_for_all_DLSE_offices_from_January_2001_to_July_2019/data/61de6b974e4aff4a643603ae/HQ20009-HQ-2nd-Production-8132019.csv"
     # url2 = "https://drive.google.com/file/d/1TRaixcwTg08bEyPSchyHntkkktG2cuc-/view?usp=sharing"
