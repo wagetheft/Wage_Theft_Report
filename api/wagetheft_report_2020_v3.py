@@ -84,8 +84,8 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 
 def main():
     # settings****************************************************
-    PARAM_1_TARGET_ZIPCODE = "San_Jose_Zipcode" #for test use "All_Zipcode"
-    PARAM_2_TARGET_INDUSTRY = "Construction" #for test use "All NAICS"
+    PARAM_1_TARGET_ZIPCODE = "Palo_Alto_Zipcode" #for test use "All_Zipcode"
+    PARAM_2_TARGET_INDUSTRY = "All NAICS" #"Construction" #for test use "All NAICS"
     OPEN_CASES = 1 # 1 for open cases only (or nearly paid off), 0 for all cases
     USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
     INFER_NAICS = 1  # 1 to infer code by industry NAICS sector
@@ -221,6 +221,7 @@ def generateWageReport(target_city, target_industry,
     time_2 = time.time()
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n") 
+    # endregion definition*******************************************************************
 
     # Read data***************************************************************************
     time_0 = time.time()
