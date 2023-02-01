@@ -69,12 +69,16 @@ import io
 #moved down one directory
 if platform.system() == 'Windows' or platform.system() =='Darwin':
     #for desktop testing--"moved down one directory"
-    from constants.zipcodes import zipcodesDict
+    from constants.zipcodes import stateDict
+    from constants.zipcodes import countyDict
+    from constants.zipcodes import cityDict
     from constants.industries import industriesDict
     from constants.prevailingWageTerms import prevailingWageTermsList
     from constants.signatories import signatories
 else:
-    from api.constants.zipcodes import zipcodesDict
+    from api.constants.zipcodes import stateDict
+    from api.constants.zipcodes import countyDict
+    from api.constants.zipcodes import cityDict
     from api.constants.industries import industriesDict
     from api.constants.prevailingWageTerms import prevailingWageTermsList
     from api.constants.signatories import signatories
@@ -84,8 +88,10 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 
 def main():
     # settings****************************************************
-    PARAM_1_TARGET_ZIPCODE = "Palo_Alto_Zipcode" #for test use "All_Zipcode"
-    PARAM_2_TARGET_INDUSTRY = "All NAICS" #"Construction" #for test use "All NAICS"
+    PARAM_1_TARGET_STATE = "" #"California"
+    PARAM_1_TARGET_COUNTY = "Santa_Clara_County"
+    PARAM_1_TARGET_ZIPCODE = "" #for test use "All_Zipcode"
+    PARAM_2_TARGET_INDUSTRY = 'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS' or "All NAICS"
     OPEN_CASES = 1 # 1 for open cases only (or nearly paid off), 0 for all cases
     USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
     INFER_NAICS = 1  # 1 to infer code by industry NAICS sector
@@ -111,7 +117,7 @@ def main():
     # https://www.goodjobsfirst.org/violation-tracker
 
     # API call***************************************************************************
-    generateWageReport(PARAM_1_TARGET_ZIPCODE, PARAM_2_TARGET_INDUSTRY,
+    generateWageReport(PARAM_1_TARGET_STATE, PARAM_1_TARGET_COUNTY, PARAM_1_TARGET_ZIPCODE, PARAM_2_TARGET_INDUSTRY,
                        federal_data, state_data, INFER_ZIP, prevailing_wage_report, signatories_report,
                        All_Industry_Summary_Block, OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG,
                        TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS)
@@ -119,7 +125,7 @@ def main():
 # Functions*************************************************
 
 
-def generateWageReport(target_city, target_industry, 
+def generateWageReport(target_state, target_county, target_city, target_industry, 
                         includeFedData, includeStateData, infer_zip, prevailing_wage_report, signatories_report,
                         all_industry_summary_block, open_cases_only, include_tables, include_summaries, only_sig_summaries,
                         include_top_viol_tables, use_assumptions, infer_by_naics):
@@ -128,25 +134,26 @@ def generateWageReport(target_city, target_industry,
     start_time = time.time()
 
     # Settings External - start
-    TARGET_ZIPCODE = zipcodesDict[target_city]
+    
+    TARGET_ZIPCODES = search_Dict_tree(target_state, target_county, target_city, stateDict, countyDict, cityDict)
+
     TARGET_INDUSTRY = industriesDict[target_industry]
     # Settings External - end
 
     # Settings Internal - start
-    TEST_ = 1 # see Read_Violation_Data() -- 
+    TEST_ = 0 # see Read_Violation_Data() -- 
     # 0 for normal run w/ all records
     # 1 for custom test dataset (url0 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv" <-- open and edit this file with test data)
     # 2 for small dataset (first 100 of each file)
     RunFast = False  # True skip slow formating; False run normal
+    New_Data_On_Run_Test = True #to generate a new labeled dataset on run
     LOGBUG = True #True to log, False to not
     FLAG_DUPLICATE = 0  # 1 FLAG_DUPLICATE duplicate, #0 drop duplicates
     # Settings Internal - end
 
     # Settings Internal that will Move to UI Options - start
-    STATE_FILTER = False # True for all of california, else False for just santa_clara_county_cities
     ORGANIZATION_FILTER = False # True to filter, False no filter for specific organizantion name, see TARGET_ORGANIZATIONS
     TARGET_ORGANIZATIONS = [['organizations'], ['GOODWILL']]  # use uppercase
-    TARGET_STATES = [['states'], ['CA']]
     Nonsignatory_Ratio_Block = False
     # Settings Internal that will Move to UI Options - end
 
@@ -171,7 +178,7 @@ def generateWageReport(target_city, target_industry,
     if not os.path.exists(script_dir):  # create folder if necessary
         os.makedirs(script_dir)
 
-    file_name = target_city + "_" + target_industry
+    file_name = TARGET_ZIPCODES[0] + "_" + target_industry
 
     file_type = '.html'
     out_file_report = '_theft_summary_'
@@ -211,15 +218,18 @@ def generateWageReport(target_city, target_industry,
     # region definition*******************************************************************
     time_1 = time.time()
     # <--revise to include other juriscition types such as County
-    JURISDICTON_NAME = "City of "
-    default_region_zip_code = TARGET_ZIPCODE[len(TARGET_ZIPCODE) - 1] #take the last zipcode for region and modify w/ ending 'xx'
+    JURISDICTON_NAME = " "
+    if TARGET_ZIPCODES[0].find("County"): "DO_NOTHING"
+    else: JURISDICTON_NAME = "City of "
+
+    default_region_zip_code = TARGET_ZIPCODES[len(TARGET_ZIPCODES) - 1] #take the last zipcode for region and modify w/ ending 'xx'
     default_region_zip_code = default_region_zip_code.replace(
         default_region_zip_code[len(default_region_zip_code) - 1:], "X")
-    TARGET_ZIPCODE.append(default_region_zip_code)
+    TARGET_ZIPCODES.append(default_region_zip_code)
     # options: santa_clara_county_cities for region or for a city use the city name "san jose"; this constant is used to search for missing zip codes
-    default_region = [TARGET_ZIPCODE[0].upper(), TARGET_ZIPCODE[0].upper()]
+    default_region = [TARGET_ZIPCODES[0].upper(), TARGET_ZIPCODES[0].upper()]
     # target jurisdiction: Report Title block and file name "<h1>DRAFT REPORT: Wage Theft in the jurisdiction of... "
-    target_city = JURISDICTON_NAME + TARGET_ZIPCODE[0]
+    target_jurisdition = JURISDICTON_NAME + TARGET_ZIPCODES[0].replace("_"," ")
     target_industry = TARGET_INDUSTRY[0][0]
     time_2 = time.time()
     log_number+=1
@@ -271,6 +281,7 @@ def generateWageReport(target_city, target_industry,
     abs_path0 = os.path.join(script_dir0, url_backup_path)
 
     OLD_DATA = False
+    if New_Data_On_Run_Test: OLD_DATA = True #reset for testing
     PATH_EXISTS = os.path.exists(abs_path0)
     if PATH_EXISTS: #check file age
         dir = os.listdir(abs_path0)
@@ -312,7 +323,7 @@ def generateWageReport(target_city, target_industry,
     for n in url_list: #filter dataset for this run -- example, remove fed and state
         if n[1] == 0: out_target = out_target[out_target.juris_or_proj_nm != n[2]]
 
-    out_target = filter_function(out_target, STATE_FILTER, TARGET_STATES, TARGET_ZIPCODE, TARGET_INDUSTRY, open_cases_only,
+    out_target = filter_function(out_target, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only,
                     ORGANIZATION_FILTER, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number)
     
     # note--estimate back wage, penaly, and interest, based on violation
@@ -476,7 +487,7 @@ def generateWageReport(target_city, target_industry,
     textFile.write("<!DOCTYPE html> \n")
     textFile.write("<html><body> \n")
 
-    Title_Block(TEST_, DF_OG_VLN, DF_OG_ALL, target_city, TARGET_INDUSTRY,
+    Title_Block(TEST_, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
                 prevailing_wage_report, includeFedData, includeStateData, textFile)
 
     if all_industry_summary_block == 1:
@@ -517,8 +528,11 @@ def generateWageReport(target_city, target_industry,
     # TABLES
     time_1 = time.time()
     if include_tables == 1: 
-        print_tables_html(include_summaries, temp_file_name, unique_legalname, header_two_way, header_two_way_table,
+        print_table_html_by_industry_and_city(temp_file_name, unique_legalname, header_two_way_table)
+        print_table_html_by_industry_and_zipcode(temp_file_name, unique_legalname, header_two_way_table)
+        print_table_html_Text_Summary(include_summaries, temp_file_name, unique_legalname, header_two_way, header_two_way_table,
             total_ee_violtd, total_case_violtn, only_sig_summaries, TARGET_INDUSTRY)
+
         if include_top_viol_tables == 1:
             print_top_viol_tables_html(out_target, unique_address, unique_legalname2, 
                 unique_tradename, unique_agency, unique_owner, agency_df, out_sort_ee_violtd, 
@@ -537,6 +551,56 @@ def generateWageReport(target_city, target_industry,
     return temp_file_name  # the temp json returned from API
 
 
+
+
+def search_Dict_tree(target_state, target_county, target_city, stateDict, countyDict, cityDict):
+
+    #check to verify that only lowest level has data
+    #initialize lists
+    STATE_LIST = []
+    COUNTY_LIST = []
+    CITY_LIST = []
+    ZIPCODE_LIST = []
+
+    target_region = target_state #temp hack to make a regional list
+    if target_region == "": STATE_LIST = []
+    else: 
+        STATE_LIST = [target_region, target_region][1:] #dummy of nationDict[target_region]
+        ZIPCODE_LIST = [[target_region, target_region][0]]
+        target_state = ""
+        target_county = ""
+        target_city = ""
+    if target_state == "": COUNTY_LIST = []
+    else: 
+        COUNTY_LIST = stateDict[target_state][1:]
+        ZIPCODE_LIST = [stateDict[target_state][0]]
+        target_county = ""
+        target_city = ""
+    if target_county == "": CITY_LIST = []
+    else: 
+        CITY_LIST = countyDict[target_county][1:]
+        ZIPCODE_LIST = [countyDict[target_county][0]]
+        target_city = ""
+    if target_city == "": "DO_NOTHING" #base case passes through last for loop
+    else: 
+        ZIPCODE_LIST = cityDict[target_city]
+        #target_precinct = ""
+        
+    for states in STATE_LIST if STATE_LIST else range(1):
+        if STATE_LIST: 
+            COUNTY_LIST.extend(stateDict[states][1:]) # [1:] to skip region name in cell one
+    
+    for counties in COUNTY_LIST if COUNTY_LIST else range(1):
+        if COUNTY_LIST: 
+            CITY_LIST.extend(countyDict[counties][1:]) # [1:] to skip region name in cell one
+        
+    for city in CITY_LIST if CITY_LIST else range(1):
+        if CITY_LIST: 
+            ZIPCODE_LIST.extend(cityDict[city][1:]) #[1:] to skip region name in cell one
+
+                ##add precinct level loop which replaces zipcode level and adds mass confusion
+
+    return ZIPCODE_LIST
 
 
 def clean_function(RunFast, df, FLAG_DUPLICATE, bug_log, LOGBUG, log_number):
@@ -588,7 +652,7 @@ def inference_function(df, infer_zip, default_region, default_region_zip_code, i
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
 
     time_1 = time.time()
-    df = Label_Industry(df, infer_by_naics, TARGET_INDUSTRY)
+    df = Infer_Industry(df, infer_by_naics, TARGET_INDUSTRY)
     time_2 = time.time()
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -624,7 +688,7 @@ def inference_function(df, infer_zip, default_region, default_region_zip_code, i
     return df
 
 
-def filter_function(df, STATE_FILTER, TARGET_STATES, TARGET_ZIPCODE, TARGET_INDUSTRY, open_cases_only,
+def filter_function(df, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only,
     ORGANIZATION_FILTER, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number):
 
     function_name = "filter_function"
@@ -633,8 +697,7 @@ def filter_function(df, STATE_FILTER, TARGET_STATES, TARGET_ZIPCODE, TARGET_INDU
     
     # zip codes filter *********************************
     time_1 = time.time()
-    if STATE_FILTER: df = Filter_for_State(df, TARGET_STATES)
-    df = Filter_for_Zipcode(df, TARGET_ZIPCODE)
+    df = Filter_for_Zipcode(df, TARGET_ZIPCODES)
     time_2 = time.time()
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -679,93 +742,94 @@ def infer_prevailing_wage_cases(df, includeFedData, prevailing_wage_terms):
     return df
 
 
-def print_tables_html(include_summaries, temp_file_name, unique_legalname, header_two_way, header_two_way_table,
+def print_table_html_by_industry_and_city(temp_file_name, unique_legalname, header_two_way_table):
+
+    # report main file--'a' Append, the file is created if it does not exist: stream is positioned at the end of the file.
+    textFile = open(temp_file_name, 'a')
+    textFile.write("<h2>Wage theft by industry and city region</h2> \n")
+    textFile.close()
+
+    df_all_industry = unique_legalname.groupby(['industry', pd.Grouper(key='cty_nm')]).agg({  # https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
+        "bw_amt": 'sum',
+        "violtn_cnt": 'sum',
+        "ee_violtd_cnt": 'sum',
+        "ee_pmt_recv": 'sum',
+        "records": 'sum',
+    }).reset_index().sort_values(['industry', 'cty_nm'], ascending=[True, True])
+
+    df_all_industry = df_all_industry.set_index(['industry', 'cty_nm'])
+    df_all_industry = df_all_industry.sort_index()
+
+    df_all_industry = df_all_industry.reindex(columns=header_two_way_table)
+    for industry, new_df in df_all_industry.groupby(level=0):
+
+        new_df = pd.concat([
+            new_df,
+            new_df.sum().to_frame().T.assign(
+                industry='', cty_nm='COUNTYWIDE').set_index(['industry', 'cty_nm'])
+        ], sort=True).sort_index()
+
+        new_df["bw_amt"] = new_df.apply(
+            lambda x: "{0:,.0f}".format(x["bw_amt"]), axis=1)
+        new_df["violtn_cnt"] = new_df.apply(
+            lambda x: "{0:,.0f}".format(x["violtn_cnt"]), axis=1)
+        new_df["ee_violtd_cnt"] = new_df.apply(
+            lambda x: "{0:,.0f}".format(x["ee_violtd_cnt"]), axis=1)
+        new_df["ee_pmt_recv"] = new_df.apply(
+            lambda x: "{0:,.0f}".format(x["ee_pmt_recv"]), axis=1)
+        new_df["records"] = new_df.apply(
+            lambda x: "{0:,.0f}".format(x["records"]), axis=1)
+
+        write_to_html_file(new_df, header_two_way_table,
+                            "", file_path(temp_file_name))
+
+
+def print_table_html_by_industry_and_zipcode(temp_file_name, unique_legalname, header_two_way_table):
+
+    textFile = open(temp_file_name, 'a')  # append to main report file
+    textFile.write(
+        "<h2>Wage theft by zip code region and industry</h2> \n")
+    textFile.close()
+
+    df_all_industry_3 = unique_legalname.groupby(["zip_cd", pd.Grouper(key='industry')]).agg({  # https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
+        "bw_amt": 'sum',
+        "violtn_cnt": 'sum',
+        "ee_violtd_cnt": 'sum',
+        "ee_pmt_recv": 'sum',
+        "records": 'sum',
+    }).reset_index().sort_values(['zip_cd', 'industry'], ascending=[True, True])
+
+    df_all_industry_3 = df_all_industry_3.set_index(['zip_cd', 'industry'])
+    df_all_industry_3 = df_all_industry_3.sort_index()
+
+    df_all_industry_3 = df_all_industry_3.reindex(columns=header_two_way_table)
+    for zip_cd, new_df_3 in df_all_industry_3.groupby(level=0):
+
+        new_df_3 = pd.concat([
+            new_df_3,
+            new_df_3.sum().to_frame().T.assign(
+                zip_cd='', industry='ZIPCODEWIDE').set_index(['zip_cd', 'industry'])
+        ], sort=True).sort_index()
+
+        new_df_3["bw_amt"] = new_df_3.apply(
+            lambda x: "{0:,.0f}".format(x["bw_amt"]), axis=1)
+        new_df_3["ee_pmt_recv"] = new_df_3.apply(
+            lambda x: "{0:,.0f}".format(x["ee_pmt_recv"]), axis=1)
+        new_df_3["records"] = new_df_3.apply(
+            lambda x: "{0:,.0f}".format(x["records"]), axis=1)
+        new_df_3["violtn_cnt"] = new_df_3.apply(
+            lambda x: "{0:,.0f}".format(x["violtn_cnt"]), axis=1)
+        new_df_3["ee_violtd_cnt"] = new_df_3.apply(
+            lambda x: "{0:,.0f}".format(x["ee_violtd_cnt"]), axis=1)
+
+        write_to_html_file(new_df_3, header_two_way_table,
+                            "", file_path(temp_file_name))
+
+
+def print_table_html_Text_Summary(include_summaries, temp_file_name, unique_legalname, header_two_way, header_two_way_table,
     total_ee_violtd, total_case_violtn, only_sig_summaries, TARGET_INDUSTRY):
     if include_summaries == 1:
-
-        # report main file--`a' Append, the file is created if it does not exist: stream is positioned at the end of the file.
-        textFile = open(temp_file_name, 'a')
-        textFile.write("<h2>Wage theft by industry and city region</h2> \n")
-        textFile.close()
-
-        df_all_industry = unique_legalname.groupby(['industry', pd.Grouper(key='cty_nm')]).agg({  # https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
-            "bw_amt": 'sum',
-            "violtn_cnt": 'sum',
-            "ee_violtd_cnt": 'sum',
-            "ee_pmt_recv": 'sum',
-            "records": 'sum',
-        }).reset_index().sort_values(['industry', 'cty_nm'], ascending=[True, True])
-
-        df_all_industry = df_all_industry.set_index(['industry', 'cty_nm'])
-        df_all_industry = df_all_industry.sort_index()
-
-        df_all_industry = df_all_industry.reindex(columns=header_two_way_table)
-        for trade, new_df in df_all_industry.groupby(level=0):
-            new_df = pd.concat([
-                new_df,
-                new_df.sum().to_frame().T.assign(
-                    trade='', cty_nm='COUNTYWIDE').set_index(['trade', 'cty_nm'])
-            ], sort=True).sort_index()
-
-            new_df["bw_amt"] = new_df.apply(
-                lambda x: "{0:,.0f}".format(x["bw_amt"]), axis=1)
-            new_df["violtn_cnt"] = new_df.apply(
-                lambda x: "{0:,.0f}".format(x["violtn_cnt"]), axis=1)
-            new_df["ee_violtd_cnt"] = new_df.apply(
-                lambda x: "{0:,.0f}".format(x["ee_violtd_cnt"]), axis=1)
-            new_df["ee_pmt_recv"] = new_df.apply(
-                lambda x: "{0:,.0f}".format(x["ee_pmt_recv"]), axis=1)
-            new_df["records"] = new_df.apply(
-                lambda x: "{0:,.0f}".format(x["records"]), axis=1)
-
-            write_to_html_file(new_df, header_two_way_table,
-                                "", file_path(temp_file_name))
-
-
-        textFile = open(temp_file_name, 'a')  # append to main report file
-        textFile.write(
-            "<h2>Wage theft by zip code region and industry</h2> \n")
-        textFile.close()
-
-        df_all_industry_3 = unique_legalname.groupby(["zip_cd", pd.Grouper(key='industry')]).agg({  # https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
-            "bw_amt": 'sum',
-            "violtn_cnt": 'sum',
-            "ee_violtd_cnt": 'sum',
-            "ee_pmt_recv": 'sum',
-            "records": 'sum',
-        }).reset_index().sort_values(['zip_cd', 'industry'], ascending=[True, True])
-
-        df_all_industry_3 = df_all_industry_3.set_index(['zip_cd', 'industry'])
-        df_all_industry_3 = df_all_industry_3.sort_index()
-
-        df_all_industry_3 = df_all_industry_3.reindex(columns=header_two_way_table)
-        for zip_cd, new_df_3 in df_all_industry_3.groupby(level=0):
-
-            new_df_3 = pd.concat([
-                new_df_3,
-                new_df_3.sum().to_frame().T.assign(
-                    zip_cd='', trade='ZIPCODEWIDE').set_index(['zip_cd', 'trade'])
-            ], sort=True).sort_index()
-
-            new_df_3["bw_amt"] = new_df_3.apply(
-                lambda x: "{0:,.0f}".format(x["bw_amt"]), axis=1)
-            new_df_3["ee_pmt_recv"] = new_df_3.apply(
-                lambda x: "{0:,.0f}".format(x["ee_pmt_recv"]), axis=1)
-            new_df_3["records"] = new_df_3.apply(
-                lambda x: "{0:,.0f}".format(x["records"]), axis=1)
-            new_df_3["violtn_cnt"] = new_df_3.apply(
-                lambda x: "{0:,.0f}".format(x["violtn_cnt"]), axis=1)
-            new_df_3["ee_violtd_cnt"] = new_df_3.apply(
-                lambda x: "{0:,.0f}".format(x["ee_violtd_cnt"]), axis=1)
-
-            write_to_html_file(new_df_3, header_two_way_table,
-                                "", file_path(temp_file_name))
-
-
-        textFile = open(temp_file_name, 'a')  # append to report main file
-        textFile.write("<h2>Wage theft by city and industry</h2> \n")
-        textFile.close()
-
+        
         if 'backwage_owed' not in unique_legalname.columns: unique_legalname['backwage_owed'] = 0 #hack bug fix 10/29/2022
 
         df_all_industry_n = unique_legalname.groupby(["cty_nm", pd.Grouper(key="zip_cd"), pd.Grouper(key='industry'),  pd.Grouper(key='legal_nm')]).agg({  # https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
@@ -783,6 +847,7 @@ def print_tables_html(include_summaries, temp_file_name, unique_legalname, heade
 
         df_all_industry_n = df_all_industry_n.reindex(columns=header_two_way)
     
+        RunHeaderOnce = True
         for cty_nm, new_df_n, in df_all_industry_n.groupby(level=0):
 
             # new_df_2 = new_df_n.reset_index(level=1, drop=True).copy() #make a copy without zipcode level 0
@@ -801,7 +866,15 @@ def print_tables_html(include_summaries, temp_file_name, unique_legalname, heade
             new_df_drop1 = new_df_drop1.droplevel('legal_nm')
             city_agency_df = GroupByMultpleAgency(new_df_drop1)
 
-            if include_summaries == 1 and (city_cases > 10 or city_total_bw_atp > 10000):
+            #PRINT SECTION HEADER
+            if RunHeaderOnce and (only_sig_summaries == 0 or city_cases > 10 or city_total_bw_atp > 10000):
+                RunHeaderOnce = False
+                textFile = open(temp_file_name, 'a')  # append to report main file
+                textFile.write("<h2>Wage theft by city and industry</h2> \n")
+                textFile.close()
+
+            #PRINT SUMMARY BLOCK
+            if only_sig_summaries == 0 or (city_cases > 10 or city_total_bw_atp > 10000):
                 City_Summary_Block(city_cases, new_df_2, total_ee_violtd, city_total_bw_atp, total_case_violtn,
                                 city_unique_legalname, city_agency_df, cty_nm, only_sig_summaries, file_path(temp_file_name))
                 City_Summary_Block_4_Zipcode_and_Industry(
@@ -821,11 +894,14 @@ def print_tables_html(include_summaries, temp_file_name, unique_legalname, heade
             new_df_2 = new_df_2.set_index(['cty_nm', 'industry'])
             new_df_2 = new_df_2.sort_index()
 
+            #commented out to test 1/29/2023
+            
             new_df_2 = pd.concat([
                 new_df_2.sum().to_frame().T.assign(
-                    cty_nm='', trade='CITYWIDE').set_index(['cty_nm', 'trade']),
-                new_df_2
+                    cty_nm='', industry='CITYWIDE').set_index(['cty_nm', 'industry'])
+                , new_df_2
             ], sort=True).sort_index()
+            
 
             # new_df_2 = new_df_2.loc[:,~new_df_2.columns.duplicated()] #https://stackoverflow.com/questions/14984119/python-pandas-remove-duplicate-columns
 
@@ -840,7 +916,8 @@ def print_tables_html(include_summaries, temp_file_name, unique_legalname, heade
             new_df_2["ee_violtd_cnt"] = new_df_2.apply(
                 lambda x: "{0:,.0f}".format(x["ee_violtd_cnt"]), axis=1)
 
-            if (city_cases > 10 or city_total_bw_atp > 10000):
+            #PRINT DATA TABLE
+            if only_sig_summaries == 0 or (city_cases > 10 or city_total_bw_atp > 10000):
                 write_to_html_file(new_df_2, header_two_way_table,
                                 "", file_path(temp_file_name))
 
@@ -852,6 +929,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
     dup_owner_header, prevailing_wage_report, out_prevailing_target, prev_file_name_csv, TEST):
 
     if not df.empty:
+        import matplotlib
 
         # format
         unique_address = Clean_Repeat_Violator_HTML_Row(
@@ -1237,17 +1315,12 @@ def Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS):
     return df_temp
 
 
-def Filter_for_Zipcode(df, TARGET_ZIPCODE):
-    if TARGET_ZIPCODE[0] != '00000': # faster run for "All_Zipcode" condition
+def Filter_for_Zipcode(df, TARGET_ZIPCODES):
+    if TARGET_ZIPCODES[0] != '00000': # faster run for "All_Zipcode" condition
         # Filter on region by zip code
-        df = df.loc[df['zip_cd'].isin(TARGET_ZIPCODE)] #<-- DLSE bug here is not finding zipcodes
+        df = df.loc[df['zip_cd'].isin(TARGET_ZIPCODES)] #<-- DLSE bug here is not finding zipcodes
     return df
 
-
-def Filter_for_State(df, TARGET_STATES):
-    df_temp = df.loc[df['st_cd'].isin(
-        TARGET_STATES[1])]  # Filter on state
-    return df_temp
 
 
 def RemoveCompletedCases(df):
@@ -1302,11 +1375,11 @@ def InferPrevailingWageAndColumnFlag(df, prevailing_wage_terms):
 
     prevailing_wage_pattern = '|'.join(prevailing_wage_terms)
     found_prevailing = (
-        ((df['violation_code'].astype(str).str.contains(prevailing_wage_pattern, flags=re.IGNORECASE, regex=True))) |
-        ((df['violation'].astype(str).str.contains(prevailing_wage_pattern, flags=re.IGNORECASE, regex=True))) |
-        ((df['Note'].astype(str).str.contains(prevailing_wage_pattern, flags=re.IGNORECASE, regex=True))) |
+        ((df['violation_code'].astype(str).str.contains(prevailing_wage_pattern, na=False, flags=re.IGNORECASE, regex=True))) |
+        ((df['violation'].astype(str).str.contains(prevailing_wage_pattern, na=False, flags=re.IGNORECASE, regex=True))) |
+        ((df['Note'].astype(str).str.contains(prevailing_wage_pattern, na=False, flags=re.IGNORECASE, regex=True))) |
         ((df['juris_or_proj_nm'].astype(str).str.contains(
-            prevailing_wage_pattern, flags=re.IGNORECASE, regex=True)))
+            prevailing_wage_pattern, na=False, flags=re.IGNORECASE, regex=True)))
     )
     df['Prevailing'] = pd.to_numeric(df['Prevailing'], errors='coerce')
     df.loc[found_prevailing, 'Prevailing'] = 1
@@ -1347,6 +1420,8 @@ def InferSignatoriesFromNameAndFlag(df, SIGNATORY_INDUSTRY):
         if "Signatory" not in df.columns:
             df["Signatory"] = 0
 
+        
+
         for x in range(1, len(SIGNATORY_INDUSTRY)):
             PATTERN_EXCLUDE = EXCLUSION_LIST_GENERATOR(
                 SIGNATORY_INDUSTRY[x][1])
@@ -1354,11 +1429,11 @@ def InferSignatoriesFromNameAndFlag(df, SIGNATORY_INDUSTRY):
 
             foundIt_sig = (
                 (
-                    df['legal_nm'].str.contains(PATTERN_IND, flags=re.IGNORECASE, regex=True) &
-                    ~df['legal_nm'].str.contains(PATTERN_EXCLUDE, flags=re.IGNORECASE, regex=True)) |
+                    df['legal_nm'].str.contains(PATTERN_IND, na=False, flags=re.IGNORECASE, regex=True) &
+                    ~df['legal_nm'].str.contains(PATTERN_EXCLUDE, na=False, flags=re.IGNORECASE, regex=True)) |
                 (
-                    df['trade_nm'].str.contains(PATTERN_IND, flags=re.IGNORECASE, regex=True) &
-                    ~df['trade_nm'].str.contains(PATTERN_EXCLUDE, flags=re.IGNORECASE, regex=True))
+                    df['trade_nm'].str.contains(PATTERN_IND, na=False, flags=re.IGNORECASE, regex=True) &
+                    ~df['trade_nm'].str.contains(PATTERN_EXCLUDE, na=False, flags=re.IGNORECASE, regex=True))
             )
             df.loc[foundIt_sig, "Signatory"] = 1
 
@@ -1374,13 +1449,13 @@ def InferSignatoriesFromNameAndAddressFlag(df, signatory_name_list, signatory_ad
     pattern_signatory_add = '|'.join(signatory_address_list)
 
     foundIt_sig = (
-        ((df['legal_nm'].str.contains(pattern_signatory_name, flags=re.IGNORECASE, regex=True)) &
+        ((df['legal_nm'].str.contains(pattern_signatory_name, na=False, flags=re.IGNORECASE, regex=True)) &
             (df['street_addr'].str.contains(
-                pattern_signatory_add, flags=re.IGNORECASE, regex=True))
+                pattern_signatory_add, na=False, flags=re.IGNORECASE, regex=True))
          ) |
-        ((df['trade_nm'].str.contains(pattern_signatory_name, flags=re.IGNORECASE, regex=True)) &
+        ((df['trade_nm'].str.contains(pattern_signatory_name, na=False, flags=re.IGNORECASE, regex=True)) &
          (df['street_addr'].str.contains(
-             pattern_signatory_add, flags=re.IGNORECASE, regex=True))
+             pattern_signatory_add, na=False, flags=re.IGNORECASE, regex=True))
          )
     )
     df.loc[foundIt_sig,"Signatory"] = 1
@@ -1396,87 +1471,79 @@ def InferSignatoriesFromAddressAndFlag(df, signatory_address_list):
     pattern_signatory = '|'.join(signatory_address_list)
     foundIt_sig = (
         (df['street_addr'].str.contains(
-            pattern_signatory, flags=re.IGNORECASE, regex=True))
-        #(df['street_addr'].str.match(pattern_signatory, flags=re.IGNORECASE) )
+            pattern_signatory, na=False, flags=re.IGNORECASE, regex=True))
+        #(df['street_addr'].str.match(pattern_signatory, na=False, flags=re.IGNORECASE) )
     )
     df.loc[foundIt_sig, "Signatory"] = 1
 
     return df
 
 
-def Label_Industry(df, INFER, TARGET_INDUSTRY):
+def Infer_Industry(df, INFER, TARGET_INDUSTRY):
     if 'industry' not in df.columns:
-        df['industry'] = ""
+        df['industry'] = "" 
     if 'trade2' not in df.columns:
-        df['trade2'] = ""
+        df['trade2'] = "" #inferred industry
 
-    if not df.empty and 'legal_nm' and 'trade_nm' in df.columns:  # filter out industry rows
+    if not df.empty:  # filter out industry rows
         # exclude cell 0 that contains an industry label cell
         for x in range(1, len(TARGET_INDUSTRY)):
             # add a levinstein distance with distance of two and match and correct: debug 10/30/2020
             PATTERN_IND = '|'.join(TARGET_INDUSTRY[x])
             PATTERN_EXCLUDE = EXCLUSION_LIST_GENERATOR(TARGET_INDUSTRY[x])
 
-            if INFER == 1:
+            if INFER == 1 and ('legal_nm' and 'trade_nm' in df.columns): #uses legal and trade names to infer industry
                 foundIt_ind1 = (
 
                     (
                         df['legal_nm'].astype(str).str.contains(
-                            PATTERN_IND, flags=re.IGNORECASE, regex=True)
+                            PATTERN_IND, na=False, flags=re.IGNORECASE, regex=True)
                         &
-                        ~df['legal_nm'].astype(str).str.contains(PATTERN_EXCLUDE, flags=re.IGNORECASE, regex=True))
+                        ~df['legal_nm'].astype(str).str.contains(PATTERN_EXCLUDE, na=False, flags=re.IGNORECASE, regex=True))
 
                     |
 
                     (
                         df['trade_nm'].astype(str).str.contains(
-                            PATTERN_IND, flags=re.IGNORECASE, regex=True)
+                            PATTERN_IND, na=False, flags=re.IGNORECASE, regex=True)
                         &
-                        ~df['trade_nm'].astype(str).str.contains(PATTERN_EXCLUDE, flags=re.IGNORECASE, regex=True))
+                        ~df['trade_nm'].astype(str).str.contains(PATTERN_EXCLUDE, na=False, flags=re.IGNORECASE, regex=True))
 
                 )
 
-                df.loc[foundIt_ind1, 'industry'] = TARGET_INDUSTRY[x][0]
+                df.loc[foundIt_ind1, 'trade2'] = TARGET_INDUSTRY[x][0]
 
-            # second round fills in anything missed with the exisiting NAICS coding
+            # uses the exisiting NAICS coding
             foundIt_ind2 = (
-                # (df['industry'] == "") &
-                df['naic_cd'].astype(str).str.contains(PATTERN_IND, flags=re.IGNORECASE, regex=True) &
+                df['naic_cd'].astype(str).str.contains(PATTERN_IND, na=False, flags=re.IGNORECASE, regex=True) &
                 ~df['naic_cd'].astype(str).str.contains(
-                    PATTERN_EXCLUDE, flags=re.IGNORECASE, regex=True)
+                    PATTERN_EXCLUDE, na=False, flags=re.IGNORECASE, regex=True)
             )
-            df.loc[foundIt_ind2, 'trade2'] = TARGET_INDUSTRY[x][0]
+            df.loc[foundIt_ind2, 'industry'] = TARGET_INDUSTRY[x][0]
 
-            foundIt_ind3 = (  # commented out 12/24/2020 because the decriptions are too easily miscoded
-                (df['trade2'] == "") &
-                df['naics_desc.'].astype(str).str.contains(PATTERN_IND, flags=re.IGNORECASE, regex=True) &
+            foundIt_ind3 = (  # uses the exisiting NAICS descriptions to fill gaps in the data
+                (df['industry'] == "") &
+                df['naics_desc.'].astype(str).str.contains(PATTERN_IND, na=False, flags=re.IGNORECASE, regex=True) &
                 ~df['naics_desc.'].astype(str).str.contains(
-                    PATTERN_EXCLUDE, flags=re.IGNORECASE, regex=True)
+                    PATTERN_EXCLUDE, na=False, flags=re.IGNORECASE, regex=True)
             )
-            df.loc[foundIt_ind3, 'trade2'] = TARGET_INDUSTRY[x][0]
+            df.loc[foundIt_ind3, 'industry'] = TARGET_INDUSTRY[x][0]
 
-            # foundIt_ind4=( #commented out 12/24/2020 because the labels were just not useful
-            # 	(#pd.isna(df['industry']) &
-            # 	df['industry'].astype(str).str.contains(PATTERN_IND, flags=re.IGNORECASE, regex = True) &
-            # 	~df['industry'].astype(str).str.contains(PATTERN_EXCLUDE, flags=re.IGNORECASE, regex = True) )
-            # 	)
-            # df['trade2'][foundIt_ind4] = TARGET_INDUSTRY[x][0]
+        # uses the existing NAICS coding and fill balnks with infered
 
         df['industry'] = df.apply(
             lambda row:
-            row['trade2'] if (row['industry'] == '') and (row['trade2'] != '')
-            else row['industry'], axis=1
+            row['trade2'] if (row['industry'] == '') and (row['trade2'] != '') #take guessed industry if NAICS is missing
+            else row['industry'], axis=1 
         )
 
-        # if all fails, assign 'other' so it gets counted
+        # if all fails, assign 'Undefined' so it gets counted
         df['industry'] = df['industry'].replace(
             r'^\s*$', 'Undefined', regex=True)
         df['industry'] = df['industry'].fillna('Undefined')
         df['industry'] = df['industry'].replace(np.nan, 'Undefined')
 
-        # when the above misses the fillna
-        #mode = df['industry'].mode().values[0]
-        # df['industry'].fillna(value=mode, inplace=True) #https://stackoverflow.com/questions/58631524/fillna-not-replacing-nan-values-in-the-dataframe
+        #'trade2' is not used outside this function other than in the print to csv 
 
     return df
 
@@ -1494,14 +1561,14 @@ def InferSignatoryIndustryAndLabel(df, SIGNATORY_INDUSTRY):
 
             foundIt_ind1 = (
                 (
-                    df['legal_nm'].astype(str).str.contains(PATTERN_IND, flags=re.IGNORECASE, regex=True) &
+                    df['legal_nm'].astype(str).str.contains(PATTERN_IND, na=False, flags=re.IGNORECASE, regex=True) &
                     ~df['legal_nm'].astype(str).str.contains(
-                        PATTERN_EXCLUDE, flags=re.IGNORECASE, regex=True)
+                        PATTERN_EXCLUDE, na=False, flags=re.IGNORECASE, regex=True)
                 ) |
                 (
-                    df['trade_nm'].astype(str).str.contains(PATTERN_IND, flags=re.IGNORECASE, regex=True) &
+                    df['trade_nm'].astype(str).str.contains(PATTERN_IND, na=False, flags=re.IGNORECASE, regex=True) &
                     ~df['trade_nm'].astype(str).str.contains(
-                        PATTERN_EXCLUDE, flags=re.IGNORECASE, regex=True)
+                        PATTERN_EXCLUDE, na=False, flags=re.IGNORECASE, regex=True)
                 ) |
                 (df['Signatory'] == 1) &
                 (df['industry'] == SIGNATORY_INDUSTRY[x][0][0])
@@ -1535,7 +1602,7 @@ def InferZipcodeFromCityName(df, region, default_region_zip_code):
         )
 
         foundZipbyCity = (
-            ((df['cty_nm'].astype(str).str.contains(PATTERN_CITY, 
+            ((df['cty_nm'].astype(str).str.contains(PATTERN_CITY, na=False, 
                 case=False, flags=re.IGNORECASE)))  # flags=re.IGNORECASE
         )
 
@@ -1562,9 +1629,9 @@ def InferZipcodeFromCompanyName(df, region, default_region_zip_code):
         )
         
         foundZipbyCompany2 = (
-            ((df['trade_nm'].astype(str).str.contains(PATTERN_CITY, case=False, flags=re.IGNORECASE))) |
+            ((df['trade_nm'].astype(str).str.contains(PATTERN_CITY, na=False, case=False, flags=re.IGNORECASE))) |
             ((df['legal_nm'].astype(str).str.contains(
-                PATTERN_CITY, case=False, flags=re.IGNORECASE)))
+                PATTERN_CITY, na=False, case=False, flags=re.IGNORECASE)))
         )
         df.loc[zipcode_is_empty * foundZipbyCompany2,'zip_cd'] = default_region_zip_code
 
@@ -1593,9 +1660,9 @@ def InferZipcodeFromJurisdictionName(df, region, default_region_zip_code):
         )
 
         foundZipbyCompany2 = (
-            (df['juris_or_proj_nm'].str.contains(PATTERN_CITY, flags=re.IGNORECASE, regex=True)) |
+            (df['juris_or_proj_nm'].str.contains(PATTERN_CITY, na=False, flags=re.IGNORECASE, regex=True)) |
             (df['Jurisdiction_region_or_General_Contractor'].str.contains(
-                    PATTERN_CITY, flags=re.IGNORECASE, regex=True))
+                    PATTERN_CITY, na=False, flags=re.IGNORECASE, regex=True))
         )
 
         df.loc[zipcode_is_empty * foundZipbyCompany2, 'zip_cd'] = default_region_zip_code
@@ -1868,8 +1935,8 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
     liability_terms0 = ['(a California)', '(a Californi)', '(a Californ)']
     pattern_liability0 = '|'.join(liability_terms0)
     if 'legal_nm' and 'trade_nm' in df.columns:
-        foundIt0 = (df['legal_nm'].str.contains(pattern_liability0, flags=re.IGNORECASE, regex=True) |
-                    df['trade_nm'].str.contains(pattern_liability0, flags=re.IGNORECASE, regex=True))
+        foundIt0 = (df['legal_nm'].str.contains(pattern_liability0, na=False, flags=re.IGNORECASE, regex=True) |
+                    df['trade_nm'].str.contains(pattern_liability0, na=False, flags=re.IGNORECASE, regex=True))
 
         df.loc[foundIt0, 'Liabilitytype'] = 'California'
 
@@ -1885,9 +1952,9 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
         liability_terms1 = ['(a Delaware)']
         pattern_liability1 = '|'.join(liability_terms1)
         foundIt1 = (
-            df['legal_nm'].str.contains(pattern_liability1, flags=re.IGNORECASE, regex=True) |
+            df['legal_nm'].str.contains(pattern_liability1, na=False, flags=re.IGNORECASE, regex=True) |
             df['trade_nm'].str.contains(
-                pattern_liability1, flags=re.IGNORECASE, regex=True)
+                pattern_liability1, na=False, flags=re.IGNORECASE, regex=True)
         )
         df.loc[foundIt1, 'Liabilitytype'] = 'Delaware'
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
@@ -1897,8 +1964,8 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
 
         liability_terms2 = ['(a Nevada)']
         pattern_liability2 = '|'.join(liability_terms2)
-        foundIt2 = (df['legal_nm'].str.contains(pattern_liability2, flags=re.IGNORECASE, regex=True) |
-                    df['trade_nm'].str.contains(pattern_liability2, flags=re.IGNORECASE, regex=True))
+        foundIt2 = (df['legal_nm'].str.contains(pattern_liability2, na=False, flags=re.IGNORECASE, regex=True) |
+                    df['trade_nm'].str.contains(pattern_liability2, na=False, flags=re.IGNORECASE, regex=True))
 
         df.loc[foundIt2, 'Liabilitytype'] = 'Delaware'
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
@@ -1908,8 +1975,8 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
 
         liability_terms3 = ['(a Nebraska)']
         pattern_liability3 = '|'.join(liability_terms3)
-        foundIt3 = (df['legal_nm'].str.contains(pattern_liability3, flags=re.IGNORECASE, regex=True) |
-                    df['trade_nm'].str.contains(pattern_liability3, flags=re.IGNORECASE, regex=True))
+        foundIt3 = (df['legal_nm'].str.contains(pattern_liability3, na=False, flags=re.IGNORECASE, regex=True) |
+                    df['trade_nm'].str.contains(pattern_liability3, na=False, flags=re.IGNORECASE, regex=True))
 
         df.loc[foundIt3, 'Liabilitytype'] = 'Nebraska'
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
@@ -1919,8 +1986,8 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
 
         liability_terms4 = ['(a foreign)']
         pattern_liability4 = '|'.join(liability_terms4)
-        foundIt4 = (df['legal_nm'].str.contains(pattern_liability4, flags=re.IGNORECASE, regex=True) |
-                    df['trade_nm'].str.contains(pattern_liability4, flags=re.IGNORECASE, regex=True))
+        foundIt4 = (df['legal_nm'].str.contains(pattern_liability4, na=False, flags=re.IGNORECASE, regex=True) |
+                    df['trade_nm'].str.contains(pattern_liability4, na=False, flags=re.IGNORECASE, regex=True))
 
         df.loc[foundIt4, 'Liabilitytype'] = 'Foreign'
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
@@ -1931,8 +1998,8 @@ def MoveCompanyLiabilityTermsToLiabilityTypeColumn(df):
         liability_terms5 = ['(Which Will Be Doing Business In California)',
                             '(Which Will Be Doing Business In California As)']
         pattern_liability5 = '|'.join(liability_terms5)
-        foundIt5 = (df['legal_nm'].str.contains(pattern_liability5, flags=re.IGNORECASE, regex=True) |
-                    df['trade_nm'].str.contains(pattern_liability5, flags=re.IGNORECASE, regex=True))
+        foundIt5 = (df['legal_nm'].str.contains(pattern_liability5, na=False, flags=re.IGNORECASE, regex=True) |
+                    df['trade_nm'].str.contains(pattern_liability5, na=False, flags=re.IGNORECASE, regex=True))
 
         df.loc[foundIt5, 'Liabilitytype'] = 'California'
         df['legal_nm'] = df[df['legal_nm'].notnull()]['legal_nm'].str.replace(
@@ -1948,8 +2015,8 @@ def MoveBusinessTypeToBusinessTypeColumn(df):
     individual_terms = ['an individual', 'individual ']
     pattern_individual = '|'.join(individual_terms)
     if 'legal_nm' and 'trade_nm' in df.columns:
-        foundIt = (df['legal_nm'].str.contains(pattern_individual, flags=re.IGNORECASE, regex=True) |
-                   df['trade_nm'].str.contains(pattern_individual, flags=re.IGNORECASE, regex=True))
+        foundIt = (df['legal_nm'].str.contains(pattern_individual, na=False, flags=re.IGNORECASE, regex=True) |
+                   df['trade_nm'].str.contains(pattern_individual, na=False, flags=re.IGNORECASE, regex=True))
 
         # df['Businesstype'] = foundIt.replace((True,False), ('Individual',df['Businesstype']), regex=True) #fill column 'industry'
         df.loc[foundIt, 'Businesstype'] = 'Individual'
@@ -1970,8 +2037,8 @@ def MoveLimitedLiabilityBusinessTypeToBusinessTypeColumn(df):
     pattern_company = '|'.join(company_terms)
 
     if 'legal_nm' and 'trade_nm' in df.columns:
-        foundIt = (df['legal_nm'].str.contains(pattern_company, flags=re.IGNORECASE, regex=True) |
-                   df['trade_nm'].str.contains(pattern_company, flags=re.IGNORECASE, regex=True))
+        foundIt = (df['legal_nm'].str.contains(pattern_company, na=False, flags=re.IGNORECASE, regex=True) |
+                   df['trade_nm'].str.contains(pattern_company, na=False, flags=re.IGNORECASE, regex=True))
 
         # df['Businesstype'] = foundIt.replace((True,False), ('Company',df['Businesstype']), regex=True) #fill column 'industry'
         df.loc[foundIt, 'Businesstype'] = 'Company'
@@ -2060,8 +2127,8 @@ def MovePartnershipBusinessTypeToBusinessTypeColumn(df):
     pattern_partner = '|'.join(partnership_terms)
 
     if 'legal_nm' and 'trade_nm' in df.columns:
-        foundIt = (df['legal_nm'].str.contains(pattern_partner, flags=re.IGNORECASE, regex=True) |
-                   df['trade_nm'].str.contains(pattern_partner, flags=re.IGNORECASE, regex=True))
+        foundIt = (df['legal_nm'].str.contains(pattern_partner, na=False, flags=re.IGNORECASE, regex=True) |
+                   df['trade_nm'].str.contains(pattern_partner, na=False, flags=re.IGNORECASE, regex=True))
 
         # df['Businesstype'] = foundIt.replace((True,False), ('Partnership',df['Businesstype']), regex=True) #fill column 'industry'
         df.loc[foundIt, 'Businesstype'] = 'Partnership'
@@ -2197,8 +2264,8 @@ def MoveCorportationBusinessTypeToBusinessTypeColumn(df):
     pattern_corp = '|'.join(corporation_terms)
 
     if 'legal_nm' and 'trade_nm' in df.columns:
-        foundIt = (df['legal_nm'].str.contains(pattern_corp, flags=re.IGNORECASE, regex=True) |
-                   df['trade_nm'].str.contains(pattern_corp,  flags=re.IGNORECASE, regex=True))
+        foundIt = (df['legal_nm'].str.contains(pattern_corp, na=False, flags=re.IGNORECASE, regex=True) |
+                   df['trade_nm'].str.contains(pattern_corp, na=False,  flags=re.IGNORECASE, regex=True))
 
         # df['Businesstype'] = foundIt.replace((True,False), ('Corporation', df['Businesstype']), regex=True) #fill column business type
         df.loc[foundIt, 'Businesstype'] = 'Corporation'
@@ -3170,9 +3237,9 @@ def read_from_url(url, TEST_CASES):
     return df_csv
 
 
-def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_city, TARGET_INDUSTRY, prevailing_wage_report, federal_data, state_data, textFile):
+def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY, prevailing_wage_report, federal_data, state_data, textFile):
     textFile.write(
-        f"<h1>DRAFT REPORT: Wage Theft in the Jurisdiction of {target_city} for {TARGET_INDUSTRY[0][0]} Industry</h1> \n")
+        f"<h1>DRAFT REPORT: Wage Theft in the Jurisdiction of {target_jurisdition} for {TARGET_INDUSTRY[0][0]} Industry</h1> \n")
     if prevailing_wage_report == 1:
         textFile.write(
             f"<h2 align=center>***PREVAILING WAGE REPORT***</h2> \n")

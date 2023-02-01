@@ -18,6 +18,8 @@ def generateFile():
     if not checkValidInput(parameters):
         return "Invalid Request. Invalid Input", 400
 
+    target_state = parameters["target_state"]
+    target_county = parameters["target_county"]
     target_city = parameters["target_city"]
     target_industry = parameters["target_industry"]
     includeFedData = parameters["includeFedData"]
@@ -34,7 +36,7 @@ def generateFile():
     use_assumptions = parameters["use_assumptions"]
     infer_by_naics = parameters["infer_by_naics"]
 
-    report_file_name = generateWageReport(target_city, target_industry, includeFedData, includeStateData, infer_zip, prevailing_wage_report, signatories_report,
+    report_file_name = generateWageReport(target_state, target_county, target_city, target_industry, includeFedData, includeStateData, infer_zip, prevailing_wage_report, signatories_report,
                                           all_industry_summary_block, open_cases_only, include_tables, include_summaries, only_sig_summaries, include_top_viol_tables, use_assumptions, infer_by_naics)
 
     try:

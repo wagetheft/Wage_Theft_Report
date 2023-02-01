@@ -21,14 +21,13 @@ utilities_terms = ['Utilities', r'utilit.*', 'Electric', 'Power', 'Generation', 
 
 construction_terms = ['Construction', '^(23)', r'plumb.*', r'construct.*', 'MANPOWER', 'build', 'floor', r'landscap.*',
                       'mechanical', 'elevator', 'plaster', 'frame', 'concrete', 'roof', 'glass', 'tile', r'dry.*wall', 'painting', 'painter', 'remodel', 'cabinet',
-                      'carpet', 'drafting', 'carpentry', 'AIR SYSTEMS', r'sheet.*metal', 'pipe', 'HOMES', 'asbestos', r'custom.*home', 'maintenance', 'window', r'tree.*trim', 'iron', 'heating',
+                      'carpet', 'drafting', 'carpentry', 'AIR SYSTEMS', r'sheet.*metal', 'pipe', 'HOMES', 'asbestos', r'custom.*home', 'window', r'tree.*trim', 'iron', 'heating',
                       r'air.*condition', 'instal', 'insulation', 'MOUNTAIN AIR', 'contract', 'brick', 'paving', 'sprinkler', 'improvement', 'renovat', 'energy',
                       'mason', 'marble', 'cooling', '161000', '162000', "^(23)", '230000', "^(3323)", "^(3334)", '333415', '337110', '337212', '339950',
                       '423320', '532410', '541350', '561730', '561790', '562910', '623200', r'tree.*service', 'Excavating', 'Restoration', 'MOULDING',
                       'electric', 'labor', 'ASPHALT', 'CEMENT', 'FENCING', r'HOME.*REPAIR', r'WOOD.*WORKING', 'ROOTER', r'\bHVAC\b', '^(54132)', r"(!Farm\b)",
-                      r"(!.*CARE.HOME.*)",
-                      r"(!RETIREMENT)", r"(!.*GROUP.HOME.*)", r"(!.*RESIDENTIAL.*CARE.*)",
-                      r"(!CATERING)", r"(!AUTO.*BODY)", r"(!FOOD.*SERVICE)", r"(!CLEANING)", r"(!ELDERLY)"]  # 'PLUMBING',
+                      r"(!.*CARE.HOME.*)", r"(!RETIREMENT)", r"(!.*GROUP.HOME.*)", r"(!.*RESIDENTIAL.*CARE.*)",
+                      r"(!CATERING)", r"(!AUTO.*BODY)", r"(!FOOD.*SERVICE)", r"(!CLEANING)", r"(!ELDERLY)", r"(!NURSING)"]  # 'PLUMBING',
 
 manufacturing_terms = ['Manufacturing', r'Manufactur.*', 'machine', 'milling', 'millwork', 'Product', 'Preserving', 'Slaughter', 'Dairy',
                        'Packaging', 'Beverage', 'Textile', 'Apparel', 'Printing', 'Petroleum', 'WELDING', 'Pesticide', 'Forging', 'Industrial', 'Metalworking',
@@ -55,6 +54,7 @@ gig_terms = ['Gig', "Uber", "Lyft", "DoorDash", "Instacart", "Postmates", "TaskR
              "Freelancer", "Gigwalk", "Grubhub", "HelloTech", "HopskipDrive", "Hubstaff Talent", "Juno", "Moonlighting", "onefinestay", "openairplane",
              "peopleperhour", "prefer", "rentah", "roadie", "rover", "shipt", "snagajob", "spare5", "sparehire", "spothero", "takl", "taskeasy",
              "turo", "upwork", "VRBO", "Vacation Rentals by Owner", "Wingz", "airbnb", "yourmechanic", "zeel"]
+
 transportation_terms = ['Transportation', '^(48)', '^(49)', r'Transport.*', 'TRANSPORATION', 'railroad', 'air transportation', 'trucking', 'freight',
                         'transit', 'taxi', 'limousine', 'charter', 'pipeline', 'MOVING', 'air traffic', 'packing', 'postal service', 'courier', 'delivery', 'warehouse',
                         'storage', 'TOWING', 'MOVERS', 'DRIVERS', 'DELIVERIES', 'AMAZON', 'SHUTTLE', 'VAN LINES', 'ROADWAYS', 'YELLOW CAB', 'HAULING', 'PACKAGE',
@@ -81,19 +81,19 @@ professional_terms = ['Professional', 'Professional', '^(54)', '^(5413)', '^(541
                       'N2N SECURE', r'LAW.*GROUP', 'INTRANET', 'PRINTERS', r'HOME.*OWNER.*ASSOC', r'\bHOA\b', 'CIRRUS SOLUTIONS', r'BLUE.*CHIP .*TEK', 'AUTOCHLOR SYSTEM',
                       r'TECH.*SHOP', 'ANALYTICAL', 'LOCAL UNION', 'LAW FIRM', 'COUNSELING', 'GEOTECHNICAL', 'CONSERVATOR', r'BAIL.*BOND', 'FAMILY TRUST', 'EMBROIDERY']
 
-management_terms = ['Management', '^(55)', '^(56)', 'Management',
-                    'ENTERPRISES', 'LOGISTICS', 'SLINGSHOT CONNECTIONS']
+management_terms = ['Management', '^(55)', 'Management','ENTERPRISES', 'LOGISTICS', 'SLINGSHOT CONNECTIONS']
 
-janitorial_terms = ['Janitorial', r'Janitor.*', r'month.*clean', r'rental.*clean', r'week.*clean', r'condo.*clean',
+janitorial_terms = ['Janitorial', '561720', '56172','^(56172)', r'Janitor.*', r'month.*clean', r'rental.*clean', r'week.*clean', r'condo.*clean', r'BUILD.*SERVICE.*',
                     r'clean.*vacanc', r'airbnb.*clean', r'move.*in.*clean', r'resident.*clean', r'post.*construct.*clean', r'apartment.*clean',
                     r'profession.*clean', r'move.*out.*clean', r'clean.*lady', 'green clean', r'commercial.*clean', r'home.*clean', r'clean.*company',
                     r'deep.*clean', r'maid.*', r'spring.*clean', r'maid.*service', r'window.*clean', r'house.*clean', r'clean.*service.*', r'house.*keep',
-                    r'carpet.*clean', '561720', '5617', 'MAINTENENCE']
+                    r'carpet.*clean', 'MAINTENENCE', r'JANITOR.*SERVICE.*', r'BUILD.*MAINT.*',r'clean.*SYSTEM.*',r'MAINT.*SYSTEM.*',
+                    r'FACIL.*MAINT.*', r'FACIL.*SERVICE.*']
 
-waste_terms = ['Waste', 'Waste', '^(5621)', '^(5621)', '^(5629)', 'WRECKERS', 'RECYCLING', r'solid.*waste', 'hazardous', 'remediation', 'landfill',
+waste_terms = ['Waste', 'Waste', '^(5621)', '^(5622)', '^(5629)', 'WRECKERS', 'RECYCLING', r'solid.*waste', 'hazardous', 'remediation', 'landfill',
                'incinerator', 'septic', 'DISMANTLER', 'DISPOSAL']
 
-administrative_terms = ['Administrative', r'Administrat.*', '^(56)']
+administrative_terms = ['Administrative', r'Administrat.*'] #'^(5611)', '^(5613)', '^(5614)', '^(5615)', '^(5616)', '^(5619)'
 
 educational_terms = ['Educational', r'educat.*', '^(61)', 'school', 'university', 'college', 'training', 'instruction', 'lecture',
                      'learning', r'tutor.*', 'CULINARY', '(!MEDICINE)']
@@ -183,7 +183,7 @@ service_terms = ['Service', '^(8112)', '^(8113)', '^(8114)', '^(8122)', '^(8123)
                  r'car.*audio', 'STAFFING', 'PERSONNEL', 'Postal', 'PLACEMENT', 'SECURITY', r'OFFICE.*WORK', 'SECURE', 'PROTECTION', 'GARDENER.', 'GARDENING',
                  r'Alteration.*', r'Tailor.*', r'Cleaner.*', r'Dry.*clean', 'Linen', r'Laund.*', 'CANINE', 'PEST PRO', 'PATROL', 'INVESTIGATIONS', 'TERMITE',
                  'PEST CONTROL', 'TEKLICON', r'OFFICE.*SOLUTION', 'EZHOME', 'GROOMING', 'PET CLINIC', 'TREE SURGEON',
-                 '(!FOOD)', '(!CONSTRUCTION)', '(!JANITORIAL)', '(!EDUCAT)']
+                 '(!FOOD)', '(!CONSTRUCTION)', '(!JANITORIAL)', '(!EDUCAT)', '(!Restaurant)', '(!Service)']
 
 automotive_terms = ['Automotive', '^(8111)', r'Automot.*', r'car.*care', r'\bwheel.', r'\btire.', r'\btire\b', r'auto.*shop', r'auto.*parts', r'Jiffy.lube',
                     r'General Auto.*', r'Auto.*Repair', r'AUTO.*SALE', 'TRANSMISSION', r'Auto.*zone', 'MOTORS', r'AUTO.*SERVICE', r'smog.*check', 'smog', 'AVIATION', r'Exhaust*.System', r'Trans.*Repair',
@@ -203,8 +203,7 @@ public_administration_terms = ['Public_servant', r'Public.*admin', '^(92)', r'fi
                                'UNITED STATES VETERANS', 'PUBLIC ENTITY', 'CITY OF', 'County of', 'State of', 'DEPARTMENT OF', 'SANTA CLARA COUNTY',
                                r'OHLONE.*TRIBE']
 
-other_terms = ['Undefined', 'Undefined', 'No Result',
-               'Other Type of Facility']  # catch all unlabeled items
+other_terms = ['Undefined', 'Undefined', 'No Result', 'Other Type of Facility']  # catch all unlabeled items
 
 professional_terms_rollup = ['Professional'] + service_terms + automotive_terms
 restaurant_terms_rollup = ['Restaurant'] + restaurant_terms + fast_food_terms
