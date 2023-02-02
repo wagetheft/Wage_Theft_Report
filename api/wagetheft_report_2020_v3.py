@@ -145,7 +145,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     # 1 for custom test dataset (url0 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv" <-- open and edit this file with test data)
     # 2 for small dataset (first 100 of each file)
     RunFast = False  # True skip slow formating; False run normal
-    New_Data_On_Run_Test = True #to generate a new labeled dataset on run
+    New_Data_On_Run_Test = False #to generate a new labeled dataset on run
     LOGBUG = True #True to log, False to not
     FLAG_DUPLICATE = 0  # 1 FLAG_DUPLICATE duplicate, #0 drop duplicates
     # Settings Internal - end
