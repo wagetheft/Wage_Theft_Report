@@ -18,9 +18,9 @@ def generateFile():
     if not checkValidInput(parameters):
         return "Invalid Request. Invalid Input", 400
 
-    target_state = parameters["target_state"]
-    target_county = parameters["target_county"]
-    target_city = parameters["target_city"]
+    target_state = parameters["target_state"] if "target_state" in parameters else ""
+    target_county = parameters["target_county"] if "target_county" in parameters else ""
+    target_city = parameters["target_city"] if "target_city" in parameters else ""
     target_industry = parameters["target_industry"]
     includeFedData = parameters["includeFedData"]
     includeStateData = parameters["includeStateData"]
