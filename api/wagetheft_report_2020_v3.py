@@ -702,8 +702,6 @@ def filter_function(df, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only,
     function_name = "filter_function"
 
     # unused df = FilterForDate(df, YEAR_START, YEAR_END) #filter for date
-    
-    df.to_csv("test_out_A.csv") #temp debug 2/1/2023
 
     # zip codes filter *********************************
     time_1 = time.time()
@@ -711,8 +709,6 @@ def filter_function(df, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only,
     time_2 = time.time()
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
-
-    df.to_csv("test_out_B.csv") #temp debug 2/1/2023
 
     time_1 = time.time()
     df = Filter_for_Target_Industry(df, TARGET_INDUSTRY)
