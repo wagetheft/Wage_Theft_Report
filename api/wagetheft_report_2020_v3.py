@@ -136,7 +136,6 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     # Settings External - start
     
     TARGET_ZIPCODES = search_Dict_tree(target_state, target_county, target_city, stateDict, countyDict, cityDict)
-
     TARGET_INDUSTRY = industriesDict[target_industry]
     # Settings External - end
 
@@ -221,13 +220,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     JURISDICTON_NAME = " "
     if TARGET_ZIPCODES[0].find("County"): "DO_NOTHING"
     else: JURISDICTON_NAME = "City of "
-
-    default_region_zip_code = TARGET_ZIPCODES[len(TARGET_ZIPCODES) - 1] #take the last zipcode for region and modify w/ ending 'xx'
-    default_region_zip_code = default_region_zip_code.replace(
-        default_region_zip_code[len(default_region_zip_code) - 1:], "X")
-    TARGET_ZIPCODES.append(default_region_zip_code)
-    # options: santa_clara_county_cities for region or for a city use the city name "san jose"; this constant is used to search for missing zip codes
-    default_region = [TARGET_ZIPCODES[0].upper(), TARGET_ZIPCODES[0].upper()]
+    
     # target jurisdiction: Report Title block and file name "<h1>DRAFT REPORT: Wage Theft in the jurisdiction of... "
     target_jurisdition = JURISDICTON_NAME + TARGET_ZIPCODES[0].replace("_"," ")
     target_industry = TARGET_INDUSTRY[0][0]
@@ -309,7 +302,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
             df_url = Read_Violation_Data(TEST_CASES, url, out_file_report)
             df_url = df_url.replace('\s', ' ', regex=True)  # remove line returns
             df_url = clean_function(RunFast, df_url, FLAG_DUPLICATE, bug_log, LOGBUG, log_number)
-            df_url = inference_function(df_url, infer_zip, default_region, default_region_zip_code, infer_by_naics, TARGET_INDUSTRY, 
+            df_url = inference_function(df_url, infer_zip, cityDict, infer_by_naics, TARGET_INDUSTRY, 
                 prevailing_wage_report, includeFedData, SIGNATORY_INDUSTRY, prevailing_wage_terms, bug_log, LOGBUG, log_number)
             save_backup_to_folder(df_url, url_backup_file+str(count), url_backup_path)
             count += 1
@@ -325,7 +318,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     out_target = filter_function(out_target, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only,
                     ORGANIZATION_FILTER, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number)
-    
+
     # note--estimate back wage, penaly, and interest, based on violation
     time_1 = time.time()
     total_ee_violtd = out_target['ee_violtd_cnt'].sum()
@@ -507,7 +500,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     textFile.write("<HR> </HR>")  # horizontal line
 
-    Notes_Block(textFile, default_region_zip_code)
+    Notes_Block(textFile)
 
     Methods_Block(textFile)
 
@@ -597,10 +590,25 @@ def search_Dict_tree(target_state, target_county, target_city, stateDict, county
     for city in CITY_LIST if CITY_LIST else range(1):
         if CITY_LIST: 
             ZIPCODE_LIST.extend(cityDict[city][1:]) #[1:] to skip region name in cell one
+            
+            tempA = cityDict[city][len(cityDict[city]) - 1] #take the last zipcode for region and modify w/ ending 'xx'
+
+            ZIPCODE_LIST.append(generate_generic_zipcode_for_city(tempA) )
 
                 ##add precinct level loop which replaces zipcode level and adds mass confusion
 
+    ZIPCODE_LIST = list( dict.fromkeys(ZIPCODE_LIST) ) #remove duplicates created in defualt region generation
+
     return ZIPCODE_LIST
+
+
+def generate_generic_zipcode_for_city(tempA, n_char = 1):
+    #add a generic zipcode for each city -- used later to filter records:
+    position = len(tempA)
+    # n_char -- replace just last zip code char seems to work best
+    suffix = "X" * n_char
+    tempB = tempA[:position-n_char] + suffix
+    return tempB
 
 
 def clean_function(RunFast, df, FLAG_DUPLICATE, bug_log, LOGBUG, log_number):
@@ -638,7 +646,7 @@ def clean_function(RunFast, df, FLAG_DUPLICATE, bug_log, LOGBUG, log_number):
     return df
 
 
-def inference_function(df, infer_zip, default_region, default_region_zip_code, infer_by_naics, TARGET_INDUSTRY, 
+def inference_function(df, infer_zip, cityDict, infer_by_naics, TARGET_INDUSTRY, 
         prevailing_wage_report, includeFedData, SIGNATORY_INDUSTRY, prevailing_wage_terms, bug_log, LOGBUG, log_number):
 
     function_name = "inference_function"
@@ -646,7 +654,7 @@ def inference_function(df, infer_zip, default_region, default_region_zip_code, i
     # zip codes infer *********************************
     time_1 = time.time()
     #if infer_zip == 1: 
-    InferZipcode(df, default_region, default_region_zip_code)
+    InferZipcode(df, cityDict)
     time_2 = time.time()
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -695,12 +703,16 @@ def filter_function(df, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only,
 
     # unused df = FilterForDate(df, YEAR_START, YEAR_END) #filter for date
     
+    df.to_csv("test_out_A.csv") #temp debug 2/1/2023
+
     # zip codes filter *********************************
     time_1 = time.time()
     df = Filter_for_Zipcode(df, TARGET_ZIPCODES)
     time_2 = time.time()
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+
+    df.to_csv("test_out_B.csv") #temp debug 2/1/2023
 
     time_1 = time.time()
     df = Filter_for_Target_Industry(df, TARGET_INDUSTRY)
@@ -714,11 +726,12 @@ def filter_function(df, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only,
 
 
 
-def InferZipcode(df, default_region, default_region_zip_code):
+def InferZipcode(df, cityDict):
     if not df.empty:
-        df = InferZipcodeFromCityName(df, default_region, default_region_zip_code)  # zipcodes by city name
-        df = InferZipcodeFromCompanyName(df, default_region, default_region_zip_code) #zipcodes by company name
-        df = InferZipcodeFromJurisdictionName(df, default_region, default_region_zip_code) #zipcodes by jurisdiction name -- many false positive -- last ditch if no city name
+        df = InferZipcodeFromCityName(df, cityDict)  # zipcodes by city name
+        df = InferZipcodeFromCompanyName(df, cityDict) #zipcodes by company name
+        df = InferZipcodeFromJurisdictionName(df, cityDict) #zipcodes by jurisdiction name -- many false positive -- last ditch if no city name
+        df = FillBlankZipcodes(df)
     return df
 
 
@@ -1585,88 +1598,125 @@ def InferSignatoryIndustryAndLabel(df, SIGNATORY_INDUSTRY):
     return df
 
 
-def InferZipcodeFromCityName(df, region, default_region_zip_code):
+def InferZipcodeFromCityName(df, cityDict):
 
-    if 'cty_nm' in df.columns:
+    if 'cty_nm' in df.columns: #if no city column then skip
 
+        #check if column is in df
         if 'zip_cd' not in df.columns:
-            df['zip_cd'] = '0'
+            df['zip_cd'] = '99999'
         df.zip_cd = df.zip_cd.astype(str)
 
-        upper_region = [x.upper() for x in region]
-        PATTERN_CITY = '|'.join(upper_region)
+        for city in cityDict:
+            #upper_region = city.upper()
+            #PATTERN_CITY = '|'.join(upper_region)
 
-        zipcode_is_empty = (
-            ((df['zip_cd'] == '0' ) | (df['zip_cd'] == 0 ) | pd.isna(df['zip_cd']) | 
-                (df['zip_cd'] == False) | (df['zip_cd'] == "" ) )  
-        )
+            zipcode_is_empty = (
+                ((df['zip_cd'] == '0' ) | (df['zip_cd'] == '99999' ) |(df['zip_cd'] == 0 ) | pd.isna(df['zip_cd']) | 
+                    (df['zip_cd'] == False) | (df['zip_cd'] == "" ) )  
+            )
 
-        foundZipbyCity = (
-            ((df['cty_nm'].astype(str).str.contains(PATTERN_CITY, na=False, 
-                case=False, flags=re.IGNORECASE)))  # flags=re.IGNORECASE
-        )
+            test = cityDict[city][0]
+            foundZipbyCity = (
+                ((df['cty_nm'].astype(str).str.contains(test, na=False, 
+                    case=False, flags=re.IGNORECASE)))  # flags=re.IGNORECASE
+                #((df['cty_nm'].astype(str).str.contains(PATTERN_CITY, na=False, 
+                #    case=False, flags=re.IGNORECASE)))  # flags=re.IGNORECASE
+            )
 
-        df.loc[zipcode_is_empty * foundZipbyCity, "zip_cd"] = default_region_zip_code
+            tempA = cityDict[city][len(cityDict[city]) - 1] #take last zipcode
+            tempB = generate_generic_zipcode_for_city(tempA)
+            df.loc[zipcode_is_empty * foundZipbyCity, "zip_cd"] = tempB
     
     return df
 
+def FillBlankZipcodes (df):
 
-def InferZipcodeFromCompanyName(df, region, default_region_zip_code):
-    # fill nan zip code by assumed zip by city name in trade name; ex. "Cupertino Elec."
-    if 'cty_nm' in df.columns:
-        PATTERN_CITY = '|'.join(region)
-
-        if 'trade_nm' not in df.columns:
-            df['trade_nm'] = ""
-        if 'legal_nm' not in df.columns:
-            df['legal_nm'] = ""
-        if 'zip_cd' not in df.columns:
-            df['zip_cd'] = '0'
-
-        zipcode_is_empty = (
-            (pd.isna(df['cty_nm'])) &
-            ((df['zip_cd'] == '0') | (df['zip_cd'] == "") | pd.isna(df['zip_cd']) | (df['zip_cd'] == 0)) #10/27/2022 changed False to 0
-        )
-        
-        foundZipbyCompany2 = (
-            ((df['trade_nm'].astype(str).str.contains(PATTERN_CITY, na=False, case=False, flags=re.IGNORECASE))) |
-            ((df['legal_nm'].astype(str).str.contains(
-                PATTERN_CITY, na=False, case=False, flags=re.IGNORECASE)))
-        )
-        df.loc[zipcode_is_empty * foundZipbyCompany2,'zip_cd'] = default_region_zip_code
+    zipcode_is_empty = (
+        ((df['zip_cd'] == '0' ) | (df['zip_cd'] == 0 ) | pd.isna(df['zip_cd']) | 
+        (df['zip_cd'] == False) | (df['zip_cd'] == "" ) )  
+    )
+    
+    df.loc[zipcode_is_empty, "zip_cd"] = "99999"
 
     return df
 
 
-def InferZipcodeFromJurisdictionName(df, region, default_region_zip_code):
+def InferZipcodeFromCompanyName(df, cityDict):
+    # fill nan zip code by assumed zip by city name in trade name; ex. "Cupertino Elec."
+    if 'cty_nm' not in df.columns:
+        df['cty_nm'] = ''
+    if 'trade_nm' not in df.columns:
+        df['trade_nm'] = ""
+    if 'legal_nm' not in df.columns:
+        df['legal_nm'] = ""
+    if 'zip_cd' not in df.columns:
+        df['zip_cd'] = '99999'
 
-    if 'cty_nm' in df.columns:
-        PATTERN_CITY = '|'.join(region)
-
-        if 'juris_or_proj_nm' not in df.columns:
-            df['juris_or_proj_nm'] = ""
-        if 'Jurisdiction_region_or_General_Contractor' not in df.columns:
-            df['Jurisdiction_region_or_General_Contractor'] = ""
-        if 'zip_cd' not in df.columns:
-            df['zip_cd'] = '0'
-
-        df.juris_or_proj_nm = df.juris_or_proj_nm.astype(str)
-        df.Jurisdiction_region_or_General_Contractor = df.Jurisdiction_region_or_General_Contractor.astype(
-            str)
+    for city in cityDict:
+        #PATTERN_CITY = '|'.join(cityDict[city][0])
 
         zipcode_is_empty = (
             (pd.isna(df['cty_nm'])) &
-            ((df['zip_cd'] == '0') | (df['zip_cd'] == "") | (df['zip_cd'] == 0)) #10/27/2022 changed False to 0
+            ((df['zip_cd'] == '0') | (df['zip_cd'] == '99999') |(df['zip_cd'] == "") | pd.isna(df['zip_cd']) | (df['zip_cd'] == 0)) #10/27/2022 changed False to 0
         )
+        
+        test = cityDict[city][0]
 
         foundZipbyCompany2 = (
-            (df['juris_or_proj_nm'].str.contains(PATTERN_CITY, na=False, flags=re.IGNORECASE, regex=True)) |
-            (df['Jurisdiction_region_or_General_Contractor'].str.contains(
-                    PATTERN_CITY, na=False, flags=re.IGNORECASE, regex=True))
+            ((df['trade_nm'].astype(str).str.contains(test, na=False, case=False, flags=re.IGNORECASE))) |
+            ((df['legal_nm'].astype(str).str.contains(
+                test, na=False, case=False, flags=re.IGNORECASE)))
+            #((df['trade_nm'].astype(str).str.contains(PATTERN_CITY, na=False, case=False, flags=re.IGNORECASE))) |
+            #((df['legal_nm'].astype(str).str.contains(
+            #    PATTERN_CITY, na=False, case=False, flags=re.IGNORECASE)))
         )
 
-        df.loc[zipcode_is_empty * foundZipbyCompany2, 'zip_cd'] = default_region_zip_code
-        # add logic to overwire zip codes from outside target region
+        tempA = cityDict[city][len(cityDict[city]) - 1] #take last zipcode
+        tempB = generate_generic_zipcode_for_city(tempA)
+        df.loc[zipcode_is_empty * foundZipbyCompany2,'zip_cd'] = tempB
+
+    return df
+
+
+def InferZipcodeFromJurisdictionName(df, cityDict):
+
+    if 'cty_nm' not in df.columns:
+        df['cty_nm'] = ''
+    if 'juris_or_proj_nm' not in df.columns:
+        df['juris_or_proj_nm'] = ""
+    if 'Jurisdiction_region_or_General_Contractor' not in df.columns:
+        df['Jurisdiction_region_or_General_Contractor'] = ""
+    if 'zip_cd' not in df.columns:
+        df['zip_cd'] = '99999'
+
+    df.juris_or_proj_nm = df.juris_or_proj_nm.astype(str)
+    df.Jurisdiction_region_or_General_Contractor = df.Jurisdiction_region_or_General_Contractor.astype(
+        str)
+
+    for city in cityDict:
+
+        #PATTERN_CITY = '|'.join(cityDict[city][0])
+
+        zipcode_is_empty = (
+            (pd.isna(df['cty_nm'])) &
+            ((df['zip_cd'] == '0') | (df['zip_cd'] == '99999') | (df['zip_cd'] == "") | (df['zip_cd'] == 0)) #10/27/2022 changed False to 0
+        )
+
+        test = cityDict[city][0]
+
+        foundZipbyCompany2 = (
+            (df['juris_or_proj_nm'].str.contains(test, na=False, flags=re.IGNORECASE, regex=True)) |
+            (df['Jurisdiction_region_or_General_Contractor'].str.contains(
+                    test, na=False, flags=re.IGNORECASE, regex=True))
+            #(df['juris_or_proj_nm'].str.contains(PATTERN_CITY, na=False, flags=re.IGNORECASE, regex=True)) |
+            #(df['Jurisdiction_region_or_General_Contractor'].str.contains(
+            #        PATTERN_CITY, na=False, flags=re.IGNORECASE, regex=True))
+        )
+
+        tempA = cityDict[city][len(cityDict[city]) - 1] #take last zipcode
+        tempB = generate_generic_zipcode_for_city(tempA)
+        df.loc[zipcode_is_empty * foundZipbyCompany2, 'zip_cd'] = tempB
 
     return df
 
@@ -3791,7 +3841,7 @@ def Industry_Summary_Block(out_counts, df, total_ee_violtd, total_bw_atp, total_
     textFile.write("\n")
 
 
-def Notes_Block(textFile, default_zipcode):
+def Notes_Block(textFile, default_zipcode="####X"):
 
     textFile.write("<p>Notes: ")
     textFile.write(
