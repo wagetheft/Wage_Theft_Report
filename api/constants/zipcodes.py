@@ -20,6 +20,23 @@ cityDict = {
     "Stockton_Zipcode": ['Stockton', '95201', '95202', '95203', '95204', '95205', '95206', '95207', '95208', '95209', '95210', '95211', '95212', '95213', '95215', '95219', '95267', '95269', '95296', '95297'],
     "Fresno_Zipcode": ['Fresno', '93611', '93612', '93619', '93650', '93701', '93702', '93703', '93704', '93705', '93706', '93710', '93711', '93720', '93721', '93722', '93723', '93725', '93726', '93727', '93728', '93730'],
     
+    "Alameda_Zipcode": ["Alameda",'94501', '94502'],
+    "Albany_Zipcode": ["Albany",'94706'],
+    "Berkeley_Zipcode": ["Berkeley",'94701','94702','94703','94704','94705','94707','94708','94709','94710','94712','94720'],
+    "Castro_Valley_Zipcode": ["Castro Valley",'94546','94552'],
+    "Dublin_Zipcode": ['Dublin','94568'],
+    "Emeryville_Zipcode": ['Emeryville','94608', '94662'],
+    "Fremont_Zipcode": ['Fremont','94536', '94537', '94538', '94539', '94555'],
+    "Hayward_Zipcode": ['Hayward','94540', '94541','94542','94543','94544','94545','94557'],
+    "Livermore_Zipcode": ['Livermore','94550','94551'],
+    "Newark_Zipcode": ['Newark','94560'],
+    "Oakland_Zipcode": ['Oakland','94601','94602','94603','94604','94605','94606','94607','94609','94610','94611','94612','94613','94614','94615','94617','94618','94619','94621','94622','94623','94624','94625','94649','94659','94660','94661','94666'],
+    "Piedmont_Zipcode": ['Piedmont','94620'],
+    "Pleasanton_Zipcode": ['Pleasanton','94566','94588'],
+    "San_Leandro_Zipcode": ['San Leandro','94577','94578','94579','94580'],
+    "Sunol_Zipcode": ['Sunol','94586'],
+    "Union_City_Zipcode": ['Union City','94587'],
+
     "All_Zipcode": ['00000']
 }
 
@@ -28,7 +45,10 @@ countyDict = {
         "Gilroy_Zipcode","Los_Altos_Zipcode","Los_Altos_Hills_Zipcode", "Los_Gatos_Zipcode", "Milpitas_Zipcode","Morgan_Hill_Zipcode",
         "Mountain_View_Zipcode", "Palo_Alto_Zipcode", "San_Jose_Zipcode", "Santa_Clara_Zipcode", "Saratoga_Zipcode", "Stanford_University_Zipcode",
         "Sunnyvale_Zipcode"],
-    "San_Diego_County": ["San_Diego_County","San_Diego_County_Unincorporated_Zipcode","San_Diego_Zipcode"]
+    "San_Diego_County": ["San_Diego_County","San_Diego_County_Unincorporated_Zipcode","San_Diego_Zipcode"],
+    "Alameda_County": ["Alameda_County", "Alameda_Zipcode", "Albany_Zipcode", "Berkeley_Zipcode", "Castro_Valley_Zipcode", "Dublin_Zipcode", "Emeryville_Zipcode",
+        "Fremont_Zipcode", "Hayward_Zipcode", "Livermore_Zipcode", "Newark_Zipcode", "Oakland_Zipcode", "Piedmont_Zipcode",
+        "Pleasanton_Zipcode", "San_Leandro_Zipcode", "Sunol_Zipcode", "Union_City_Zipcode"]
 }
 
 stateDict = {
