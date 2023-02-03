@@ -21,7 +21,7 @@ def generateFile():
     target_state = parameters["target_state"] if "target_state" in parameters else ""
     target_county = parameters["target_county"] if "target_county" in parameters else ""
     target_city = parameters["target_city"] if "target_city" in parameters else ""
-    target_industry = parameters["target_industry"]
+    target_industry = parameters["target_industry"] if "target_industry" in parameters else "WTC NAICS"
     includeFedData = parameters["includeFedData"]
     includeStateData = parameters["includeStateData"]
     infer_zip = parameters["infer_zip"]
