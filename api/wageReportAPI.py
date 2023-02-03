@@ -29,7 +29,7 @@ def generateFile():
     signatories_report = parameters["signatories_report"]
     all_industry_summary_block = parameters["all_industry_summary_block"]
     open_cases_only = parameters["open_cases_only"]
-    include_tables = parameters["include_tables"]  #temp fix to force assumptions
+    include_tables = parameters["include_tables"] if "include_tables" in parameters else 1
     include_summaries = parameters["include_summaries"]
     only_sig_summaries = parameters["only_sig_summaries"]
     include_top_viol_tables = parameters["include_top_viol_tables"]
@@ -45,7 +45,7 @@ def generateFile():
         includeStateData = 1
     if "include_top_viol_tables" in parameters:
         include_tables = 1
-    
+        
     try:
         return send_file(report_file_name, as_attachment=True)
     except Exception as e:
