@@ -39,6 +39,13 @@ def generateFile():
     report_file_name = generateWageReport(target_state, target_county, target_city, target_industry, includeFedData, includeStateData, infer_zip, prevailing_wage_report, signatories_report,
                                           all_industry_summary_block, open_cases_only, include_tables, include_summaries, only_sig_summaries, include_top_viol_tables, use_assumptions, infer_by_naics)
 
+    #valid stuff
+    if "includeFedData" not in parameters and "includeStateData" not in parameters:
+        includeFedData = 1
+        includeStateData = 1
+    
+    
+
     try:
         return send_file(report_file_name, as_attachment=True)
     except Exception as e:
