@@ -29,11 +29,11 @@ def generateFile():
     signatories_report = parameters["signatories_report"]
     all_industry_summary_block = parameters["all_industry_summary_block"]
     open_cases_only = parameters["open_cases_only"]
-    include_tables = parameters["include_tables"]
+    include_tables = parameters["include_tables"]  #temp fix to force assumptions
     include_summaries = parameters["include_summaries"]
     only_sig_summaries = parameters["only_sig_summaries"]
     include_top_viol_tables = parameters["include_top_viol_tables"]
-    use_assumptions = parameters["use_assumptions"]
+    use_assumptions = parameters["use_assumptions"] if "use_assumptions" in parameters else 1 #temp fix to force assumptions
     infer_by_naics = parameters["infer_by_naics"]
 
     report_file_name = generateWageReport(target_state, target_county, target_city, target_industry, includeFedData, includeStateData, infer_zip, prevailing_wage_report, signatories_report,
@@ -43,9 +43,9 @@ def generateFile():
     if "includeFedData" not in parameters and "includeStateData" not in parameters:
         includeFedData = 1
         includeStateData = 1
+    if "include_top_viol_tables" in parameters:
+        include_tables = 1
     
-    
-
     try:
         return send_file(report_file_name, as_attachment=True)
     except Exception as e:
