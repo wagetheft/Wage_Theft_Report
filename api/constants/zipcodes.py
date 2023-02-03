@@ -54,6 +54,8 @@ stateDict = {
     "California": ["California", "Santa_Clara_County", "San_Diego_County"]
 }
 
+#NOTES on zipcodes https://mcdc.missouri.edu/geography/ZIP-resources.html
+
 # this tells the system to add records that the zipcode is infered by a city name
 inferred_zipcode = ['99999', '99999']
 Custom_Zipcode = ['95112', '95113']
