@@ -21,7 +21,7 @@ def generateFile():
     target_state = parameters["target_state"] if "target_state" in parameters else ""
     target_county = parameters["target_county"] if "target_county" in parameters else ""
     target_city = parameters["target_city"] if "target_city" in parameters else ""
-    target_industry = parameters["target_industry"] if "target_industry" in parameters else "WTC_NAICS"
+    target_industry = parameters["target_industry"]
     includeFedData = parameters["includeFedData"]
     includeStateData = parameters["includeStateData"]
     infer_zip = parameters["infer_zip"]
@@ -43,8 +43,8 @@ def generateFile():
     if "includeFedData" not in parameters and "includeStateData" not in parameters:
         includeFedData = 1
         includeStateData = 1
-    #if "include_top_viol_tables" in parameters:
-    #    include_tables = 1
+    if target_industry == "":
+        target_industry = "WTC_NAICS"
         
     try:
         return send_file(report_file_name, as_attachment=True)
