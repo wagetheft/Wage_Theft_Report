@@ -89,9 +89,9 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 def main():
     # settings****************************************************
     PARAM_1_TARGET_STATE = "" #"California"
-    PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
-    PARAM_1_TARGET_ZIPCODE = "San_Jose_Zipcode" #for test use "All_Zipcode"
-    PARAM_2_TARGET_INDUSTRY = 'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS' or "All NAICS"
+    PARAM_1_TARGET_COUNTY = "Santa_Clara_County"
+    PARAM_1_TARGET_ZIPCODE = ""#"San_Jose_Zipcode" #for test use "All_Zipcode"
+    PARAM_2_TARGET_INDUSTRY = "Construction" #'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS' or "All NAICS"
     OPEN_CASES = 0 # 1 for open cases only (or nearly paid off), 0 for all cases
     USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
     INFER_NAICS = 1  # 1 to infer code by industry NAICS sector
@@ -104,7 +104,7 @@ def main():
     SUMMARY = 1  # 1 for summaries and 0 for none
     SUMMARY_SIG = 1 # 1 for summaries only of regions with significant wage theft (more than $10,000), 0 for all
     TOP_VIOLATORS = 1  # 1 for tables of top violators and 0 for none
-    prevailing_wage_report = 0 # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
+    prevailing_wage_report = 1 # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
     signatories_report = 0 # 1 to include signatories (typically, this report is only for union compliance officers) 0 to exclude signatories
 
     #!!!manually add to report***********************************************************
@@ -515,19 +515,21 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     # TABLES
     time_1 = time.time()
-    if include_tables == 1: 
+    if include_tables == 1:
         print_table_html_by_industry_and_city(temp_file_name, unique_legalname, header_two_way_table)
         print_table_html_by_industry_and_zipcode(temp_file_name, unique_legalname, header_two_way_table)
-        print_table_html_Text_Summary(include_summaries, temp_file_name, unique_legalname, header_two_way, header_two_way_table,
-            total_ee_violtd, total_case_violtn, only_sig_summaries, TARGET_INDUSTRY)
 
-        if include_top_viol_tables == 1:
-            print_top_viol_tables_html(out_target, unique_address, unique_legalname2, 
-                unique_tradename, unique_agency, unique_owner, agency_df, out_sort_ee_violtd, 
-                out_sort_bw_amt, out_sort_repeat_violtd, temp_file_name, signatories_report,
-                out_signatory_target, sig_file_name_csv, prevailing_header, header, multi_agency_header, 
-                dup_agency_header, dup_header, dup_owner_header, prevailing_wage_report, out_prevailing_target, 
-                prev_file_name_csv, TEST_)
+        if include_summaries == 1: 
+            print_table_html_Text_Summary(include_summaries, temp_file_name, unique_legalname, header_two_way, header_two_way_table,
+                total_ee_violtd, total_case_violtn, only_sig_summaries, TARGET_INDUSTRY)
+
+    if include_top_viol_tables == 1:
+        print_top_viol_tables_html(out_target, unique_address, unique_legalname2, 
+            unique_tradename, unique_agency, unique_owner, agency_df, out_sort_ee_violtd, 
+            out_sort_bw_amt, out_sort_repeat_violtd, temp_file_name, signatories_report,
+            out_signatory_target, sig_file_name_csv, prevailing_header, header, multi_agency_header, 
+            dup_agency_header, dup_header, dup_owner_header, prevailing_wage_report, out_prevailing_target, 
+            prev_file_name_csv, TEST_)
     time_2 = time.time()
 
     textFile = open(temp_file_name, 'a')

@@ -29,7 +29,7 @@ def generateFile():
     signatories_report = parameters["signatories_report"]
     all_industry_summary_block = parameters["all_industry_summary_block"]
     open_cases_only = parameters["open_cases_only"]
-    include_tables = 1 #parameters["include_tables"] if "include_tables" in parameters else 1
+    include_tables = parameters["include_tables"]
     include_summaries = parameters["include_summaries"]
     only_sig_summaries = parameters["only_sig_summaries"]
     include_top_viol_tables = parameters["include_top_viol_tables"]
@@ -40,6 +40,13 @@ def generateFile():
     if includeFedData == 0 and includeStateData == 0:
         includeFedData = 1
         includeStateData = 1
+    if include_tables == 0 and include_top_viol_tables == 0:
+        include_top_viol_tables == 1
+    if only_sig_summaries == 1:
+        include_summaries = 1
+        include_tables = 1
+    if include_summaries == 1:
+        include_tables = 1
     if parameters["target_industry"] == "":
         target_industry = "WTC NAICS"
     if parameters["target_city"] == "":
