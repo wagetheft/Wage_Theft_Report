@@ -36,16 +36,17 @@ def generateFile():
     use_assumptions = 1 #parameters["use_assumptions"] if "use_assumptions" in parameters else 1 #temp fix to force assumptions
     infer_by_naics = parameters["infer_by_naics"]
 
-    report_file_name = generateWageReport(target_state, target_county, target_city, target_industry, includeFedData, includeStateData, infer_zip, prevailing_wage_report, signatories_report,
-                                          all_industry_summary_block, open_cases_only, include_tables, include_summaries, only_sig_summaries, include_top_viol_tables, use_assumptions, infer_by_naics)
-
     #valid stuff
     if includeFedData == 0 and includeStateData == 0:
         includeFedData = 1
         includeStateData = 1
     if parameters["target_industry"] == "":
         target_industry = "WTC NAICS"
-        
+
+    #out it goes
+    report_file_name = generateWageReport(target_state, target_county, target_city, target_industry, includeFedData, includeStateData, infer_zip, prevailing_wage_report, signatories_report,
+                                          all_industry_summary_block, open_cases_only, include_tables, include_summaries, only_sig_summaries, include_top_viol_tables, use_assumptions, infer_by_naics)
+
     try:
         return send_file(report_file_name, as_attachment=True)
     except Exception as e:
