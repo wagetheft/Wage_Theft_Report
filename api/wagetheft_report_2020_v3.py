@@ -587,7 +587,7 @@ def search_Dict_tree(target_state, target_county, target_city, stateDict, county
     if target_city == "": "DO_NOTHING" #base case passes through last for loop
     else: 
         CITY_LIST = [target_city]
-        #ZIPCODE_LIST = cityDict[target_city]
+        ZIPCODE_LIST = [cityDict[target_city]][0]
         #target_precinct = ""
         
     for states in STATE_LIST if STATE_LIST else range(1):
