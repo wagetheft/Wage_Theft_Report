@@ -104,7 +104,7 @@ def main():
     SUMMARY = 1  # 1 for summaries and 0 for none
     SUMMARY_SIG = 1 # 1 for summaries only of regions with significant wage theft (more than $10,000), 0 for all
     TOP_VIOLATORS = 1  # 1 for tables of top violators and 0 for none
-    prevailing_wage_report = 1 # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
+    prevailing_wage_report = 0 # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
     signatories_report = 0 # 1 to include signatories (typically, this report is only for union compliance officers) 0 to exclude signatories
 
     #!!!manually add to report***********************************************************
@@ -145,7 +145,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     # 1 for custom test dataset (url0 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv" <-- open and edit this file with test data)
     # 2 for small dataset (first 100 of each file)
     RunFast = False  # True skip slow formating; False run normal
-    New_Data_On_Run_Test = False #to generate a new labeled dataset on run
+    New_Data_On_Run_Test = True #to generate a new labeled dataset on run
     LOGBUG = True #True to log, False to not
     FLAG_DUPLICATE = 0  # 1 FLAG_DUPLICATE duplicate, #0 drop duplicates
     # Settings Internal - end
@@ -295,6 +295,19 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         
     else: #read new files from url source
         count = 1
+
+        #save settings
+        hold_zip = infer_zip
+        hold_prev = prevailing_wage_report
+        hold_assump = use_assumptions
+        hold_NAICS = infer_by_naics
+        
+        #all options on for new data build
+        infer_zip = 1
+        prevailing_wage_report = 1
+        use_assumptions = 1
+        infer_by_naics = 1
+
         for n in url_list:
             url = n[0]
             out_file_report = n[2]
@@ -307,6 +320,12 @@ def generateWageReport(target_state, target_county, target_city, target_industry
             save_backup_to_folder(df_url, url_backup_file+str(count), url_backup_path)
             count += 1
             DF_OG = pd.concat([df_url, DF_OG], ignore_index=True)
+        
+        #return settings
+        infer_zip = hold_zip
+        prevailing_wage_report = hold_prev
+        use_assumptions = hold_assump
+        infer_by_naics = hold_NAICS 
             
     time_2 = time.time()
     append_log(bug_log, LOGBUG, f"Time to read csv(s) " + "%.5f" % (time_2 - time_1) + "\n")
@@ -343,8 +362,10 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     #unique_legalname_sig  = unique_legalname_sig[~unique_legalname_sig.index.duplicated()]
     time_1 = time.time()
+    out_target.to_csv("test_out_A.csv")
     if 'Prevailing' in out_target.columns:
         out_prevailing_target = unique_legalname_sig.loc[unique_legalname_sig['Prevailing'] == 1]
+    out_prevailing_target.to_csv("test_out_B.csv")
     if "Signatory" in out_target.columns:
         out_signatory_target = unique_legalname_sig.loc[unique_legalname_sig["Signatory"] == 1]
     if signatories_report == 0 and 'Signatory' and 'legal_nm' and 'trade_nm' in out_target.columns:
@@ -695,6 +716,7 @@ def inference_function(df, infer_zip, cityDict, infer_by_naics, TARGET_INDUSTRY,
     # PREVAILING WAGE
     time_1 = time.time()
     df = infer_prevailing_wage_cases(df, includeFedData, prevailing_wage_terms)
+    df['Prevailing'] = pd.to_numeric(df['Prevailing'], errors='coerce')
     time_2 = time.time()
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -1350,7 +1372,6 @@ def Filter_for_Zipcode(df, TARGET_ZIPCODES):
     return df
 
 
-
 def RemoveCompletedCases(df):
     '''
     DLSE categories
@@ -1399,7 +1420,12 @@ def RemoveCompletedCases(df):
 
 def InferPrevailingWageAndColumnFlag(df, prevailing_wage_terms):
 
-    df['Prevailing'] = df.Prevailing.fillna("0")
+    if 'Prevailing' not in df.columns:
+        df['Prevailing'] = '0'
+    else:
+        df['Prevailing'] = df.Prevailing.fillna("0")
+
+    df.to_csv("Test_out_D.csv")
 
     prevailing_wage_pattern = '|'.join(prevailing_wage_terms)
     found_prevailing = (
@@ -1409,8 +1435,9 @@ def InferPrevailingWageAndColumnFlag(df, prevailing_wage_terms):
         ((df['juris_or_proj_nm'].astype(str).str.contains(
             prevailing_wage_pattern, na=False, flags=re.IGNORECASE, regex=True)))
     )
-    df['Prevailing'] = pd.to_numeric(df['Prevailing'], errors='coerce')
-    df.loc[found_prevailing, 'Prevailing'] = 1
+    df.loc[found_prevailing, 'Prevailing'] = '1'
+
+    df.to_csv("Test_out_E.csv")
 
     return df
 
@@ -1645,6 +1672,7 @@ def InferZipcodeFromCityName(df, cityDict):
     
     return df
 
+
 def FillBlankZipcodes (df):
 
     zipcode_is_empty = (
@@ -1749,9 +1777,15 @@ def EXCLUSION_LIST_GENERATOR(SIGNATORY_INDUSTRY):
 
 
 def infer_WHD_prevailing_wage_violation(df):
+    if 'Prevailing' not in df.columns:
+        df['Prevailing'] = '0'
+    else:
+        df['Prevailing'] = df.Prevailing.fillna("0")
+
     #dbra_cl_violtn_cnt, dbra_bw_atp_amt, dbra_ee_atp_cnt
     if "dbra_cl_violtn_cnt" in df.columns:
         df.loc[df["dbra_cl_violtn_cnt"] > 0, "violation_code"] = "DBRA"
+        df.loc[df["dbra_cl_violtn_cnt"] > 0, "Prevailing"] = "1"
     # if "dbra_bw_atp_amt" in df.columns:
         #df.loc[df["dbra_bw_atp_amt"] > 0, "violation_code"] = "DBRA"
     # if "dbra_ee_atp_cnt" in df.columns:
