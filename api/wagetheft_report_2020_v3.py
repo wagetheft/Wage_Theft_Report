@@ -3856,10 +3856,12 @@ def Industry_Summary_Block(out_counts, df, total_ee_violtd, total_bw_atp, total_
 
 def Notes_Block(textFile, default_zipcode="####X"):
 
-    textFile.write("<p>Notes: ")
+    textFile.write("<p>Notes:</p>")
+    textFile.write("\n")
+    textFile.write("<p>")
     textFile.write(
-        f"(1) In the following tables and city summaries, the zip {default_zipcode} represents data that is missing the zip code field. ")
-    textFile.write("(2) There are unlabeled industries, many of these are actually construction, care homes, restaurants, etc. just there is not an ability to label them as such--a label of 'other' could lead one to indicate that they are not these industries and therefore the category of 'uncategorized.' ")
+        f"(1) In the tables and city summaries, the zip {default_zipcode} represents data that is missing the zip code field. ")
+    textFile.write("(2) There are unlabeled industries, many of these are actually construction, care homes, restaurants, etc. just there is not an ability to label them as such--a label of 'other' could lead one to indicate that they are not these industries and therefore the category of 'undefined.' ")
     textFile.write("(3) Values may deviate by 10% within the report for camparable subcategories: this is due to labeling and relabeling of industry that may overwrite a previous industry label (for example Nail Hamburger could be labeled service or food). ")
     textFile.write("</p>")
 
