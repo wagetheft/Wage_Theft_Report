@@ -3986,11 +3986,12 @@ def Signatory_to_Nonsignatory_Block(df1, df2, filename):
 
 
 def Footer_Block(TEST, textFile):
-    textFile.write("<p>Prepared by the Stanford University Center for Integrated Facility Engineering (CIFE) in collaboration with the Santa Clara County Wage Theft Coalition. These data have not been audited and, therefore, are only intended as an indication of wage theft.</p> \n")
-
     textFile.write("<p> Report generated ")
     textFile.write(pd.to_datetime('today').strftime("%m/%d/%Y"))
-    textFile.write("</p>")
+    textFile.write("</p> \n")
+
+    textFile.write("<p>Based on open source software prepared by the Stanford University Center for Integrated Facility Engineering (CIFE) in collaboration with the Santa Clara County Wage Theft Coalition. These data have not been audited and, therefore, are only intended as an indication of wage theft.</p> \n")
+    
 
 #write_to_html_file(new_df_3, header_HTML_EMP3, "", file_path('py_output/A4W_Summary_by_Emp_for_all2.html') )
 
