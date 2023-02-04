@@ -89,10 +89,10 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 def main():
     # settings****************************************************
     PARAM_1_TARGET_STATE = "" #"California"
-    PARAM_1_TARGET_COUNTY = "Santa_Clara_County"
-    PARAM_1_TARGET_ZIPCODE = "" #for test use "All_Zipcode"
+    PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
+    PARAM_1_TARGET_ZIPCODE = "San_Jose_Zipcode" #for test use "All_Zipcode"
     PARAM_2_TARGET_INDUSTRY = 'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS' or "All NAICS"
-    OPEN_CASES = 1 # 1 for open cases only (or nearly paid off), 0 for all cases
+    OPEN_CASES = 0 # 1 for open cases only (or nearly paid off), 0 for all cases
     USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
     INFER_NAICS = 1  # 1 to infer code by industry NAICS sector
     INFER_ZIP = 1  # 1 to infer zip code
@@ -500,11 +500,6 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     textFile.write("<HR> </HR>")  # horizontal line
 
-    Notes_Block(textFile)
-
-    Methods_Block(textFile)
-
-    Footer_Block(TEST_, textFile)
     time_2 = time.time()
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -534,6 +529,20 @@ def generateWageReport(target_state, target_county, target_city, target_industry
                 dup_agency_header, dup_header, dup_owner_header, prevailing_wage_report, out_prevailing_target, 
                 prev_file_name_csv, TEST_)
     time_2 = time.time()
+
+    textFile = open(temp_file_name, 'a')
+    textFile.write("<html><body> \n")
+    textFile.write("<HR> </HR>")  # horizontal line
+    textFile.write("<h1> Notes and methods summary</h1>")  # horizontal line
+
+    Footer_Block(TEST_, textFile)
+
+    Notes_Block(textFile)
+
+    Methods_Block(textFile)
+
+    textFile.write("</html></body>")
+
     # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -541,6 +550,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     append_log(bug_log, LOGBUG, f"Time to finish report " + "%.5f" % (time_2 - time_0) + "\n")
     append_log(bug_log, LOGBUG, "<h1>DONE</h1> \n" + "</html></body> \n") #CLOSE
     # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
+    
     return temp_file_name  # the temp json returned from API
 
 
@@ -576,7 +586,8 @@ def search_Dict_tree(target_state, target_county, target_city, stateDict, county
         target_city = ""
     if target_city == "": "DO_NOTHING" #base case passes through last for loop
     else: 
-        ZIPCODE_LIST = cityDict[target_city]
+        CITY_LIST = [target_city]
+        #ZIPCODE_LIST = cityDict[target_city]
         #target_precinct = ""
         
     for states in STATE_LIST if STATE_LIST else range(1):
@@ -600,6 +611,12 @@ def search_Dict_tree(target_state, target_county, target_city, stateDict, county
     ZIPCODE_LIST = list( dict.fromkeys(ZIPCODE_LIST) ) #remove duplicates created in defualt region generation
 
     return ZIPCODE_LIST
+
+def get_key_from_value(d, val): #https://note.nkmk.me/en/python-dict-get-key-from-value/
+    keys = [k for k, v in d.items() if v == val]
+    if keys:
+        return keys[0]
+    return None
 
 
 def generate_generic_zipcode_for_city(tempA, n_char = 1):
@@ -3885,7 +3902,7 @@ def Methods_Block(textFile):
     textFile.write("</ul>")
 
     textFile.write("<p>")
-    textFile.write("Interest_Balance_Due: ")
+    textFile.write("interest_balance_due: ")
     textFile.write("</p>")
     textFile.write("<ul>")
     textFile.write(
