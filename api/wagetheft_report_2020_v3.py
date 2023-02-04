@@ -315,8 +315,8 @@ def generateWageReport(target_state, target_county, target_city, target_industry
             df_url = Read_Violation_Data(TEST_CASES, url, out_file_report)
             df_url = df_url.replace('\s', ' ', regex=True)  # remove line returns
             df_url = clean_function(RunFast, df_url, FLAG_DUPLICATE, bug_log, LOGBUG, log_number)
-            df_url = inference_function(df_url, infer_zip, cityDict, infer_by_naics, TARGET_INDUSTRY, 
-                prevailing_wage_report, includeFedData, SIGNATORY_INDUSTRY, prevailing_wage_terms, bug_log, LOGBUG, log_number)
+            df_url = inference_function(df_url, cityDict, TARGET_INDUSTRY, 
+                includeFedData, SIGNATORY_INDUSTRY, prevailing_wage_terms, bug_log, LOGBUG, log_number)
             save_backup_to_folder(df_url, url_backup_file+str(count), url_backup_path)
             count += 1
             DF_OG = pd.concat([df_url, DF_OG], ignore_index=True)
@@ -335,8 +335,9 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     for n in url_list: #filter dataset for this run -- example, remove fed and state
         if n[1] == 0: out_target = out_target[out_target.juris_or_proj_nm != n[2]]
 
-    out_target = filter_function(out_target, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only,
-                    ORGANIZATION_FILTER, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number)
+    out_target = filter_function(out_target, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only, 
+        infer_zip, infer_by_naics, 
+        ORGANIZATION_FILTER, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number)
 
     # note--estimate back wage, penaly, and interest, based on violation
     time_1 = time.time()
@@ -686,8 +687,8 @@ def clean_function(RunFast, df, FLAG_DUPLICATE, bug_log, LOGBUG, log_number):
     return df
 
 
-def inference_function(df, infer_zip, cityDict, infer_by_naics, TARGET_INDUSTRY, 
-        prevailing_wage_report, includeFedData, SIGNATORY_INDUSTRY, prevailing_wage_terms, bug_log, LOGBUG, log_number):
+def inference_function(df, cityDict, TARGET_INDUSTRY, 
+        includeFedData, SIGNATORY_INDUSTRY, prevailing_wage_terms, bug_log, LOGBUG, log_number):
 
     function_name = "inference_function"
 
@@ -700,7 +701,7 @@ def inference_function(df, infer_zip, cityDict, infer_by_naics, TARGET_INDUSTRY,
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
 
     time_1 = time.time()
-    df = Infer_Industry(df, infer_by_naics, TARGET_INDUSTRY)
+    df = Infer_Industry(df, TARGET_INDUSTRY)
     time_2 = time.time()
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -738,6 +739,7 @@ def inference_function(df, infer_zip, cityDict, infer_by_naics, TARGET_INDUSTRY,
 
 
 def filter_function(df, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only,
+    infer_zip, infer_by_naics,
     ORGANIZATION_FILTER, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number):
 
     function_name = "filter_function"
@@ -746,13 +748,13 @@ def filter_function(df, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only,
 
     # zip codes filter *********************************
     time_1 = time.time()
-    df = Filter_for_Zipcode(df, TARGET_ZIPCODES)
+    df = Filter_for_Zipcode(df, TARGET_ZIPCODES, infer_zip)
     time_2 = time.time()
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
 
     time_1 = time.time()
-    df = Filter_for_Target_Industry(df, TARGET_INDUSTRY)
+    df = Filter_for_Target_Industry(df, TARGET_INDUSTRY, infer_by_naics)
     if open_cases_only == 1: df = RemoveCompletedCases(df)
     if ORGANIZATION_FILTER: df = Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS)
     time_2 = time.time()
@@ -1344,12 +1346,16 @@ def FilterForDate(df, YEAR_START, YEAR_END):
     return df
 
 
-def Filter_for_Target_Industry(df, TARGET_INDUSTRY):
+def Filter_for_Target_Industry(df, TARGET_INDUSTRY, infer_by_naics):
     appended_data = pd.DataFrame()
     # https://stackoverflow.com/questions/28669482/appending-pandas-dataframes-generated-in-a-for-loop
     for x in range(len(TARGET_INDUSTRY)):
         temp_term = TARGET_INDUSTRY[x][0]
-        df_temp = df.loc[df['industry'].str.upper() == temp_term.upper()]
+        df_temp = pd.DataFrame()
+        if infer_by_naics:
+            df_temp = df.loc[df['industry'].str.upper() == temp_term.upper()]
+        else: #exclude the use of inferenced values
+            df_temp = df.loc[df['industry'].str.upper() == temp_term.upper() and df['trade2'] == '']
         appended_data = pd.concat([appended_data, df_temp])
     return appended_data
 
@@ -1365,10 +1371,14 @@ def Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS):
     return df_temp
 
 
-def Filter_for_Zipcode(df, TARGET_ZIPCODES):
+def Filter_for_Zipcode(df, TARGET_ZIPCODES, infer_zip):
     if TARGET_ZIPCODES[0] != '00000': # faster run for "All_Zipcode" condition
+        TARGET_ZIPCODES_HERE = TARGET_ZIPCODES #make local copy
+        if not infer_zip:
+            for zipcode in TARGET_ZIPCODES_HERE:
+                if 'X' in zipcode: TARGET_ZIPCODES_HERE.remove(zipcode) #remove the dummy codes
         # Filter on region by zip code
-        df = df.loc[df['zip_cd'].isin(TARGET_ZIPCODES)] #<-- DLSE bug here is not finding zipcodes
+        df = df.loc[df['zip_cd'].isin(TARGET_ZIPCODES_HERE)] #<-- DLSE bug here is not finding zipcodes
     return df
 
 
@@ -1534,7 +1544,7 @@ def InferSignatoriesFromAddressAndFlag(df, signatory_address_list):
     return df
 
 
-def Infer_Industry(df, INFER, TARGET_INDUSTRY):
+def Infer_Industry(df, TARGET_INDUSTRY):
     if 'industry' not in df.columns:
         df['industry'] = "" 
     if 'trade2' not in df.columns:
@@ -1547,42 +1557,39 @@ def Infer_Industry(df, INFER, TARGET_INDUSTRY):
             PATTERN_IND = '|'.join(TARGET_INDUSTRY[x])
             PATTERN_EXCLUDE = EXCLUSION_LIST_GENERATOR(TARGET_INDUSTRY[x])
 
-            if INFER == 1 and ('legal_nm' and 'trade_nm' in df.columns): #uses legal and trade names to infer industry
+            if 'legal_nm' and 'trade_nm' in df.columns: #uses legal and trade names to infer industry
                 foundIt_ind1 = (
-
                     (
                         df['legal_nm'].astype(str).str.contains(
                             PATTERN_IND, na=False, flags=re.IGNORECASE, regex=True)
                         &
                         ~df['legal_nm'].astype(str).str.contains(PATTERN_EXCLUDE, na=False, flags=re.IGNORECASE, regex=True))
-
                     |
-
                     (
                         df['trade_nm'].astype(str).str.contains(
                             PATTERN_IND, na=False, flags=re.IGNORECASE, regex=True)
                         &
                         ~df['trade_nm'].astype(str).str.contains(PATTERN_EXCLUDE, na=False, flags=re.IGNORECASE, regex=True))
-
                 )
-
                 df.loc[foundIt_ind1, 'trade2'] = TARGET_INDUSTRY[x][0]
 
-            # uses the exisiting NAICS coding
-            foundIt_ind2 = (
-                df['naic_cd'].astype(str).str.contains(PATTERN_IND, na=False, flags=re.IGNORECASE, regex=True) &
-                ~df['naic_cd'].astype(str).str.contains(
-                    PATTERN_EXCLUDE, na=False, flags=re.IGNORECASE, regex=True)
-            )
-            df.loc[foundIt_ind2, 'industry'] = TARGET_INDUSTRY[x][0]
-
-            foundIt_ind3 = (  # uses the exisiting NAICS descriptions to fill gaps in the data
+            foundIt_ind2 = (  # uses the exisiting NAICS descriptions to fill gaps in the data
                 (df['industry'] == "") &
                 df['naics_desc.'].astype(str).str.contains(PATTERN_IND, na=False, flags=re.IGNORECASE, regex=True) &
                 ~df['naics_desc.'].astype(str).str.contains(
                     PATTERN_EXCLUDE, na=False, flags=re.IGNORECASE, regex=True)
             )
+            df.loc[foundIt_ind2, 'industry'] = TARGET_INDUSTRY[x][0]
+            df.loc[foundIt_ind2, 'trade2'] = "" #clear inference if found
+
+            # uses the exisiting NAICS coding
+            foundIt_ind3 = (
+                df['naic_cd'].astype(str).str.contains(PATTERN_IND, na=False, flags=re.IGNORECASE, regex=True) &
+                ~df['naic_cd'].astype(str).str.contains(
+                    PATTERN_EXCLUDE, na=False, flags=re.IGNORECASE, regex=True)
+            )
             df.loc[foundIt_ind3, 'industry'] = TARGET_INDUSTRY[x][0]
+            df.loc[foundIt_ind3, 'trade2'] = "" #clear inference if found
 
         # uses the existing NAICS coding and fill balnks with infered
 
