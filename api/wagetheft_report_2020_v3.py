@@ -3387,15 +3387,6 @@ def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
         "Therefore, the following is a sample given the above data constraints and the reluctance by populations to file wage and hour claims.</p>")
 
     textFile.write("\n")
-
-    textFile.write(
-        "<p>Note that categorizations are based on both documented data and intelligent inferences, therefore, there are errors. ")
-    textFile.write("For the fields used to prepare this report, please see https://docs.google.com/spreadsheets/d/19EPT9QlUgemOZBiGMrtwutbR8XyKwnrEhB5rZpZqM98/edit?usp=sharing . ")
-    textFile.write(
-        "And for the industry categories, which are given shortened names here, please see https://www.naics.com/search/ . ")
-    textFile.write("To see a visualization of the data by zip code and industry, please see (last updated Feb 2020) https://public.tableau.com/profile/forest.peterson#!/vizhome/Santa_Clara_County_Wage_Theft/SantaClaraCounty . </p>")
-
-    textFile.write("\n")
     textFile.write("\n")
 
 
@@ -3864,6 +3855,16 @@ def Notes_Block(textFile, default_zipcode="####X"):
     textFile.write("(2) There are unlabeled industries, many of these are actually construction, care homes, restaurants, etc. just there is not an ability to label them as such--a label of 'other' could lead one to indicate that they are not these industries and therefore the category of 'undefined.' ")
     textFile.write("(3) Values may deviate by 10% within the report for camparable subcategories: this is due to labeling and relabeling of industry that may overwrite a previous industry label (for example Nail Hamburger could be labeled service or food). ")
     textFile.write("</p>")
+
+    textFile.write("\n")
+
+    textFile.write(
+        "<p>Note that categorizations are based on both documented data and intelligent inferences, therefore, there are errors. ")
+    textFile.write("For the fields used to prepare this report, please see https://docs.google.com/spreadsheets/d/19EPT9QlUgemOZBiGMrtwutbR8XyKwnrEhB5rZpZqM98/edit?usp=sharing . ")
+    textFile.write(
+        "And for the industry categories, which are given shortened names here, please see https://www.naics.com/search/ . ")
+    textFile.write("To see a visualization of the data by zip code and industry, please see (last updated Feb 2020) https://public.tableau.com/profile/forest.peterson#!/vizhome/Santa_Clara_County_Wage_Theft/SantaClaraCounty . </p>")
+
 
     textFile.write("\n")
     textFile.write("\n")
