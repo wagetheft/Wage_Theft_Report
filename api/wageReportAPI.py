@@ -44,7 +44,7 @@ def generateFile():
         includeFedData = 1
         includeStateData = 1
     if target_industry == "":
-        target_industry = "WTC_NAICS"
+        target_industry = "WTC NAICS"
         
     try:
         return send_file(report_file_name, as_attachment=True)
