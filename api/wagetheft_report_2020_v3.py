@@ -96,13 +96,13 @@ def main():
     USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
     INFER_NAICS = 1  # 1 to infer code by industry NAICS sector
     INFER_ZIP = 1  # 1 to infer zip code
-    federal_data = 1  # 1 to include federal data
+    federal_data = 1 # 1 to include federal data
     state_data = 1  # 1 to include state data
     # report output block settings****************************************************
     All_Industry_Summary_Block = 0
-    TABLES = 0  # 1 for tables and 0 for just text description
-    SUMMARY = 0  # 1 for summaries and 0 for none
-    SUMMARY_SIG = 0 # 1 for summaries only of regions with significant wage theft (more than $10,000), 0 for all
+    TABLES = 1  # 1 for tables and 0 for just text description
+    SUMMARY = 1  # 1 for summaries and 0 for none
+    SUMMARY_SIG = 1 # 1 for summaries only of regions with significant wage theft (more than $10,000), 0 for all
     TOP_VIOLATORS = 1  # 1 for tables of top violators and 0 for none
     prevailing_wage_report = 1 # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
     signatories_report = 0 # 1 to include signatories (typically, this report is only for union compliance officers) 0 to exclude signatories
@@ -296,18 +296,6 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     else: #read new files from url source
         count = 1
 
-        #save settings
-        hold_zip = infer_zip
-        hold_prev = prevailing_wage_report
-        hold_assump = use_assumptions
-        hold_NAICS = infer_by_naics
-        
-        #all options on for new data build
-        infer_zip = 1
-        prevailing_wage_report = 1
-        use_assumptions = 1
-        infer_by_naics = 1
-
         TEMP_TARGET_INDUSTRY = industriesDict['WTC NAICS']
 
         for n in url_list:
@@ -322,12 +310,6 @@ def generateWageReport(target_state, target_county, target_city, target_industry
             save_backup_to_folder(df_url, url_backup_file+str(count), url_backup_path)
             count += 1
             DF_OG = pd.concat([df_url, DF_OG], ignore_index=True)
-        
-        #return settings
-        infer_zip = hold_zip
-        prevailing_wage_report = hold_prev
-        use_assumptions = hold_assump
-        infer_by_naics = hold_NAICS 
             
     time_2 = time.time()
     append_log(bug_log, LOGBUG, f"Time to read csv(s) " + "%.5f" % (time_2 - time_1) + "\n")
