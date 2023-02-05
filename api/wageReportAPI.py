@@ -51,7 +51,8 @@ def generateFile():
         target_industry = "WTC NAICS"
     if parameters["target_city"] == "":
         target_county = "Santa_Clara_County"
-
+    if parameters["includeStateData"] == 1:
+        infer_zip = 1
 
     #out it goes
     report_file_name = generateWageReport(target_state, target_county, target_city, target_industry, includeFedData, includeStateData, infer_zip, prevailing_wage_report, signatories_report,
