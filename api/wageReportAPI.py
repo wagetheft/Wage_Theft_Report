@@ -41,7 +41,7 @@ def generateFile():
         includeFedData = 1
         includeStateData = 1
     if include_tables == 0 and include_top_viol_tables == 0:
-        include_top_viol_tables == 1
+        include_top_viol_tables = 1
     if only_sig_summaries == 1:
         include_summaries = 1
         include_tables = 1
