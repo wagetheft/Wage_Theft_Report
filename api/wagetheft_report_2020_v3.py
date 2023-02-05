@@ -89,8 +89,8 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 def main():
     # settings****************************************************
     PARAM_1_TARGET_STATE = "" #"California"
-    PARAM_1_TARGET_COUNTY = "Santa_Clara_County"
-    PARAM_1_TARGET_ZIPCODE = ""#"San_Jose_Zipcode" #for test use "All_Zipcode"
+    PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
+    PARAM_1_TARGET_ZIPCODE = "San_Jose_Zipcode" #for test use "All_Zipcode"
     PARAM_2_TARGET_INDUSTRY = "Construction" #'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS' or "All NAICS"
     OPEN_CASES = 0 # 1 for open cases only (or nearly paid off), 0 for all cases
     USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
@@ -100,11 +100,11 @@ def main():
     state_data = 1  # 1 to include state data
     # report output block settings****************************************************
     All_Industry_Summary_Block = 0
-    TABLES = 1  # 1 for tables and 0 for just text description
-    SUMMARY = 1  # 1 for summaries and 0 for none
-    SUMMARY_SIG = 1 # 1 for summaries only of regions with significant wage theft (more than $10,000), 0 for all
+    TABLES = 0  # 1 for tables and 0 for just text description
+    SUMMARY = 0  # 1 for summaries and 0 for none
+    SUMMARY_SIG = 0 # 1 for summaries only of regions with significant wage theft (more than $10,000), 0 for all
     TOP_VIOLATORS = 1  # 1 for tables of top violators and 0 for none
-    prevailing_wage_report = 0 # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
+    prevailing_wage_report = 1 # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
     signatories_report = 0 # 1 to include signatories (typically, this report is only for union compliance officers) 0 to exclude signatories
 
     #!!!manually add to report***********************************************************
