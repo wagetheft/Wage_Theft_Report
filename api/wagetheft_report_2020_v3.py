@@ -145,7 +145,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     # 1 for custom test dataset (url0 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv" <-- open and edit this file with test data)
     # 2 for small dataset (first 100 of each file)
     RunFast = False  # True skip slow formating; False run normal
-    New_Data_On_Run_Test = True #to generate a new labeled dataset on run
+    New_Data_On_Run_Test = False #to generate a new labeled dataset on run
     LOGBUG = True #True to log, False to not
     FLAG_DUPLICATE = 0  # 1 FLAG_DUPLICATE duplicate, #0 drop duplicates
     # Settings Internal - end
@@ -308,6 +308,8 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         use_assumptions = 1
         infer_by_naics = 1
 
+        TEMP_TARGET_INDUSTRY = industriesDict['WTC NAICS']
+
         for n in url_list:
             url = n[0]
             out_file_report = n[2]
@@ -315,8 +317,8 @@ def generateWageReport(target_state, target_county, target_city, target_industry
             df_url = Read_Violation_Data(TEST_CASES, url, out_file_report)
             df_url = df_url.replace('\s', ' ', regex=True)  # remove line returns
             df_url = clean_function(RunFast, df_url, FLAG_DUPLICATE, bug_log, LOGBUG, log_number)
-            df_url = inference_function(df_url, cityDict, TARGET_INDUSTRY, 
-                includeFedData, SIGNATORY_INDUSTRY, prevailing_wage_terms, bug_log, LOGBUG, log_number)
+            df_url = inference_function(df_url, cityDict, TEMP_TARGET_INDUSTRY, SIGNATORY_INDUSTRY, 
+                prevailing_wage_terms, bug_log, LOGBUG, log_number)
             save_backup_to_folder(df_url, url_backup_file+str(count), url_backup_path)
             count += 1
             DF_OG = pd.concat([df_url, DF_OG], ignore_index=True)
@@ -363,10 +365,10 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     #unique_legalname_sig  = unique_legalname_sig[~unique_legalname_sig.index.duplicated()]
     time_1 = time.time()
-    out_target.to_csv("test_out_A.csv")
+
     if 'Prevailing' in out_target.columns:
         out_prevailing_target = unique_legalname_sig.loc[unique_legalname_sig['Prevailing'] == 1]
-    out_prevailing_target.to_csv("test_out_B.csv")
+
     if "Signatory" in out_target.columns:
         out_signatory_target = unique_legalname_sig.loc[unique_legalname_sig["Signatory"] == 1]
     if signatories_report == 0 and 'Signatory' and 'legal_nm' and 'trade_nm' in out_target.columns:
@@ -688,7 +690,7 @@ def clean_function(RunFast, df, FLAG_DUPLICATE, bug_log, LOGBUG, log_number):
 
 
 def inference_function(df, cityDict, TARGET_INDUSTRY, 
-        includeFedData, SIGNATORY_INDUSTRY, prevailing_wage_terms, bug_log, LOGBUG, log_number):
+        SIGNATORY_INDUSTRY, prevailing_wage_terms, bug_log, LOGBUG, log_number):
 
     function_name = "inference_function"
 
@@ -716,7 +718,7 @@ def inference_function(df, cityDict, TARGET_INDUSTRY,
 
     # PREVAILING WAGE
     time_1 = time.time()
-    df = infer_prevailing_wage_cases(df, includeFedData, prevailing_wage_terms)
+    df = infer_prevailing_wage_cases(df, prevailing_wage_terms)
     df['Prevailing'] = pd.to_numeric(df['Prevailing'], errors='coerce')
     time_2 = time.time()
     log_number+=1
@@ -787,9 +789,8 @@ def infer_signatory_cases(df, SIGNATORY_INDUSTRY):
     return df
 
 
-def infer_prevailing_wage_cases(df, includeFedData, prevailing_wage_terms):
-    if includeFedData == 1:
-        df = infer_WHD_prevailing_wage_violation(df)
+def infer_prevailing_wage_cases(df, prevailing_wage_terms):
+    df = infer_WHD_prevailing_wage_violation(df)
     df = InferPrevailingWageAndColumnFlag(df, prevailing_wage_terms)
     return df
 
@@ -1347,15 +1348,17 @@ def FilterForDate(df, YEAR_START, YEAR_END):
 
 
 def Filter_for_Target_Industry(df, TARGET_INDUSTRY, infer_by_naics):
+    
+    if 'trade2' not in df.columns:
+        df['trade2'] = ''
     appended_data = pd.DataFrame()
     # https://stackoverflow.com/questions/28669482/appending-pandas-dataframes-generated-in-a-for-loop
-    for x in range(len(TARGET_INDUSTRY)):
-        temp_term = TARGET_INDUSTRY[x][0]
-        df_temp = pd.DataFrame()
-        if infer_by_naics:
-            df_temp = df.loc[df['industry'].str.upper() == temp_term.upper()]
-        else: #exclude the use of inferenced values
-            df_temp = df.loc[df['industry'].str.upper() == temp_term.upper() and df['trade2'] == '']
+    for x in range(len(TARGET_INDUSTRY) ):
+        temp_term = TARGET_INDUSTRY[x][0]       
+        #df_temp = df.loc[df['industry'].str.upper() == temp_term.upper()]
+        df_temp = df[df['industry'].str.upper() == temp_term.upper()]
+        if not infer_by_naics: #exclude the use of inferenced values
+            df_temp = df_temp.loc[df_temp['naic_cd'].notnull()]
         appended_data = pd.concat([appended_data, df_temp])
     return appended_data
 
@@ -1414,7 +1417,7 @@ def RemoveCompletedCases(df):
     bw = df['bw_amt'].tolist()
     pmt = df['ee_pmt_recv'].tolist()
 
-    # df.index # -5 fixes an over count bug and is small eough that it wont introduce that much error into reports
+    # df.index # -5 fixes an over count bug and is small enough that it wont introduce that much error into reports
     for i in range(0, len(bw)-5):
         if math.isclose(bw[i], pmt[i], rel_tol=0.10, abs_tol=0.0):  # works
             # if math.isclose(df['bw_amt'][i], df['ee_pmt_recv'][i], rel_tol=0.10, abs_tol=0.0): #error
@@ -1435,15 +1438,13 @@ def InferPrevailingWageAndColumnFlag(df, prevailing_wage_terms):
     else:
         df['Prevailing'] = df.Prevailing.fillna("0")
 
-    df.to_csv("Test_out_D.csv")
-
     prevailing_wage_pattern = '|'.join(prevailing_wage_terms)
     found_prevailing = (
-        ((df['violation_code'].astype(str).str.contains(prevailing_wage_pattern, na=False, flags=re.IGNORECASE, regex=True))) |
-        ((df['violation'].astype(str).str.contains(prevailing_wage_pattern, na=False, flags=re.IGNORECASE, regex=True))) |
-        ((df['Note'].astype(str).str.contains(prevailing_wage_pattern, na=False, flags=re.IGNORECASE, regex=True))) |
+        ((df['violation_code'].astype(str).str.contains(prevailing_wage_pattern, case = False))) |
+        ((df['violation'].astype(str).str.contains(prevailing_wage_pattern, case = False))) |
+        ((df['Note'].astype(str).str.contains(prevailing_wage_pattern, case = False))) |
         ((df['juris_or_proj_nm'].astype(str).str.contains(
-            prevailing_wage_pattern, na=False, flags=re.IGNORECASE, regex=True)))
+            prevailing_wage_pattern, case = False)))
     )
     df.loc[found_prevailing, 'Prevailing'] = '1'
 
