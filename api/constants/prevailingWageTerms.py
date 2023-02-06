@@ -1,4 +1,4 @@
-prevailingWageTermsList = [  # https://www.dir.ca.gov/public-works/californiaprevailingwagelaws.pdf
+prevailingWageLaborCodeList = [  # https://www.dir.ca.gov/public-works/californiaprevailingwagelaws.pdf
     "(L.C. 223)", "(section 223)", "(LC 223)",  # frequently used
     "(L.C. 1720)", "(section 1720)", "(LC 1720)",
     "(L.C. 1720.2)", "(section 1720.2)", "(LC 1720.2)",
@@ -123,10 +123,25 @@ prevailingWageTermsList = [  # https://www.dir.ca.gov/public-works/californiapre
     "(H.S.C. 50898.2)", "(section 50898.2)", "(HSC 50898.2)",
     "(H.S.C. 50953)", "(section 50953)", "(HSC 50953)",
     "(H.S.C. 125290.65)", "(section 125290.65)", "(HSC 125290.65)",
+]
 
-    "(underpayment)", "(misclassification)", "(prevailing)", "(incorrect)", "(increase)", "(fringe)",
-    "(apprentice)", "(apprenticeship)", "(Public Contract)"
-    "(City of )", "(School District)", "(County)", "(College)", "(University)", "(State of )", "(Library)",
-    "(Fire station)", "(Fire depart)", "(Sheriff)", "(Police)", "(Water District)",
-    "(DBRA)"
+# col 'Reason For Closing'
+# col 'Closure Disposition - Other Reason' 1x
+# col "naics_desc." <-- do not search
+prevailingWageTermsList = [
+    #"underpayment", "incorrect", "increase", 
+    "misclassification", "prevailing", "fringe",
+    r"apprentice.*", 
+    r"Public.*Contract.*", r"Public.*Work.*", 
+]
+
+#legal_nm
+prevailingWagePoliticalList = [
+    r"City of.*", r"City and County of.*", r"County of.*", 
+    r"City Depart.*", r"County Depart.*",
+    r"School.*Dist.*", "High School", "Middle School", "Elementary School", r"Charter School.*", r"Charter Academ.*",
+    "Community College", "Junior Collge", "City College", r"College.*Dist.*", "University", "Library", 
+    r"State of Cal.*", 
+    r"Fire.*station.*", r"Fire.*depart.*", r"Sheriff.*", "Police", r".*Police.*Depart.*",
+    r"Water.*Dist.*", "Water District", "Municipal Water"
 ]

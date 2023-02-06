@@ -74,6 +74,8 @@ if platform.system() == 'Windows' or platform.system() =='Darwin':
     from constants.zipcodes import cityDict
     from constants.industries import industriesDict
     from constants.prevailingWageTerms import prevailingWageTermsList
+    from constants.prevailingWageTerms import prevailingWageLaborCodeList
+    from constants.prevailingWageTerms import prevailingWagePoliticalList
     from constants.signatories import signatories
 else:
     from api.constants.zipcodes import stateDict
@@ -81,6 +83,8 @@ else:
     from api.constants.zipcodes import cityDict
     from api.constants.industries import industriesDict
     from api.constants.prevailingWageTerms import prevailingWageTermsList
+    from api.constants.prevailingWageTerms import prevailingWageLaborCodeList
+    from api.constants.prevailingWageTerms import prevailingWagePoliticalList
     from api.constants.signatories import signatories
 
 warnings.filterwarnings("ignore", 'This pattern has match groups')
@@ -89,9 +93,9 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 def main():
     # settings****************************************************
     PARAM_1_TARGET_STATE = "" #"California"
-    PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
-    PARAM_1_TARGET_ZIPCODE = "San_Jose_Zipcode" #for test use "All_Zipcode"
-    PARAM_2_TARGET_INDUSTRY = "Construction" #'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS' or "All NAICS"
+    PARAM_1_TARGET_COUNTY = "Santa_Clara_County"
+    PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode" #for test use "All_Zipcode"
+    PARAM_2_TARGET_INDUSTRY = 'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS' or "All NAICS"
     OPEN_CASES = 0 # 1 for open cases only (or nearly paid off), 0 for all cases
     USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
     INFER_NAICS = 1  # 1 to infer code by industry NAICS sector
@@ -104,7 +108,7 @@ def main():
     SUMMARY = 1  # 1 for summaries and 0 for none
     SUMMARY_SIG = 1 # 1 for summaries only of regions with significant wage theft (more than $10,000), 0 for all
     TOP_VIOLATORS = 1  # 1 for tables of top violators and 0 for none
-    prevailing_wage_report = 1 # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
+    prevailing_wage_report = 0 # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
     signatories_report = 0 # 1 to include signatories (typically, this report is only for union compliance officers) 0 to exclude signatories
 
     #!!!manually add to report***********************************************************
@@ -158,6 +162,9 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     #LIBRARIES - start
     prevailing_wage_terms = prevailingWageTermsList #from prevailingWageTerms.py
+    prevailing_wage_labor_code = prevailingWageLaborCodeList #from prevailingWageTerms.py
+    prevailing_wage_politicals = prevailingWagePoliticalList #from prevailingWageTerms.py
+
     SIGNATORY_INDUSTRY = signatories #from signatories.py
     #LIBRARIES - end
     
@@ -233,18 +240,6 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     time_0 = time.time()
     time_1 = time.time()
 
-    # from os.path import exists # for relative path
-    # violation_report_folder = "dlse_judgements/"
-    # if exists(violation_report_folder + "unified_no_WHD_20190629.csv"):
-    #     read_file0 = violation_report_folder + \
-    #         "unified_no_WHD_20190629.csv"  # mixed SJOE, SCCBTC, DLSE
-    # if exists(violation_report_folder + "whd_whisard_02052022.csv"):
-    #     read_file1 = violation_report_folder + \
-    #         "whd_whisard_02052022.csv"  # US DOL WHD website
-    # if exists(violation_report_folder + "HQ20009-HQ2ndProduction8.13.2019_no_returns_Linux.csv"): #10/2/2022 added _Linux
-    #     read_file2 = violation_report_folder + \
-    #         "HQ20009-HQ2ndProduction8.13.2019_no_returns.csv"  # CA DIR DSLE PRA
-
     url0 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv" #<-- open and edit this file with test data
     url1 = "https://enfxfr.dol.gov/data_catalog/WHD/whd_whisard_20221006.csv.zip"
     # url2 = "https://www.researchgate.net/profile/Forest-Peterson/publication/357767172_California_Dept_of_Labor_Standards_Enforcement_DLSE_PRA_Wage_Claim_Adjudications_WCA_for_all_DLSE_offices_from_January_2001_to_July_2019/data/61de6b974e4aff4a643603ae/HQ20009-HQ-2nd-Production-8132019.csv"
@@ -305,8 +300,9 @@ def generateWageReport(target_state, target_county, target_city, target_industry
             df_url = Read_Violation_Data(TEST_CASES, url, out_file_report)
             df_url = df_url.replace('\s', ' ', regex=True)  # remove line returns
             df_url = clean_function(RunFast, df_url, FLAG_DUPLICATE, bug_log, LOGBUG, log_number)
-            df_url = inference_function(df_url, cityDict, TEMP_TARGET_INDUSTRY, SIGNATORY_INDUSTRY, 
-                prevailing_wage_terms, bug_log, LOGBUG, log_number)
+            df_url = inference_function(df_url, cityDict, TEMP_TARGET_INDUSTRY, 
+                prevailing_wage_terms, prevailing_wage_labor_code, prevailing_wage_politicals, 
+                bug_log, LOGBUG, log_number)
             save_backup_to_folder(df_url, url_backup_file+str(count), url_backup_path)
             count += 1
             DF_OG = pd.concat([df_url, DF_OG], ignore_index=True)
@@ -320,8 +316,16 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         if n[1] == 0: out_target = out_target[out_target.juris_or_proj_nm != n[2]]
 
     out_target = filter_function(out_target, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only, 
-        infer_zip, infer_by_naics, 
-        ORGANIZATION_FILTER, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number)
+        infer_zip, infer_by_naics, ORGANIZATION_FILTER, TARGET_ORGANIZATIONS, 
+        bug_log, LOGBUG, log_number)
+
+    if signatories_report:
+        # infer signatories
+        time_1 = time.time()
+        out_target = infer_signatory_cases(out_target, SIGNATORY_INDUSTRY)
+        time_2 = time.time()
+        log_number+=1
+        append_log(bug_log, LOGBUG, f"Time to infer signatories " + "%.5f" % (time_2 - time_1) + "\n")
 
     # note--estimate back wage, penaly, and interest, based on violation
     time_1 = time.time()
@@ -672,7 +676,8 @@ def clean_function(RunFast, df, FLAG_DUPLICATE, bug_log, LOGBUG, log_number):
 
 
 def inference_function(df, cityDict, TARGET_INDUSTRY, 
-        SIGNATORY_INDUSTRY, prevailing_wage_terms, bug_log, LOGBUG, log_number):
+        prevailing_wage_terms, prevailing_wage_labor_code, prevailing_wage_politicals, 
+        bug_log, LOGBUG, log_number):
 
     function_name = "inference_function"
 
@@ -700,15 +705,8 @@ def inference_function(df, cityDict, TARGET_INDUSTRY,
 
     # PREVAILING WAGE
     time_1 = time.time()
-    df = infer_prevailing_wage_cases(df, prevailing_wage_terms)
+    df = infer_prevailing_wage_cases(df, prevailing_wage_terms, prevailing_wage_labor_code, prevailing_wage_politicals)
     df['Prevailing'] = pd.to_numeric(df['Prevailing'], errors='coerce')
-    time_2 = time.time()
-    log_number+=1
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
-
-    # infer signatories
-    time_1 = time.time()
-    df = infer_signatory_cases(df, SIGNATORY_INDUSTRY)
     time_2 = time.time()
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -771,9 +769,8 @@ def infer_signatory_cases(df, SIGNATORY_INDUSTRY):
     return df
 
 
-def infer_prevailing_wage_cases(df, prevailing_wage_terms):
-    df = infer_WHD_prevailing_wage_violation(df)
-    df = InferPrevailingWageAndColumnFlag(df, prevailing_wage_terms)
+def infer_prevailing_wage_cases(df, prevailing_wage_terms, prevailing_wage_labor_code, prevailing_wage_politicals):
+    df = InferPrevailingWageAndColumnFlag(df, prevailing_wage_terms, prevailing_wage_labor_code, prevailing_wage_politicals)
     return df
 
 
@@ -996,6 +993,10 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
         df.plot()  # table setup
 
         # tables top 10 violators
+
+        #write_to_html_file(out_sort_bw_amt, header, "TEST: Top violators by amount of backwages stolen (by legal name)", file_path(temp_file_name), 6)
+        #write_to_html_file(out_sort_ee_violtd, header, "TEST: Top violators by number of employees violated (by legal name)", file_path(temp_file_name), 6)
+        #write_to_html_file(out_sort_repeat_violtd, header, "TEST: Top violators by number of repeat violations (by legal name)", file_path(temp_file_name), 6)
 
         with open(temp_file_name, 'a', encoding='utf-8') as f:  # append to report main file
 
@@ -1246,17 +1247,34 @@ def GroupByMultpleCases(df, COLUMN_NAME):
         df['records'] = 1
         df['records'] = df.groupby(COLUMN_NAME)[COLUMN_NAME].transform(
             'count')  # count duplicates
-
-        df['bw_amt'] = df.groupby(COLUMN_NAME)["bw_amt"].transform('sum')
-        #df['ee_pmt_due'] = df.groupby(COLUMN_NAME)["ee_pmt_due"].transform('sum')
-        df['backwage_owed'] = df.groupby(
-            COLUMN_NAME)['backwage_owed'].transform('sum')
-        df['violtn_cnt'] = df.groupby(
-            COLUMN_NAME)["violtn_cnt"].transform('sum')
-        df['ee_violtd_cnt'] = df.groupby(
-            COLUMN_NAME)["ee_violtd_cnt"].transform('sum')
-        df['ee_pmt_recv'] = df.groupby(
-            COLUMN_NAME)["ee_pmt_recv"].transform('sum')
+        if 'bw_amt' not in df.columns:
+            df['bw_amt'] = "0"
+        else:
+            df['bw_amt'] = df.groupby(COLUMN_NAME)["bw_amt"].transform('sum')
+        #if 'ee_pmt_due' not in df.columns:
+        #    df['ee_pmt_due'] = "0"
+        #else:
+        #    df['ee_pmt_due'] = df.groupby(COLUMN_NAME)["ee_pmt_due"].transform('sum')
+        if 'backwage_owed' not in df.columns:
+            df['backwage_owed'] = "0"
+        else:
+            df['backwage_owed'] = df.groupby(
+                COLUMN_NAME)['backwage_owed'].transform('sum')
+        if 'violtn_cnt' not in df.columns:
+            df['violtn_cnt'] = "0"
+        else:
+            df['violtn_cnt'] = df.groupby(
+                COLUMN_NAME)["violtn_cnt"].transform('sum')
+        if 'ee_violtd_cnt' not in df.columns:
+            df['ee_violtd_cnt'] = "0"
+        else:
+            df['ee_violtd_cnt'] = df.groupby(
+                COLUMN_NAME)["ee_violtd_cnt"].transform('sum')
+        if 'ee_pmt_recv' not in df.columns:
+            df['ee_pmt_recv'] = "0"
+        else:
+            df['ee_pmt_recv'] = df.groupby(
+                COLUMN_NAME)["ee_pmt_recv"].transform('sum')
 
         df = df.drop_duplicates(subset=[COLUMN_NAME], keep='first')
         df = df[df.records > 1]
@@ -1413,24 +1431,51 @@ def RemoveCompletedCases(df):
     return df
 
 
-def InferPrevailingWageAndColumnFlag(df, prevailing_wage_terms):
+def InferPrevailingWageAndColumnFlag(df, prevailing_wage_terms, prevailing_wage_labor_code, prevailing_wage_politicals):
 
     if 'Prevailing' not in df.columns:
         df['Prevailing'] = '0'
     else:
         df['Prevailing'] = df.Prevailing.fillna("0")
+    
+    if "Reason For Closing" not in df.columns:
+        df["Reason For Closing"] = ""
+    if 'Closure Disposition - Other Reason' not in df.columns:
+        df['Closure Disposition - Other Reason'] = ""
+    if 'violation_code' not in df.columns:
+        df['violation_code'] = ""
+    if 'violation' not in df.columns:
+        df['violation'] = ""
+    if 'Note' not in df.columns:
+        df['Note'] = ""
+    
 
     prevailing_wage_pattern = '|'.join(prevailing_wage_terms)
-    found_prevailing = (
-        ((df['violation_code'].astype(str).str.contains(prevailing_wage_pattern, case = False))) |
-        ((df['violation'].astype(str).str.contains(prevailing_wage_pattern, case = False))) |
-        ((df['Note'].astype(str).str.contains(prevailing_wage_pattern, case = False))) |
-        ((df['juris_or_proj_nm'].astype(str).str.contains(
-            prevailing_wage_pattern, case = False)))
+    found_prevailing_0 = (
+        ((df['Reason For Closing'].astype(str).str.contains(prevailing_wage_pattern, case = False))) |
+        ((df['Closure Disposition - Other Reason'].astype(str).str.contains(prevailing_wage_pattern, case = False)))
     )
-    df.loc[found_prevailing, 'Prevailing'] = '1'
 
-    df.to_csv("Test_out_E.csv")
+    prevailing_wage_labor_code_pattern = '|'.join(prevailing_wage_labor_code)
+    found_prevailing_1 = (
+        ((df['violation_code'].astype(str).str.contains(prevailing_wage_labor_code_pattern, case = False))) |
+        ((df['violation'].astype(str).str.contains(prevailing_wage_labor_code_pattern, case = False))) |
+        ((df['Note'].astype(str).str.contains(prevailing_wage_labor_code_pattern, case = False))) 
+    )
+
+    prevailing_wage_political_pattern = '|'.join(prevailing_wage_politicals)
+    found_prevailing_2 = (
+        ((df['legal_nm'].astype(str).str.contains(prevailing_wage_political_pattern, case = False)))
+    )
+
+    df.loc[((found_prevailing_0 | found_prevailing_1 | found_prevailing_2) & 
+        ((df['industry'] == "Construction") | (df['industry'] == 'Utilities') )), 
+        'Prevailing'] = '1'
+
+    #specific to DOL WHD data
+    if "dbra_cl_violtn_cnt" in df.columns:
+        df.loc[df["dbra_cl_violtn_cnt"] > 0, "violation_code"] = "DBRA"
+        df.loc[df["dbra_cl_violtn_cnt"] > 0, "Prevailing"] = "1"
 
     return df
 
@@ -1764,24 +1809,6 @@ def EXCLUSION_LIST_GENERATOR(SIGNATORY_INDUSTRY):
     else:
         PATTERN_EXCLUDE = "999999"
     return PATTERN_EXCLUDE
-
-
-def infer_WHD_prevailing_wage_violation(df):
-    if 'Prevailing' not in df.columns:
-        df['Prevailing'] = '0'
-    else:
-        df['Prevailing'] = df.Prevailing.fillna("0")
-
-    #dbra_cl_violtn_cnt, dbra_bw_atp_amt, dbra_ee_atp_cnt
-    if "dbra_cl_violtn_cnt" in df.columns:
-        df.loc[df["dbra_cl_violtn_cnt"] > 0, "violation_code"] = "DBRA"
-        df.loc[df["dbra_cl_violtn_cnt"] > 0, "Prevailing"] = "1"
-    # if "dbra_bw_atp_amt" in df.columns:
-        #df.loc[df["dbra_bw_atp_amt"] > 0, "violation_code"] = "DBRA"
-    # if "dbra_ee_atp_cnt" in df.columns:
-        #df.loc[df["dbra_ee_atp_cnt"] > 0, "violation_code"] = "DBRA"
-
-    return df
 
 
 def lookuplist(trade, list_x, col):
@@ -3343,8 +3370,8 @@ def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
     # all data summary block
     if TEST != 3:
         textFile.write("<p>These data are a combination of the Department of Labor Wage and Hour Division cases (not all result in judgments), the Division of Labor Standards Enforcement judgments, "
-                       "and the San Jose Office of Enforcement cases. The WHD data were obtained from the DOL, the DLSE data were obtained through a Section 6250 CA Public Records Act request (up to Aug 1, 2019 and does not include purged cases which are those settled and then purged typically after three years), "
-                       "and the City provided the SJOE data.</p>")
+                       "The WHD data were obtained from the DOL, the DLSE data were obtained through a Section 6250 CA Public Records Act request (up to Aug 1, 2019 and does not include purged cases "
+                       "which are those settled and then purged typically after three years).</p>")
 
     textFile.write("\n")
 
@@ -3392,7 +3419,7 @@ def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
 
     if TEST != 3:
         textFile.write(
-            "<p>The Federal WHD data goes back to 2000, the State DLSE data goes back to 2000, and the City SJOE data goes back to 2011.</p>")
+            "<p>The Federal WHD data goes back to 2000, and the State DLSE data goes back to 2000.</p>")
 
     '''
 	textFile.write( "<p>Dataset date range: ")
@@ -3887,9 +3914,12 @@ def Notes_Block(textFile, default_zipcode="####X"):
     textFile.write(
         "<p>Note that categorizations are based on both documented data and intelligent inferences, therefore, there are errors. ")
     textFile.write("For the fields used to prepare this report, please see https://docs.google.com/spreadsheets/d/19EPT9QlUgemOZBiGMrtwutbR8XyKwnrEhB5rZpZqM98/edit?usp=sharing . ")
-    textFile.write(
-        "And for the industry categories, which are given shortened names here, please see https://www.naics.com/search/ . ")
+    textFile.write("And for the industry categories, which are given shortened names here, please see https://www.naics.com/search/ . ")
     textFile.write("To see a visualization of the data by zip code and industry, please see (last updated Feb 2020) https://public.tableau.com/profile/forest.peterson#!/vizhome/Santa_Clara_County_Wage_Theft/SantaClaraCounty . </p>")
+
+    textFile.write("\n")
+
+    textFile.write("<p>The DIR DLSE uses one case per employee while the DOL WHD combines employeees into one case. </p>")
 
 
     textFile.write("\n")
@@ -4026,7 +4056,7 @@ def Footer_Block(TEST, textFile):
 
 
 # https://stackoverflow.com/questions/47704441/applying-styling-to-pandas-dataframe-saved-to-html-file
-def write_to_html_file(df, header_HTML, title, filename):
+def write_to_html_file(df, header_HTML, title, filename, rows = 99):
     # added this line to avoid error 8/10/2022 f. peterson
     import pandas.io.formats.style
     import os  # added this line to avoid error 8/10/2022 f. peterso
@@ -4069,7 +4099,7 @@ def write_to_html_file(df, header_HTML, title, filename):
     if type(df) == pd.io.formats.style.Styler:
         result += df.render()
     else:
-        result += df.to_html(classes='wide', columns=header_HTML, escape=False)
+        result += df.to_html(max_rows = rows, classes='wide', columns=header_HTML, escape=False)
     result += '''
 		</body>
 		</html>
@@ -4081,6 +4111,8 @@ def write_to_html_file(df, header_HTML, title, filename):
     # https://stackoverflow.com/questions/27092833/unicodeencodeerror-charmap-codec-cant-encode-characters
     with open(filename, mode='a', encoding="utf-8") as f:
         f.write(result)
+
+
 
 def append_log(bug_log, LOGBUG, text):
     if LOGBUG:

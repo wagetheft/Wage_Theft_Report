@@ -33,7 +33,7 @@ def generateFile():
     include_summaries = parameters["include_summaries"]
     only_sig_summaries = parameters["only_sig_summaries"]
     include_top_viol_tables = parameters["include_top_viol_tables"]
-    use_assumptions = 1 #parameters["use_assumptions"] if "use_assumptions" in parameters else 1 #temp fix to force assumptions
+    use_assumptions = parameters["use_assumptions"]
     infer_by_naics = parameters["infer_by_naics"]
 
     #valid stuff
