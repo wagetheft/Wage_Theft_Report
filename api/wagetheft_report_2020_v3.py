@@ -181,8 +181,13 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     # <-- dir the script is in (import os) plus up one
     script_dir = os.path.dirname(os.path.dirname(__file__))
     abs_path = os.path.join(script_dir, rel_path)
+    os.chdir(script_dir) #Change the current working directory per https://stackoverflow.com/questions/12201928/open-gives-filenotfounderror-ioerror-errno-2-no-such-file-or-directory
+    
     if not os.path.exists(script_dir):  # create folder if necessary
         os.makedirs(script_dir)
+
+    if not os.path.exists(abs_path):  # create folder if necessary
+        os.makedirs(abs_path)
 
     file_name = TARGET_ZIPCODES[0] + "_" + target_industry
 
