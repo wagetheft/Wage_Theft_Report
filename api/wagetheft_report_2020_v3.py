@@ -279,7 +279,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     PATH_EXISTS = os.path.exists(abs_path0)
     if PATH_EXISTS: #check file age
         dir = os.listdir(abs_path0)
-        if len(dir) == 0: #check if empty
+        if len(dir) < 2: #check if missing a file
             OLD_DATA = True
         else: #check if old
             import glob
