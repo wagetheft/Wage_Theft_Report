@@ -274,21 +274,28 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     abs_path0 = os.path.join(script_dir0, url_backup_path)
 
     OLD_DATA = False
-    if New_Data_On_Run_Test: OLD_DATA = True #reset for testing
+    if New_Data_On_Run_Test: 
+        OLD_DATA = True #reset for testing
     PATH_EXISTS = os.path.exists(abs_path0)
     if PATH_EXISTS: #check file age
         dir = os.listdir(abs_path0)
-        if len(dir) == 0: OLD_DATA = True
-        import glob
-        csv_files = glob.glob(os.path.join(abs_path0, "*.csv"))
-        for f in csv_files:
-            if time.time() - os.path.getmtime(f) > (1 * 30 * 24 * 60 * 60): #if older than one month
-                OLD_DATA = True
-                os.remove(f) #remove and make new
+        if len(dir) == 0: #check if empty
+            OLD_DATA = True
+        else: #check if old
+            import glob
+            csv_files = glob.glob(os.path.join(abs_path0, "*.csv"))
+            age_limit = (1 * 30 * 24 * 60 * 60) #seconds = 1 month x 30 days/mo x 24 hr/day x 60 min/hr x 60s/min
+            for f in csv_files:
+                born_on = os.path.getmtime(f)
+                age = (time.time() - born_on)
+                if age > age_limit: #if older than one month
+                    OLD_DATA = True
+                    os.remove(f) #remove and make new
 
     if PATH_EXISTS and not OLD_DATA: #cleaned files exist and newer than one month
         import glob
         csv_files = glob.glob(os.path.join(abs_path0, "*.csv"))
+        
         for f in csv_files:
             df_backup = pd.read_csv(f, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
             DF_OG = pd.concat([df_backup, DF_OG], ignore_index=True)
