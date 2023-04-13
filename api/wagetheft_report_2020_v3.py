@@ -3803,7 +3803,7 @@ def Regional_All_Industry_Summary_Block(out_counts, df, total_ee_violtd, total_b
 
     if OPEN_CASES == 1:
         textFile.write(
-            "<p>This report has cases removed that are documented as closed or the amount repaid matches the backwages owed.</p> \n")
+            "<p>This report has cases removed that are documented as paid or claimant withdrew or the amount repaid matches the backwages owed.</p> \n")
 
     if not len(out_counts.index) == 0:
         textFile.write("<p>Wage theft cases: ")
