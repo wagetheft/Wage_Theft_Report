@@ -1441,15 +1441,39 @@ def RemoveCompletedCases(df):
             (df["Closure Disposition"] != 'Settled   At hearing') &
             (df["Closure Disposition"] != 'Settled   Pre-Conference') &
             (df["Closure Disposition"] != 'Settled   Pre-hearing') &
-            (df["Closure Disposition"] != 'Plaintiff rec d $0 ODA') &
+            (df["Closure Disposition"] != 'Settled   Post Hearing (Post Judgment, Prior to JEU referral)') &
+            (df["Closure Disposition"] != 'Settled   Post Hearing (Prior to ODA)') &
+            (df["Closure Disposition"] != 'Settled   Post Hearing (Post ODA, Prior to Judgment)') &
+            (df["Closure Disposition"] != 'Settled   Post Appeal') &
+            (df["Closure Disposition"] != 'Plaintiff rec d ODA') &
+            (df["Closure Disposition"] != 'Paid in Full   Post Judgment Entry') &
             (df["Closure Disposition - Other Reason"] != 'Duplicate') &
+            (df["Closure Disposition - Other Reason"] != 'duplicate') &
             (df["Closure Disposition - Other Reason"] != 'Duplicate Case') &
             (df["Closure Disposition - Other Reason"] != 'Duplicate Claim') &
             (df["Closure Disposition - Other Reason"] != 'ODA - Dft') &
             (df["Closure Disposition - Other Reason"] != 'Outside settlement between parties') &
             (df["Closure Disposition - Other Reason"] != 'Parties settled outside the office') &
             (df["Closure Disposition - Other Reason"] != 'Payment remitted to Labor Commissioner because employer cannot locate employee') &
-            (df["Closure Disposition - Other Reason"] != 'Pd prior to PHC')
+            (df["Closure Disposition - Other Reason"] != 'Pd prior to PHC') & 
+            (df["Closure Disposition - Other Reason"] != 'nothing owed still employed') &
+            (df["Reason For Closing"] != 'Plt settled w/Dft - SofJ') &
+            (df["Reason For Closing"] != 'conceded wages paid by employer. no claims by plaintiff') &
+            (df["Reason For Closing"] != 'duplicate') &
+            (df["Reason For Closing"] != 'Duplicate') &
+            (df["Reason For Closing"] != 'Duplicate case') &
+            (df["Reason For Closing"] != 'ODA - Pd') &
+            (df["Reason For Closing"] != 'ODA Pd') &
+            (df["Reason For Closing"] != 'Paid in full per settlement') &
+            (df["Reason For Closing"] != 'Paid in Full') &
+            (df["Reason For Closing"] != 'paid in full post judgment entry.') &
+            (df["Reason For Closing"] != 'parties settled') &
+            (df["Reason For Closing"] != 'Pd per ODA') &
+            (df["Reason For Closing"] != 'Pd') &
+            (df["Reason For Closing"] != 'Plaintiff withdrew claim') &
+            (df["Reason For Closing"] != 'Plt w/d clm') &
+            (df["Reason For Closing"] != 'Parties settled for an amount less on ODA')
+
 
         ]
 
@@ -1460,13 +1484,10 @@ def RemoveCompletedCases(df):
     df['bw_amt'] = df['bw_amt'].fillna(0).astype(float)
     df['ee_pmt_recv'] = df['ee_pmt_recv'].fillna(0).astype(float)
 
-    df = df[df['bw_amt'] != df['ee_pmt_recv']]
-
-    bw = df['bw_amt'].tolist()
-    pmt = df['ee_pmt_recv'].tolist()
-
     # df.index # -5 fixes an over count bug and is small enough that it wont introduce that much error into reports
     '''
+    bw = df['bw_amt'].tolist()
+    pmt = df['ee_pmt_recv'].tolist()
     for i in range(0, len(bw)-5):
         if math.isclose(bw[i], pmt[i], rel_tol=0.20, abs_tol=1.0):  # works
             # if math.isclose(df['bw_amt'][i], df['ee_pmt_recv'][i], rel_tol=0.10, abs_tol=0.0): #error
@@ -1482,8 +1503,8 @@ def RemoveCompletedCases(df):
         tolerance = 1.05 #outstanding value must be greater than 105% of payment (less than 95% paid)
         abs_tol = -0.001 # allows zero but no negative values
         df = df.loc[ 
-            (df['bw_amt'] > (df['ee_pmt_recv']*tolerance) ) & #more than 5% of amount still owed
-            ((df['bw_amt'] - df['ee_pmt_recv']) > abs_tol ) & #amount owed is not negative and is more than $0
+            (df['bw_amt'] >= (df['ee_pmt_recv']*tolerance) ) & #more than 5% of amount still owed
+            ((df['bw_amt'] - df['ee_pmt_recv']) >= abs_tol ) & #amount owed is not negative and is more than $0
             (df["Case Stage"] != 'Judgment') &
             (df["Case Stage"] != 'JEU Referral') &
             (df["Case Status"] != 'Judgment Issued') &
