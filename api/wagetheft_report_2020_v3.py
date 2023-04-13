@@ -96,7 +96,7 @@ def main():
     PARAM_1_TARGET_COUNTY = "Santa_Clara_County"
     PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode" #for test use "All_Zipcode"
     PARAM_2_TARGET_INDUSTRY = 'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS' or "All NAICS"
-    OPEN_CASES = 0 # 1 for open cases only (or nearly paid off), 0 for all cases
+    OPEN_CASES = 1 # 1 for open cases only (or nearly paid off), 0 for all cases
     USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
     INFER_NAICS = 1  # 1 to infer code by industry NAICS sector
     INFER_ZIP = 1  # 1 to infer zip code
@@ -1398,8 +1398,9 @@ def Filter_for_Zipcode(df, TARGET_ZIPCODES, infer_zip):
 
 
 def RemoveCompletedCases(df):
+
+    #DLSE categories
     '''
-    DLSE categories
     'Closed - Paid in Full (PIF)/Satisfied'
     'Full Satisfaction'
     'Open'
@@ -1411,13 +1412,48 @@ def RemoveCompletedCases(df):
     'Vacated'
     '''
 
-    if "Note" in df:
+    #Closure Disposition
+    '''
+    Dismissed   Claimant Withdrew
+    Paid in Full   Post ODA
+    Paid in Full   Pre-Hearing
+    Settled   At Conference
+    Settled   At hearing
+    Settled   Pre-Conference
+    Settled   Pre-hearing
+    Plaintiff rec d $0 ODA
+    '''
+
+    #Closure Disposition - Other Reason
+    '''
+    Duplicate
+    '''
+
+    if "Note" in df: #take cases that are open
         df = df.loc[
             (df["Note"] != 'Closed - Paid in Full (PIF)/Satisfied') &
             (df["Note"] != 'Full Satisfaction') &
-            (df["Note"] != 'Vacated')
+            (df["Note"] != 'Vacated') &
+            (df["Closure Disposition"] != 'Dismissed   Claimant Withdrew') &
+            (df["Closure Disposition"] != 'Paid in Full   Post ODA') &
+            (df["Closure Disposition"] != 'Paid in Full   Pre-Hearing') &
+            (df["Closure Disposition"] != 'Settled   At Conference') &
+            (df["Closure Disposition"] != 'Settled   At hearing') &
+            (df["Closure Disposition"] != 'Settled   Pre-Conference') &
+            (df["Closure Disposition"] != 'Settled   Pre-hearing') &
+            (df["Closure Disposition"] != 'Plaintiff rec d $0 ODA') &
+            (df["Closure Disposition - Other Reason"] != 'Duplicate') &
+            (df["Closure Disposition - Other Reason"] != 'Duplicate Case') &
+            (df["Closure Disposition - Other Reason"] != 'Duplicate Claim') &
+            (df["Closure Disposition - Other Reason"] != 'ODA - Dft') &
+            (df["Closure Disposition - Other Reason"] != 'Outside settlement between parties') &
+            (df["Closure Disposition - Other Reason"] != 'Parties settled outside the office') &
+            (df["Closure Disposition - Other Reason"] != 'Payment remitted to Labor Commissioner because employer cannot locate employee') &
+            (df["Closure Disposition - Other Reason"] != 'Pd prior to PHC')
+
         ]
 
+    #cleanup data and replace empty cells w/ zero
     df['bw_amt'] = df['bw_amt'].replace('NaN', 0).astype(float)
     df['ee_pmt_recv'] = df['ee_pmt_recv'].replace('NaN', 0).astype(float)
 
@@ -1430,8 +1466,9 @@ def RemoveCompletedCases(df):
     pmt = df['ee_pmt_recv'].tolist()
 
     # df.index # -5 fixes an over count bug and is small enough that it wont introduce that much error into reports
+    '''
     for i in range(0, len(bw)-5):
-        if math.isclose(bw[i], pmt[i], rel_tol=0.10, abs_tol=0.0):  # works
+        if math.isclose(bw[i], pmt[i], rel_tol=0.20, abs_tol=1.0):  # works
             # if math.isclose(df['bw_amt'][i], df['ee_pmt_recv'][i], rel_tol=0.10, abs_tol=0.0): #error
             # if math.isclose(df.loc[i].at['bw_amt'], df.loc[i].at['ee_pmt_recv'], rel_tol=0.10, abs_tol=0.0): #error
             # if math.isclose(df.at[i,'bw_amt'], df.at[i,'ee_pmt_recv'], rel_tol=0.10, abs_tol=0.0): #error
@@ -1439,7 +1476,32 @@ def RemoveCompletedCases(df):
                 df.drop(df.index[i], inplace=True)
             except IndexError:
                 dummy = ""
+    '''
 
+    if 'bw_amt' and 'ee_pmt_recv' in df: #take cases that are open
+        tolerance = 1.05 #outstanding value must be greater than 105% of payment (less than 95% paid)
+        abs_tol = -0.001 # allows zero but no negative values
+        df = df.loc[ 
+            (df['bw_amt'] > (df['ee_pmt_recv']*tolerance) ) & #more than 5% of amount still owed
+            ((df['bw_amt'] - df['ee_pmt_recv']) > abs_tol ) & #amount owed is not negative and is more than $0
+            (df["Case Stage"] != 'Judgment') &
+            (df["Case Stage"] != 'JEU Referral') &
+            (df["Case Status"] != 'Judgment Issued') &
+            (df["Closure Disposition"] != 'De Novo Referral') &
+            (df["Closure Disposition"] != 'Judgment') &
+            (df["Closure Disposition"] != 'Judgment   Claimant Collect') &
+            (df["Closure Disposition"] != 'Judgment   JEU') &
+            (df["Closure Disposition - Other Reason"] != 'Appeal filed') &
+            (df["Closure Disposition - Other Reason"] != 'Case has been appealed') & 
+            (df["Closure Disposition - Other Reason"] != 'Defendant appealed, P represented by own attorney') &
+            (df["Closure Disposition - Other Reason"] != 'Ongoing criminal trial, close until resolved and P may re-open if desire.') &
+            (df["Closure Disposition - Other Reason"] != 'Plaintiff appealed') &
+            (df["Closure Disposition - Other Reason"] != 'Plt left U.S. to renew visa, visa request was denied.  Plt does not have return date to USA yet.  Plt may request to reopen upon return to US.') &
+            (df["Closure Disposition - Other Reason"] != 'Plt unable to state a clear, valid claim.  Temporarily closed to give Plt a chance to consult with the Law Center and submit a valid wage claim.') &
+            (df["Closure Disposition - Other Reason"] != 'Requested postponement for settlement talks, no request to re-start process.') &
+            (df["Closure Disposition - Other Reason"] != 'unclaimed wages returned for NSF - unable to contact Plt') 
+        ]
+    
     return df
 
 
