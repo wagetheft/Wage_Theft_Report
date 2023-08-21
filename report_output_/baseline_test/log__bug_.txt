@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html><body>
+<h1>START</h1>
+Time to finish section 1 0.00000
+Time to finish section 2 in clean_function 0.01661
+Time to finish section 3 in clean_function 0.09105
+Time to finish section 4 in clean_function 1.79606
+Time to finish section 5 in clean_function 0.10259
+Time to finish section 2 in inference_function 0.62488
+Time to finish section 3 in inference_function 0.67686
+Time to finish section 4 in inference_function 0.00697
+Time to finish section 5 in inference_function 0.14885
+Time to finish section 6 in inference_function 0.00319
+Time to finish section 2 in clean_function 4.34108
+Time to finish section 3 in clean_function 6.27136
+Time to finish section 4 in clean_function 565.86001
+Time to finish section 5 in clean_function 21.63938
+Time to finish section 2 in inference_function 89.16374
+Time to finish section 3 in inference_function 546.33099
+Time to finish section 4 in inference_function 1.53323
+Time to finish section 5 in inference_function 6.02967
+Time to finish section 6 in inference_function 0.00636
+Time to finish section 2 in clean_function 5.21482
+Time to finish section 3 in clean_function 5.89093
+Time to finish section 4 in clean_function 666.20631
+Time to finish section 5 in clean_function 27.56204
+Time to finish section 2 in inference_function 109.49578
+Time to finish section 3 in inference_function 470.30065
+Time to finish section 4 in inference_function 1.75496
+Time to finish section 5 in inference_function 572.31918
+Time to finish section 6 in inference_function 0.00777
+Time to read csv(s) 3280.88530
+Time to finish section 2 in filter_function 0.05901
+Time to finish section 3 in filter_function 1.27259
+Time to finish section 2 0.21696
+Time to finish section 3 0.31792
+Time to finish section 4 0.04859
+Time to finish section 5 2.20446
+Time to finish section 6 2.11876
+Time to finish section 7 3.47738
+Time to finish section 8 0.08688
+Time to finish section 9 26.55994
+Time to finish section 10 0.00000
+Time to finish section 11 0.14734
+Time to finish section 12 0.00164
+Time to finish section 13 14.79094
+Time to finish report 3333.84919
+<h1>DONE</h1> 
+</html></body> 

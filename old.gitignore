@@ -1,0 +1,31 @@
+/.ipynb_checkpoints
+/.vscode
+/backup
+/dlse_judgements
+/pandas
+/report_output
+/fix.txt
+/geocode_test.xlsx
+/geocode_test_geocodio_cleaned.csv
+/geocode_test_geocodio_ef33641bacd1bfd1b4c032e2fe20882a02eb5b08.csv
+/Untitled.ipynb
+/wage_theft_reporter.graphml
+/Hospitals_data.csv
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Report code
+/api/report_output/*
+/api/report_output/
+report_output/
+report_output/*
+*/report_output
+api/report_output
+report_output_/
+*/report_output_
+
+# Virtual Environment
+.venv

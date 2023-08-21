@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html><body>
+<h1>START</h1>
+Time to finish section 1 0.00000
+Time to read csv(s) 9.37856
+Time to finish section 2 in filter_function 0.09183
+Time to finish section 3 in filter_function 2.42636
+Time to finish section 2 0.14224
+Time to finish section 3 0.17509
+Time to finish section 4 0.02438
+Time to finish section 5 1.33677
+Time to finish section 6 1.15683
+Time to finish section 7 1.87180
+Time to finish section 8 0.05794
+Time to finish section 9 24.26921
+Time to finish section 10 0.00000
+Time to finish section 11 0.09747
+Time to finish section 12 0.00053
+Time to finish section 13 13.10318
+Time to finish report 55.76962
+<h1>DONE</h1> 
+</html></body> 
