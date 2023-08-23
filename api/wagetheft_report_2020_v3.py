@@ -245,27 +245,6 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     time_0 = time.time()
     time_1 = time.time()
 
-    url0 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv" #<-- open and edit this file with test data
-    url1 = "https://enfxfr.dol.gov/data_catalog/WHD/whd_whisard_20230710.csv.zip" #update link from here https://enforcedata.dol.gov/views/data_catalogs.php
-    # url2 = "https://www.researchgate.net/profile/Forest-Peterson/publication/357767172_California_Dept_of_Labor_Standards_Enforcement_DLSE_PRA_Wage_Claim_Adjudications_WCA_for_all_DLSE_offices_from_January_2001_to_July_2019/data/61de6b974e4aff4a643603ae/HQ20009-HQ-2nd-Production-8132019.csv"
-    # url2 = "https://drive.google.com/file/d/1TRaixcwTg08bEyPSchyHntkkktG2cuc-/view?usp=sharing"
-    url2 = "https://stanford.edu/~granite/HQ20009-HQ2ndProduction8.13.2019_no_returns_Linux.csv" #10/2/2022 added _Linux
-    
-    includeTestData = False
-    if (TEST_ == 1): 
-        includeTestData = 1
-        includeFedData = 0
-        includeStateData = 0
-        #includeLocalData = False -- unused
-        #includeOfficeData = False -- unused
-    url_list = [
-        [url0, includeTestData,'TEST'], 
-        [url1, includeFedData,'DOL_WHD'], 
-        [url2, includeStateData,'DIR_DLSE']
-        #includeLocalData = False -- unused
-        #includeOfficeData = False -- unused
-        ]
-    
     DF_OG = pd.DataFrame()
 
     url_backup_file = 'url_backup'
@@ -304,6 +283,31 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         count = 1
 
         TEMP_TARGET_INDUSTRY = industriesDict['WTC NAICS']
+
+        url0 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv" #<-- open and edit this file with test data
+        #find updated url -- #dev by Henry 8/21/2023
+        ret = requests.post('https://enforcedata.dol.gov/views/data_summary.php', data={'agency':'whd'})
+        m = re.search(r'(https://enfxfr.dol.gov/\.\./data_catalog/WHD/whd_whisard_[0-9]{8}\.csv\.zip)', str(ret.content))   
+        #url1 = "https://enfxfr.dol.gov/data_catalog/WHD/whd_whisard_20230710.csv.zip" #update link from here https://enforcedata.dol.gov/views/data_catalogs.php
+        url1 = m.group(0)
+        # url2 = "https://www.researchgate.net/profile/Forest-Peterson/publication/357767172_California_Dept_of_Labor_Standards_Enforcement_DLSE_PRA_Wage_Claim_Adjudications_WCA_for_all_DLSE_offices_from_January_2001_to_July_2019/data/61de6b974e4aff4a643603ae/HQ20009-HQ-2nd-Production-8132019.csv"
+        # url2 = "https://drive.google.com/file/d/1TRaixcwTg08bEyPSchyHntkkktG2cuc-/view?usp=sharing"
+        url2 = "https://stanford.edu/~granite/HQ20009-HQ2ndProduction8.13.2019_no_returns_Linux.csv" #10/2/2022 added _Linux
+        
+        includeTestData = False
+        if (TEST_ == 1): 
+            includeTestData = 1
+            includeFedData = 0
+            includeStateData = 0
+            #includeLocalData = False -- unused
+            #includeOfficeData = False -- unused
+        url_list = [
+            [url0, includeTestData,'TEST'], 
+            [url1, includeFedData,'DOL_WHD'], 
+            [url2, includeStateData,'DIR_DLSE']
+            #includeLocalData = False -- unused
+            #includeOfficeData = False -- unused
+            ]
 
         for n in url_list:
             url = n[0]
