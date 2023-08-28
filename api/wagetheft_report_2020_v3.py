@@ -252,6 +252,21 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     script_dir0 = os.path.dirname(os.path.dirname(__file__))
     abs_path0 = os.path.join(script_dir0, url_backup_path)
 
+    includeTestData = False
+    if (TEST_ == 1): 
+        includeTestData = 1
+        includeFedData = 0
+        includeStateData = 0
+        #includeLocalData = False -- unused
+        #includeOfficeData = False -- unused
+    url_list = [
+        ["temp", includeTestData,'TEST'], 
+        ["temp", includeFedData,'DOL_WHD'], 
+        ["temp", includeStateData,'DIR_DLSE']
+        #includeLocalData = False -- unused
+        #includeOfficeData = False -- unused
+        ]
+
     OLD_DATA = False
     if New_Data_On_Run_Test: 
         OLD_DATA = True #reset for testing
@@ -294,13 +309,6 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         # url2 = "https://drive.google.com/file/d/1TRaixcwTg08bEyPSchyHntkkktG2cuc-/view?usp=sharing"
         url2 = "https://stanford.edu/~granite/HQ20009-HQ2ndProduction8.13.2019_no_returns_Linux.csv" #10/2/2022 added _Linux
         
-        includeTestData = False
-        if (TEST_ == 1): 
-            includeTestData = 1
-            includeFedData = 0
-            includeStateData = 0
-            #includeLocalData = False -- unused
-            #includeOfficeData = False -- unused
         url_list = [
             [url0, includeTestData,'TEST'], 
             [url1, includeFedData,'DOL_WHD'], 
