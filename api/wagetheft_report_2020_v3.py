@@ -96,6 +96,7 @@ def main():
     PARAM_1_TARGET_COUNTY = "Santa_Clara_County"
     PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode" #for test use "All_Zipcode"
     PARAM_2_TARGET_INDUSTRY = 'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS' or "All NAICS"
+    PARAM_3_TARGET_ORGANIZATION = "GoodWill"
     OPEN_CASES = 1 # 1 for open cases only (or nearly paid off), 0 for all cases
     USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
     INFER_NAICS = 1  # 1 to infer code by industry NAICS sector
@@ -121,7 +122,7 @@ def main():
     # https://www.goodjobsfirst.org/violation-tracker
 
     # API call***************************************************************************
-    generateWageReport(PARAM_1_TARGET_STATE, PARAM_1_TARGET_COUNTY, PARAM_1_TARGET_ZIPCODE, PARAM_2_TARGET_INDUSTRY,
+    generateWageReport(PARAM_1_TARGET_STATE, PARAM_1_TARGET_COUNTY, PARAM_1_TARGET_ZIPCODE, PARAM_2_TARGET_INDUSTRY, PARAM_3_TARGET_ORGANIZATION,
                        federal_data, state_data, INFER_ZIP, prevailing_wage_report, signatories_report,
                        All_Industry_Summary_Block, OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG,
                        TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS)
@@ -129,7 +130,7 @@ def main():
 # Functions*************************************************
 
 
-def generateWageReport(target_state, target_county, target_city, target_industry, 
+def generateWageReport(target_state, target_county, target_city, target_industry, target_organization,
                         includeFedData, includeStateData, infer_zip, prevailing_wage_report, signatories_report,
                         all_industry_summary_block, open_cases_only, include_tables, include_summaries, only_sig_summaries,
                         include_top_viol_tables, use_assumptions, infer_by_naics):
@@ -141,6 +142,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     
     TARGET_ZIPCODES = search_Dict_tree(target_state, target_county, target_city, stateDict, countyDict, cityDict)
     TARGET_INDUSTRY = industriesDict[target_industry]
+    TARGET_ORGANIZATIONS = [['organizations'], [target_organization]]  # use uppercase
     # Settings External - end
 
     # Settings Internal - start
@@ -155,8 +157,6 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     # Settings Internal - end
 
     # Settings Internal that will Move to UI Options - start
-    ORGANIZATION_FILTER = False # True to filter, False no filter for specific organizantion name, see TARGET_ORGANIZATIONS
-    TARGET_ORGANIZATIONS = [['organizations'], ['GOODWILL']]  # use uppercase
     Nonsignatory_Ratio_Block = False
     # Settings Internal that will Move to UI Options - end
 
@@ -340,7 +340,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         if n[1] == 0: out_target = out_target[out_target.juris_or_proj_nm != n[2]]
 
     out_target = filter_function(out_target, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only, 
-        infer_zip, infer_by_naics, ORGANIZATION_FILTER, TARGET_ORGANIZATIONS, 
+        infer_zip, infer_by_naics, TARGET_ORGANIZATIONS, 
         bug_log, LOGBUG, log_number)
 
     if signatories_report:
@@ -745,8 +745,7 @@ def inference_function(df, cityDict, TARGET_INDUSTRY,
 
 
 def filter_function(df, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only,
-    infer_zip, infer_by_naics,
-    ORGANIZATION_FILTER, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number):
+    infer_zip, infer_by_naics, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number):
 
     function_name = "filter_function"
 
@@ -762,7 +761,7 @@ def filter_function(df, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only,
     time_1 = time.time()
     df = Filter_for_Target_Industry(df, TARGET_INDUSTRY, infer_by_naics)
     if open_cases_only == 1: df = RemoveCompletedCases(df)
-    if ORGANIZATION_FILTER: df = Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS)
+    if (TARGET_ORGANIZATIONS[1] != ""): df = Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS)
     time_2 = time.time()
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -1390,9 +1389,9 @@ def Filter_for_Target_Industry(df, TARGET_INDUSTRY, infer_by_naics):
 def Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS):
 
     df_temp_0 = df.loc[df['legal_nm'].str.contains(
-        '|'.join(TARGET_ORGANIZATIONS[1]))]
+        '|'.join(TARGET_ORGANIZATIONS[1]), case=False, regex=False) ]
     df_temp_1 = df.loc[df['trade_nm'].str.contains(
-        '|'.join(TARGET_ORGANIZATIONS[1]))]
+        '|'.join(TARGET_ORGANIZATIONS[1]), case=False, regex=False) ]
 
     df_temp = pd.concat([df_temp_0, df_temp_1], ignore_index=True)
     return df_temp

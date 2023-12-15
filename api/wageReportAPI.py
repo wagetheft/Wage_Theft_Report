@@ -22,6 +22,7 @@ def generateFile():
     target_county = parameters["target_county"] if "target_county" in parameters else ""
     target_city = parameters["target_city"] if "target_city" in parameters else ""
     target_industry = parameters["target_industry"]
+    target_organization = parameters["target_organization"]
     includeFedData = parameters["includeFedData"]
     includeStateData = parameters["includeStateData"]
     infer_zip = parameters["infer_zip"]
@@ -57,7 +58,7 @@ def generateFile():
 
 
     #out it goes
-    report_file_name = generateWageReport(target_state, target_county, target_city, target_industry, includeFedData, includeStateData, infer_zip, prevailing_wage_report, signatories_report,
+    report_file_name = generateWageReport(target_state, target_county, target_city, target_industry, target_organization, includeFedData, includeStateData, infer_zip, prevailing_wage_report, signatories_report,
                                           all_industry_summary_block, open_cases_only, include_tables, include_summaries, only_sig_summaries, include_top_viol_tables, use_assumptions, infer_by_naics)
 
     try:
@@ -67,7 +68,7 @@ def generateFile():
 
 
 def checkValidInput(inputDict) -> bool:
-    if "target_city" not in inputDict or "target_industry" not in inputDict or "includeFedData" not in inputDict or "includeStateData" not in inputDict or "infer_zip" not in inputDict or "prevailing_wage_report" not in inputDict or "signatories_report" not in inputDict or "all_industry_summary_block" not in inputDict or "open_cases_only" not in inputDict or "include_tables" not in inputDict or "include_summaries" not in inputDict or "only_sig_summaries" not in inputDict or "include_top_viol_tables" not in inputDict or "use_assumptions" not in inputDict or "infer_by_naics" not in inputDict:
+    if "target_city" not in inputDict or "target_industry" not in inputDict or "target_organization" not in inputDict or "includeFedData" not in inputDict or "includeStateData" not in inputDict or "infer_zip" not in inputDict or "prevailing_wage_report" not in inputDict or "signatories_report" not in inputDict or "all_industry_summary_block" not in inputDict or "open_cases_only" not in inputDict or "include_tables" not in inputDict or "include_summaries" not in inputDict or "only_sig_summaries" not in inputDict or "include_top_viol_tables" not in inputDict or "use_assumptions" not in inputDict or "infer_by_naics" not in inputDict:
         return False
 
     return True
