@@ -93,10 +93,10 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 def main():
     # settings****************************************************
     PARAM_1_TARGET_STATE = "" #"California"
-    PARAM_1_TARGET_COUNTY = "Santa_Clara_County"
-    PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode" #for test use "All_Zipcode"
-    PARAM_2_TARGET_INDUSTRY = 'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS' or "All NAICS"
-    PARAM_3_TARGET_ORGANIZATION = "GoodWill"
+    PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
+    PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode"
+    PARAM_2_TARGET_INDUSTRY = "" #'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS'
+    PARAM_3_TARGET_ORGANIZATION = "" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
     OPEN_CASES = 1 # 1 for open cases only (or nearly paid off), 0 for all cases
     USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
     INFER_NAICS = 1  # 1 to infer code by industry NAICS sector
@@ -138,8 +138,12 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     warnings.filterwarnings("ignore", category=UserWarning)
     start_time = time.time()
 
-    # Settings External - start
+    # Defaults start
+    if target_industry == "": target_industry = "All NAICS"
+    if target_city == "": target_city = "All_Zipcode"
+    # Defaults end
     
+    # Settings External - start
     TARGET_ZIPCODES = search_Dict_tree(target_state, target_county, target_city, stateDict, countyDict, cityDict)
     TARGET_INDUSTRY = industriesDict[target_industry]
     TARGET_ORGANIZATIONS = [['organizations'], [target_organization]]  # use uppercase
@@ -1387,13 +1391,15 @@ def Filter_for_Target_Industry(df, TARGET_INDUSTRY, infer_by_naics):
 
 
 def Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS):
+    organization_list = ''.join(TARGET_ORGANIZATIONS[1]).split('|')
 
     df_temp_0 = df.loc[df['legal_nm'].str.contains(
-        '|'.join(TARGET_ORGANIZATIONS[1]), case=False, regex=False) ]
+        '|'.join(organization_list), case=False, na=False) ] #na=False https://stackoverflow.com/questions/66536221/getting-cannot-mask-with-non-boolean-array-containing-na-nan-values-but-the
     df_temp_1 = df.loc[df['trade_nm'].str.contains(
-        '|'.join(TARGET_ORGANIZATIONS[1]), case=False, regex=False) ]
+        '|'.join(organization_list), case=False, na=False) ]
 
     df_temp = pd.concat([df_temp_0, df_temp_1], ignore_index=True)
+
     return df_temp
 
 
