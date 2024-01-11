@@ -19,14 +19,15 @@ mining_terms = ['Mining', 'Mining', "^(211)", "^(212)", "^(213)", 'Quarrying', r
 utilities_terms = ['Utilities', r'utilit.*', 'Electric', 'Power', 'Generation', 'Hydroelectric', 'Nuclear', 'Geothermal', 'Solar',
                    r'\bWind\b', 'Biomass', 'Natural Gas', 'Sewer', 'Water supply', "^(221)", '(!MANPOWER)']
 
-construction_terms = ['Construction', '^(23)', r'plumb.*', r'construct.*', 'MANPOWER', 'build', 'floor', r'landscap.*',
-                      'mechanical', 'elevator', 'plaster', 'frame', 'concrete', 'roof', 'glass', 'tile', r'dry.*wall', 'painting', 'painter', 'remodel', 'cabinet',
+construction_terms = ['Construction', '^(23)', r'54132.*', r'plumb.*', r'construct.*', 'MANPOWER', 'build', 'floor', r'landscap.*',
+                      'mechanical', 'elevator', 'plaster', 'frame', 'concrete', 'roof', 'glass', 'tile', r'dry.*wall', 'painting', 'painter', r'remodel.*', 'cabinet',
                       'carpet', 'drafting', 'carpentry', 'AIR SYSTEMS', r'sheet.*metal', 'pipe', 'HOMES', 'asbestos', r'custom.*home', 'window', r'tree.*trim', 'iron', 'heating',
                       r'air.*condition', 'instal', 'insulation', 'MOUNTAIN AIR', 'contract', 'brick', 'paving', 'sprinkler', 'improvement', 'renovat', 'energy',
                       'mason', 'marble', 'cooling', '161000', '162000', "^(23)", '230000', "^(3323)", "^(3334)", '333415', '337110', '337212', '339950',
                       '423320', '532410', '541350', '561730', '561790', '562910', '623200', r'tree.*service', 'Excavating', 'Restoration', 'MOULDING',
-                      'electric', 'labor', 'ASPHALT', 'CEMENT', 'FENCING', r'HOME.*REPAIR', r'WOOD.*WORKING', 'ROOTER', r'\bHVAC\b', '^(54132)', r"(!Farm\b)",
-                      r"(!.*CARE.HOME.*)", r"(!RETIREMENT)", r"(!.*GROUP.HOME.*)", r"(!.*RESIDENTIAL.*CARE.*)",
+                      'electric', 'labor', r'BLACK.*SEAL.*', 'ASPHALT', 'CEMENT', 'FENCING', r'HOME.*REPAIR', r'WOOD.*WORK.*', 'ROOTER', r'\bHVAC\b', '^(54132)',
+                      r"CUSTOM.*BUILD.*", r"CONSTRUCTION.*", r"TEICHERT.*SON", r'GENERAL CONTRACT.*', r'GENERAL CONSTRUCT.*', 'BUILDERS', 'PAVEMENT', 'FOUNDATIONS', r'ROOF.*REMOV', 'DRYWALL',
+                      r'BUILD.*ENGINEER.*', 'LIMESTONE', 'CONSTRUCTORS' r"(!Farm\b)", r"TREE.*CARE.*", r"(!.*CARE.HOME.*)", r"(!RETIREMENT)", r"(!.*GROUP.HOME.*)", r"(!.*RESIDENTIAL.*CARE.*)",
                       r"(!CATERING)", r"(!AUTO.*BODY)", r"(!FOOD.*SERVICE)", r"(!CLEANING)", r"(!ELDERLY)", r"(!NURSING)"]  # 'PLUMBING',
 
 manufacturing_terms = ['Manufacturing', r'Manufactur.*', 'machine', 'milling', 'millwork', 'Product', 'Preserving', 'Slaughter', 'Dairy',
@@ -37,8 +38,8 @@ manufacturing_terms = ['Manufacturing', r'Manufactur.*', 'machine', 'milling', '
                        '^(337)', '^(338)', '^(339)', "feed", 'hay', r'HEWLETT.PACKARD', 'PLATING', 'panaderia', 'MACHINING', 'PRECISION', 'FABRICATION',
                        'WINERY', 'INDUSTRIES', 'TELEDEX', 'ASSEMBLY', 'ALLOYS', 'ESP SAFETY', 'WELDERS', r'METAL.*FINISH', '^(print)', r'PRINT.*']
 
-trade_terms = ['Trade', '^(423)', '^(424)', '^(425)', 'trading', 'trader', 'Wholesale', 'Broker', 'merchant', 'lumber', r'material.*',
-               'plywood', r'millwork.*', r'home.depo', 'lowes', 'DISTRIBUTION', 'DISTRIBUTOR']
+trade_terms = ['Trade', '^(423)', '^(424)', '^(425)', 'trading', 'trader', 'Wholesale', 'Broker', 'merchant', r'lumber.*', r'material.*',
+               'plywood', r'millwork.*', r'home.depo', 'lowes', 'DISTRIBUTION', 'DISTRIBUTOR', r"BUILD.*SUPP.*", r'BUILD.*MATERIAL.*', 'DRYWALL SUPPLY']
 
 retail_terms = ['Retail', '^(44)', '^(45)', "(store)", 'SPORTSWEAR', "DOLLAR STORE", 'Paints', 'PLATOS CLOSET', 'PAPAYA', 'SWAROVSKI',
                 r'VAPE.*', 'Victoria Secret', 'SAVERS', 'PETCO', r'QUICK.STOP', 'KOHLS', 'KOHLS', r'FOREVER.21', 'CASK N FLASK', 'Target', r'Smoke.*',
@@ -63,7 +64,7 @@ transportation_terms = ['Transportation', '^(48)', '^(49)', r'Transport.*', 'TRA
 information_terms = ['Information', 'Information', '^(51)', 'LOGIC', 'TECHNOLO', 'newspaper', 'publisher', 'software', 'video', 'recording',
                      'radio', 'broadcasting', 'programming', 'wireless', 'MOBILE', 'SYSTEMS', 'COMMUNICATIONS', 'ATANDT', 'telecommunication', 'NETWORK',
                      'SILICON', 'satellite', 'data', 'MOBILITY', 'NETFLIX', 'processing', 'hosting', 'library', 'archive', 'internet', 'PUBLISH', r'\bNEWS\b',
-                     'TRONIC', 'ZAGACE', 'MAGAZINE', 'TELECOM', 'CELLULAR', 'INTEGRATED']
+                     'TRONIC', 'ZAGACE', 'MAGAZINE', 'TELECOM', 'CELLULAR', 'INTEGRATED', "(!CONSTRUCTION)"]
 
 finance_terms = ['Finance', 'Financ', '^(52)', "^(429)", "^(522)", "^(521)", 'capital', r'asset.*management', 'banking', r"Wells.Fargo",
                  r"(Chase.Bank)", r"(JP.Morgan)", 'CITIBANK', r'\bBank\b', r"Credit.*union", r"Credit.*card", 'insurance', r'saving.*',
@@ -79,7 +80,7 @@ professional_terms = ['Professional', 'Professional', '^(54)', '^(5413)', '^(541
                       'consulting', 'marketing', 'PROMOTIONS', 'environmental', 'CIVIL ENGINEER', 'ASSOCIATES', 'EVENT PRO', 'DOCUMENT', 'IMAGING', 'LAW OFFICE', 'research', 'VIRTUAL', 'APPRAISAL', 'development', 'advertising', r'public.*relations', 'media', 'scientific',
                       'photography', 'science', 'net optics', 'COMPUTER', 'LABS', 'interpreter', 'DIAGNOSTICS', 'TRUSTEE', 'PHOTO', 'STUDIOS', 'ACCOUNTAN',
                       'N2N SECURE', r'LAW.*GROUP', 'INTRANET', 'PRINTERS', r'HOME.*OWNER.*ASSOC', r'\bHOA\b', 'CIRRUS SOLUTIONS', r'BLUE.*CHIP .*TEK', 'AUTOCHLOR SYSTEM',
-                      r'TECH.*SHOP', 'ANALYTICAL', 'LOCAL UNION', 'LAW FIRM', 'COUNSELING', 'GEOTECHNICAL', 'CONSERVATOR', r'BAIL.*BOND', 'FAMILY TRUST', 'EMBROIDERY']
+                      r'TECH.*SHOP', 'ANALYTICAL', 'LOCAL UNION', 'LAW FIRM', 'COUNSELING', 'GEOTECHNICAL', 'CONSERVATOR', r'BAIL.*BOND', 'FAMILY TRUST', 'EMBROIDERY', "(!541320)"]
 
 management_terms = ['Management', '^(55)', 'Management','ENTERPRISES', 'LOGISTICS', 'SLINGSHOT CONNECTIONS']
 
@@ -120,7 +121,7 @@ healthcare_terms = ['Health_care', '^(62)', r'Health.*care', r'\bDMD\b', r'\bMD\
 entertainment_terms = ['Entertainment', '^(71)', 'performing', 'Billiard', 'theater', 'dance', 'musical', 'artist', r'sport.*', 'team',
                        'racetrack', 'athlete', 'entertainer', 'writer', 'museum', 'historical', 'zoo', 'botanical', 'BADMINTON', 'nature park', 'amusement', 'gambling',
                        'golf', 'casino', 'marina', 'bowling', r'PERFORMING ART.', r'SOCCER.*LEAGUE', 'SOCCER', 'LEAGUE', 'BASEBALL', 'football', 'ATHLETIC',
-                       r'MARTIAL.*ART', 'HOOKAH', 'GREAT AMERICA', '(!bar)', '(!SPORTSWEAR)', '(!Transport)']
+                       r'MARTIAL.*ART', 'HOOKAH', 'GREAT AMERICA', '(!bar)', '(!SPORTSWEAR)', '(!Transport)', '(!DRYWALL)', r'(!ENGINEER.*)', "(!BUILDERS)", "(!LIMESTONE)"]
 
 fitness_terms = ['Fitness', r'Fitness.*',
                  '^(71394)', r'gym.*', 'YOGA', r'JENNY CRAIG.', r'crossfit.*', r'physical.*', r'fit.*']

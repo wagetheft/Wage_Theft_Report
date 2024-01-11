@@ -2,15 +2,8 @@
 # Python 3.9.7
 # Last updated
 # 3/3/2019 by F. Peterson first file--170 lines
-# 7/8/2019 by F. Peterson
-# 9/7/2019 by F. Peterson (v2)
-# 1/14/2020 by F. Peterson
-# 2/4/2020 by F. Peterson
 # 5/1/2019 by F. Peterson numerous updates
-# 2/25/2020 by F. Peterson
 # 3/5/2020 by F. Peterson locked code before forking into OLSE and SCC WTC versions (donation of ~1,500 lines--@$73,500--from WTC to OLSE)
-# 10/11/2020 by F. Peterson
-# 10/22/2020 by F. Peterson
 # 10/26/2020 by F. Peterson (finally debugged 4am on 10/30/2020)
 # 11/1/2020 by F. Peterson still working on this a week later
 # 11/9/2020 by F. Peterson fixed infer zip code and added proximity match to allow filtering unpaid theft
@@ -26,7 +19,6 @@
 # 1/14/2021 by F. Peterson added a summary of ratio of union to non-union company wage theft (2,880 lines-->@$140k in work with $5 per line and ~10 lines per 8hr day)
 # 1/22/2021 by F. Peterson careful output check with 100 x 1,000 dataset
 # 1/24/2021 by F. Peterson debug details in signatory library access to industry labels (2,969 lines)
-# 9/21/2021 by F. Peterson
 # 10/25/2021 by F. Peterson added summary block 1/0 triggers, 4 LoC and added formating to prev wage table
 # 2/3/2022 by F. Peterson added organization filter -- add State filter, added new WHD file and debugged, fix date bug, industry lebel adjusted (3,195 lines)
 # 2/14/2022 by F. Peterson add WHD prevailing wage inference
@@ -46,8 +38,7 @@
 # Note: add an edit distance comparison
 # to fix replace() https://stackoverflow.com/questions/64843109/compiler-issue-assertionerror-on-replace-given-t-or-f-condition-with-string/64856554#64856554
 
-# DUPLICTAE CHECKS:
-# duplicated values for ee_pmt_due are zeroed
+# DUPLICATE CHECKS:
 # no duplicate by case numbers
 # no duplicate by legal or trade names
 # no duplicates by bw_amt
@@ -65,6 +56,7 @@ import warnings
 import time
 import requests
 import io
+
 
 #moved down one directory
 if platform.system() == 'Windows' or platform.system() =='Darwin':
@@ -92,21 +84,23 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 
 def main():
     # settings****************************************************
-    PARAM_1_TARGET_STATE = "" #"California"
+    PARAM_1_TARGET_STATE = "California" #"California"
     PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
     PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode"
-    PARAM_2_TARGET_INDUSTRY = "" #'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS'
+    PARAM_2_TARGET_INDUSTRY = "Construction" #'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS'
     PARAM_3_TARGET_ORGANIZATION = "" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
+    PARAM_YEAR_START = pd.to_datetime('today') - pd.DateOffset(years=4)
+    PARAM_YEAR_END = pd.to_datetime('today')
     OPEN_CASES = 1 # 1 for open cases only (or nearly paid off), 0 for all cases
     USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
     INFER_NAICS = 1  # 1 to infer code by industry NAICS sector
     INFER_ZIP = 1  # 1 to infer zip code
-    federal_data = 1 # 1 to include federal data
+    federal_data = 0 # 1 to include federal data
     state_data = 1  # 1 to include state data
     # report output block settings****************************************************
     All_Industry_Summary_Block = 0
-    TABLES = 1  # 1 for tables and 0 for just text description
-    SUMMARY = 1  # 1 for summaries and 0 for none
+    TABLES = 0  # 1 for tables and 0 for just text description
+    SUMMARY = 0  # 1 for summaries and 0 for none
     SUMMARY_SIG = 1 # 1 for summaries only of regions with significant wage theft (more than $10,000), 0 for all
     TOP_VIOLATORS = 1  # 1 for tables of top violators and 0 for none
     prevailing_wage_report = 0 # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
@@ -124,16 +118,16 @@ def main():
     # API call***************************************************************************
     generateWageReport(PARAM_1_TARGET_STATE, PARAM_1_TARGET_COUNTY, PARAM_1_TARGET_ZIPCODE, PARAM_2_TARGET_INDUSTRY, PARAM_3_TARGET_ORGANIZATION,
                        federal_data, state_data, INFER_ZIP, prevailing_wage_report, signatories_report,
-                       All_Industry_Summary_Block, OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG,
-                       TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS)
+                       OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG,
+                       TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS,PARAM_YEAR_START, PARAM_YEAR_END)
 
 # Functions*************************************************
 
 
 def generateWageReport(target_state, target_county, target_city, target_industry, target_organization,
                         includeFedData, includeStateData, infer_zip, prevailing_wage_report, signatories_report,
-                        all_industry_summary_block, open_cases_only, include_tables, include_summaries, only_sig_summaries,
-                        include_top_viol_tables, use_assumptions, infer_by_naics):
+                        open_cases_only, include_tables, include_summaries, only_sig_summaries,
+                        include_top_viol_tables, use_assumptions, infer_by_naics,YEAR_START, YEAR_END):
 
     warnings.filterwarnings("ignore", category=UserWarning)
     start_time = time.time()
@@ -141,6 +135,10 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     # Defaults start
     if target_industry == "": target_industry = "All NAICS"
     if target_city == "": target_city = "All_Zipcode"
+    if YEAR_START == "":
+        YEAR_START = pd.to_datetime('today') - pd.DateOffset(years=4)
+    if YEAR_END == "":
+        YEAR_END = pd.to_datetime('today')
     # Defaults end
     
     # Settings External - start
@@ -256,7 +254,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     script_dir0 = os.path.dirname(os.path.dirname(__file__))
     abs_path0 = os.path.join(script_dir0, url_backup_path)
 
-    includeTestData = False
+    includeTestData = 0 #this is always 0
     if (TEST_ == 1): 
         includeTestData = 1
         includeFedData = 0
@@ -295,7 +293,8 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         csv_files = glob.glob(os.path.join(abs_path0, "*.csv"))
         
         for f in csv_files:
-            df_backup = pd.read_csv(f, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
+            #df_backup = pd.read_csv(f, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
+            df_backup = pd.read_csv(f, encoding = 'utf8', low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
             DF_OG = pd.concat([df_backup, DF_OG], ignore_index=True)
         
     else: #read new files from url source
@@ -311,12 +310,19 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         url1 = m.group(0)
         # url2 = "https://www.researchgate.net/profile/Forest-Peterson/publication/357767172_California_Dept_of_Labor_Standards_Enforcement_DLSE_PRA_Wage_Claim_Adjudications_WCA_for_all_DLSE_offices_from_January_2001_to_July_2019/data/61de6b974e4aff4a643603ae/HQ20009-HQ-2nd-Production-8132019.csv"
         # url2 = "https://drive.google.com/file/d/1TRaixcwTg08bEyPSchyHntkkktG2cuc-/view?usp=sharing"
-        url2 = "https://stanford.edu/~granite/HQ20009-HQ2ndProduction8.13.2019_no_returns_Linux.csv" #10/2/2022 added _Linux
-        
+        url2 = "https://stanford.edu/~granite/HQ20009-HQ2ndProduction8.13.2019_no_returns_Linux_CA.csv" #10/2/2022 added _Linux
+        TEST1 = "https://stanford.edu/~granite/WageClaimDataExport_State_Construction_Jan_8_2024.csv"
+        TEST2 = "https://stanford.edu/~granite/ExportData_Judge_state_NAISC_23_Jan_8_2024.csv"
+        TEST3 = "https://stanford.edu/~granite/ExportData_Judge_state_NAISC_5413_Jan_8_2024.csv"
+
+
         url_list = [
-            [url0, includeTestData,'TEST'], 
-            [url1, includeFedData,'DOL_WHD'], 
-            [url2, includeStateData,'DIR_DLSE']
+            #[url0, includeTestData,'TEST'], 
+            #[url1, includeFedData,'DOL_WHD'], 
+            #[url2, includeStateData,'DIR_DLSE'],
+            #[TEST1, includeStateData,'DLSE_WageClaim'],
+            [TEST2, includeStateData,'DLSE_Judge_23'],
+            #[TEST3, includeStateData,'DLSE_Judge_5413']
             #includeLocalData = False -- unused
             #includeOfficeData = False -- unused
             ]
@@ -325,7 +331,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
             url = n[0]
             out_file_report = n[2]
             df_url = pd.DataFrame()
-            df_url = Read_Violation_Data(TEST_CASES, url, out_file_report)
+            df_url = Read_Violation_Data(TEST_CASES, url, out_file_report, bug_log_csv)
             df_url = df_url.replace('\s', ' ', regex=True)  # remove line returns
             df_url = clean_function(RunFast, df_url, FLAG_DUPLICATE, bug_log, LOGBUG, log_number)
             df_url = inference_function(df_url, cityDict, TEMP_TARGET_INDUSTRY, 
@@ -344,9 +350,9 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         if n[1] == 0: out_target = out_target[out_target.juris_or_proj_nm != n[2]]
 
     out_target = filter_function(out_target, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only, 
-        infer_zip, infer_by_naics, TARGET_ORGANIZATIONS, 
+        infer_zip, infer_by_naics, TARGET_ORGANIZATIONS, YEAR_START, YEAR_END, target_state, 
         bug_log, LOGBUG, log_number)
-
+    
     if signatories_report:
         # infer signatories
         time_1 = time.time()
@@ -357,15 +363,23 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     # note--estimate back wage, penaly, and interest, based on violation
     time_1 = time.time()
-    total_ee_violtd = out_target['ee_violtd_cnt'].sum()
-    total_bw_atp = out_target['bw_amt'].sum()
-    total_case_violtn = out_target['violtn_cnt'].sum()
     if use_assumptions: 
         out_target = calculate_interest_owed(out_target)
         #NEED TO DEBUG out_target = infer_wage_penalty(out_target)  # B backwage, M monetary penalty
         out_target = backwages_owed(out_target)
         out_target = compute_and_add_violation_count_assumptions(out_target)
         # out_target.to_csv(bug_log_csv) #debug outfile
+    
+    case_disposition_series = out_target['Case Status'].value_counts().copy()
+    #case_disposition_series  = case_disposition_series.reset_index()
+    
+    if open_cases_only == 1: 
+        out_target = RemoveCompletedCases(out_target)
+    
+    total_ee_violtd = out_target['ee_violtd_cnt'].sum()
+    total_bw_atp = out_target['bw_amt'].sum()
+    total_case_violtn = out_target['violtn_cnt'].sum()
+
     time_2 = time.time()
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -484,8 +498,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     # report headers***************************************************
     # note that some headers have been renamed at the top of this program
     time_1 = time.time()
-    header_two_way_table = ["violtn_cnt",
-                            "ee_violtd_cnt", "bw_amt", "records", "ee_pmt_recv"]
+    header_two_way_table = ["violtn_cnt", "ee_violtd_cnt", "bw_amt", "records", "ee_pmt_recv"]
     header = ["legal_nm", "trade_nm", "cty_nm"] + header_two_way_table
     header_two_way = header_two_way_table + \
         ["zip_cd", 'legal_nm', "juris_or_proj_nm", 'case_id',
@@ -521,11 +534,6 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     Title_Block(TEST_, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
                 prevailing_wage_report, includeFedData, includeStateData, textFile)
 
-    if all_industry_summary_block == 1:
-        #Regional_All_Industry_Summary_Block(DF_OG, DF_OG, total_ee_violtd, total_bw_atp, total_case_violtn, 
-        #    all_unique_legalname, all_agency_df, open_cases_only, textFile)
-        do_nothing = "<p>Purposful Omission of All Industry Summary Block</p>"
-
     if Nonsignatory_Ratio_Block == True:
         #Signatory_to_Nonsignatory_Block(DF_OG, DF_OG, textFile)
         do_nothing = "<p>Purposful Omission of Nonsignatory Ratio Block</p>"
@@ -535,6 +543,9 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     else:
         Industry_Summary_Block(out_counts, out_counts, total_ee_violtd, total_bw_atp,
             total_case_violtn, unique_legalname, agency_df, open_cases_only, textFile)
+        Proportion_Summary_Block(out_counts, total_ee_violtd, total_bw_atp,
+            total_case_violtn, unique_legalname, agency_df, YEAR_START, YEAR_END, open_cases_only, 
+            target_jurisdition, TARGET_INDUSTRY, case_disposition_series, textFile)
 
     textFile.write("<HR> </HR>")  # horizontal line
 
@@ -557,9 +568,9 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         print_table_html_by_industry_and_city(temp_file_name, unique_legalname, header_two_way_table)
         print_table_html_by_industry_and_zipcode(temp_file_name, unique_legalname, header_two_way_table)
 
-        if include_summaries == 1: 
-            print_table_html_Text_Summary(include_summaries, temp_file_name, unique_legalname, header_two_way, header_two_way_table,
-                total_ee_violtd, total_case_violtn, only_sig_summaries, TARGET_INDUSTRY)
+    if include_summaries == 1: 
+        print_table_html_Text_Summary(include_summaries, temp_file_name, unique_legalname, header_two_way, header_two_way_table,
+            total_ee_violtd, total_case_violtn, only_sig_summaries, TARGET_INDUSTRY)
 
     if include_top_viol_tables == 1:
         print_top_viol_tables_html(out_target, unique_address, unique_legalname2, 
@@ -580,6 +591,8 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     Notes_Block(textFile)
 
     Methods_Block(textFile)
+
+    Sources_Block(textFile)
 
     textFile.write("</html></body>")
 
@@ -648,9 +661,10 @@ def search_Dict_tree(target_state, target_county, target_city, stateDict, county
 
                 ##add precinct level loop which replaces zipcode level and adds mass confusion
 
-    ZIPCODE_LIST = list( dict.fromkeys(ZIPCODE_LIST) ) #remove duplicates created in defualt region generation
+    ZIPCODE_LIST = list( dict.fromkeys(ZIPCODE_LIST) ) #remove duplicates created in default region generation
 
     return ZIPCODE_LIST
+
 
 def get_key_from_value(d, val): #https://note.nkmk.me/en/python-dict-get-key-from-value/
     keys = [k for k, v in d.items() if v == val]
@@ -673,20 +687,7 @@ def clean_function(RunFast, df, FLAG_DUPLICATE, bug_log, LOGBUG, log_number):
     function_name = "clean_function"
 
     if not RunFast:
-        time_1 = time.time()
-        df = Define_Column_Types(df)
-        time_2 = time.time()
-        log_number+=1
-        append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
-
-        # remove duplicate cases using case_id and violation as a unique key
-        time_1 = time.time()
-        df = DropDuplicateRecords(df, FLAG_DUPLICATE)
-        df = DropDuplicateBackwage(df, FLAG_DUPLICATE)
-        time_2 = time.time()
-        log_number+=1
-        append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
-
+        
         time_1 = time.time()
         df = Cleanup_Number_Columns(df)
         df = Cleanup_Text_Columns(df)
@@ -700,6 +701,21 @@ def clean_function(RunFast, df, FLAG_DUPLICATE, bug_log, LOGBUG, log_number):
         log_number+=1
         append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
 
+        time_1 = time.time()
+        df = Define_Column_Types(df)
+        time_2 = time.time()
+        log_number+=1
+        append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+
+        # remove duplicate cases using case_id and violation as a unique key
+        time_1 = time.time()
+        df = DropDuplicateRecords(df, FLAG_DUPLICATE)
+        df = FlagDuplicateBackwage(df, FLAG_DUPLICATE)
+        time_2 = time.time()
+        log_number+=1
+        append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+
+        
     return df
 
 
@@ -734,7 +750,8 @@ def inference_function(df, cityDict, TARGET_INDUSTRY,
     # PREVAILING WAGE
     time_1 = time.time()
     df = infer_prevailing_wage_cases(df, prevailing_wage_terms, prevailing_wage_labor_code, prevailing_wage_politicals)
-    df['Prevailing'] = pd.to_numeric(df['Prevailing'], errors='coerce')
+    if is_string_series(df['Prevailing']):
+        df['Prevailing'] = pd.to_numeric(df['Prevailing'], errors='coerce')
     time_2 = time.time()
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -749,22 +766,22 @@ def inference_function(df, cityDict, TARGET_INDUSTRY,
 
 
 def filter_function(df, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only,
-    infer_zip, infer_by_naics, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number):
+    infer_zip, infer_by_naics, TARGET_ORGANIZATIONS, YEAR_START, YEAR_END, target_state, bug_log, LOGBUG, log_number):
 
     function_name = "filter_function"
 
-    # unused df = FilterForDate(df, YEAR_START, YEAR_END) #filter for date
+    df = FilterForDate(df, YEAR_START, YEAR_END)
 
     # zip codes filter *********************************
     time_1 = time.time()
-    df = Filter_for_Zipcode(df, TARGET_ZIPCODES, infer_zip)
+    df = Filter_for_Zipcode(df, TARGET_ZIPCODES, infer_zip, target_state)
     time_2 = time.time()
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
 
     time_1 = time.time()
     df = Filter_for_Target_Industry(df, TARGET_INDUSTRY, infer_by_naics)
-    if open_cases_only == 1: df = RemoveCompletedCases(df)
+    #if open_cases_only == 1: df = RemoveCompletedCases(df)
     if (TARGET_ORGANIZATIONS[1] != ""): df = Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS)
     time_2 = time.time()
     log_number+=1
@@ -778,6 +795,7 @@ def InferZipcode(df, cityDict):
     if not df.empty:
         df = InferZipcodeFromCityName(df, cityDict)  # zipcodes by city name
         df = InferZipcodeFromCompanyName(df, cityDict) #zipcodes by company name
+        df = InferZipcodeFromAddress(df, cityDict) #zipcodes by address that is full length
         df = InferZipcodeFromJurisdictionName(df, cityDict) #zipcodes by jurisdiction name -- many false positive -- last ditch if no city name
         df = FillBlankZipcodes(df)
     return df
@@ -1025,192 +1043,258 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
         #write_to_html_file(out_sort_ee_violtd, header, "TEST: Top violators by number of employees violated (by legal name)", file_path(temp_file_name), 6)
         #write_to_html_file(out_sort_repeat_violtd, header, "TEST: Top violators by number of repeat violations (by legal name)", file_path(temp_file_name), 6)
 
-        with open(temp_file_name, 'a', encoding='utf-8') as f:  # append to report main file
+        result = '''
+            <html>
+            <head>
+            <style>
 
-            if not out_sort_bw_amt.empty:
-                # by backwages
-                f.write(
-                    "<h2>Top violators by amount of backwages stolen (by legal name)</h2> \n")
-                out_sort_bw_amt.head(6).to_html(f, columns=header, index=False)
-                f.write("\n")
+                h2 {
+                    text-align: center;
+                    font-family: Helvetica, Arial, sans-serif;
+                }
+                table { 
+                    margin-left: auto;
+                    margin-right: auto;
+                }
+                table, th, td {
+                    border: 1px solid black;
+                    border-collapse: collapse;
+                }
+                th, td {
+                    padding: 5px;
+                    text-align: center;
+                    font-family: Helvetica, Arial, sans-serif;
+                    font-size: 90%;
+                }
+                table tbody tr:hover {
+                    background-color: #dddddd;
+                }
+                .wide {
+                    width: 90%; 
+                }
 
-            if not out_sort_ee_violtd.empty:
-                # by employees
-                f.write(
-                    "<h2>Top violators by number of employees violated (by legal name)</h2> \n")
-                out_sort_ee_violtd.head(6).to_html(
-                    f, columns=header, index=False)
-                f.write("\n")
+            </style>
+            </head>
+            <body>
+            '''
+        
+        #with open(temp_file_name, 'a', encoding='utf-8') as f:  # append to report main file
 
-            if not out_sort_repeat_violtd.empty:
-                # by repeated
-                f.write(
-                    "<h2>Top violators by number of repeat violations (by legal name)</h2> \n")
-                out_sort_repeat_violtd.head(6).to_html(
-                    f, columns=header, index=False)
-                f.write("\n")
+        if not out_sort_bw_amt.empty:
+            # by backwages
+            #f.write(
+            result += "<h2>Top violators by amount of backwages stolen (by legal name)</h2> \n"
+            #)
+            result += out_sort_bw_amt.head(6).to_html(columns=header, index=False)
+            #f.write("\n")
 
-            # by repeat violators******************
-            row_head = 24
-            if not unique_address.empty:
-                # by unique_address
-                f.write("<h2>Group by address and sort by records</h2> \n")
-                unique_address.head(row_head).to_html(
-                    f, columns=dup_header, index=False)
-                f.write("\n")
-            else:
-                f.write("<p> There are no groups by address to report</p> \n")
+        if not out_sort_ee_violtd.empty:
+            # by employees
+            #f.write(
+            result += "<h2>Top violators by number of employees violated (by legal name)</h2> \n"
+            #)
+            result += out_sort_ee_violtd.head(6).to_html(
+                columns=header, index=False)
+            #f.write("\n")
 
-            if not unique_legalname2.empty:
-                # by 'legal_name'
-                f.write("<h2>Group by legal name and sort by records</h2> \n")
-                unique_legalname2.head(row_head).to_html(
-                    f, columns=dup_header, index=False)
-                f.write("\n")
-            else:
-                f.write("<p> There are no groups by legal name to report</p> \n")
+        if not out_sort_repeat_violtd.empty:
+            # by repeated
+            #f.write(
+            result += "<h2>Top violators by number of repeat violations (by legal name)</h2> \n"
+            #)
+            result += out_sort_repeat_violtd.head(6).to_html(
+                columns=header, index=False)
+            #f.write("\n")
 
-            if not unique_tradename.empty and TEST != 3:
-                # by unique_trade_nm
-                f.write("<h2>Group by trade name and sort by records</h2> \n")
-                unique_tradename.head(row_head).to_html(
-                    f, columns=dup_header, index=False)
-                f.write("\n")
-            else:
-                f.write("<p> There are no groups by trade name to report</p> \n")
+        # by repeat violators******************
+        row_head = 24
+        if not unique_address.empty:
+            # by unique_address
+            #f.write(
+            result += "<h2>Group by address and sort by records</h2> \n"
+            #)
+            result += unique_address.head(row_head).to_html(
+                columns=dup_header, index=False)
+            #f.write("\n")
+        else:
+            #f.write(
+            result += "<p> There are no groups by address to report</p> \n"
+            #)
 
-            if not agency_df.empty:
-                # report for cases from multiple agencies
-                f.write(
-                    "<h2>Group by company and sort by number of agencies involved</h2> \n")
-                agency_df.head(row_head).to_html(
-                    f, columns=multi_agency_header, index=False)
-                f.write("\n")
-            else:
-                f.write(
-                    "<p> There are no groups by companies with violations by multiple agencies to report</p> \n")
+        if not unique_legalname2.empty:
+            # by 'legal_name'
+            #f.write(
+            result += "<h2>Group by legal name and sort by records</h2> \n"
+            #)
+            result += unique_legalname2.head(row_head).to_html(
+                columns=dup_header, index=False)
+            #f.write("\n")
+        else:
+            #f.write(
+            result += "<p> There are no groups by legal name to report</p> \n"
+            #)
 
-            if not unique_agency.empty:
-                # report agency counts
-                # by unique_agency
-                f.write("<h2>Cases by agency or owner</h2> \n")
-                unique_agency.head(row_head).to_html(
-                    f, columns=dup_agency_header, index=False)
-                f.write("\n")
-            else:
-                f.write(
-                    "<p> There are no case groups by agency or owner to report</p> \n")
+        if not unique_tradename.empty and TEST != 3:
+            # by unique_trade_nm
+            #f.write(
+            result += "<h2>Group by trade name and sort by records</h2> \n"
+            #)
+            result += unique_tradename.head(row_head).to_html(
+                columns=dup_header, index=False)
+            #f.write("\n")
+        else:
+            #f.write(
+            result += "<p> There are no groups by trade name to report</p> \n"
+            #)
 
-            if not unique_owner.empty:
-                # by 'unique_owner'
-                f.write(
-                    "<h2>Cases by jurisdiction (includes private jurisdictions)</h2> \n")
-                unique_owner.head(row_head).to_html(
-                    f, columns=dup_owner_header, index=False)
-                f.write("\n")
-            else:
-                f.write(
-                    "<p> There are no case groups by jurisdiction to report</p> \n")
+        if not agency_df.empty:
+            # report for cases from multiple agencies
+            #f.write(
+            result += "<h2>Group by company and sort by number of agencies involved</h2> \n"
+            #)
+            result += agency_df.head(row_head).to_html(
+                columns=multi_agency_header, index=False)
+            #f.write("\n")
+        else:
+            #f.write(
+            result += "<p> There are no groups by companies with violations by multiple agencies to report</p> \n"
+            #)
 
-            # signatory
-            if signatories_report == 1 and not out_signatory_target.empty:
+        if not unique_agency.empty:
+            # report agency counts
+            # by unique_agency
+            #f.write(
+            result += "<h2>Cases by agency or owner</h2> \n"
+            #)
+            result += unique_agency.head(row_head).to_html(
+                columns=dup_agency_header, index=False)
+            #f.write("\n")
+        else:
+            #f.write(
+            result += "<p> There are no case groups by agency or owner to report</p> \n"
+            #)
 
-                out_sort_signatory = pd.DataFrame()
-                out_sort_signatory = out_signatory_target.sort_values(
-                    'legal_nm', ascending=True)
+        if not unique_owner.empty:
+            # by 'unique_owner'
+            #f.write(
+            result += "<h2>Cases by jurisdiction (includes private jurisdictions)</h2> \n"
+            #)
+            result += unique_owner.head(row_head).to_html(
+                columns=dup_owner_header, index=False)
+            #f.write("\n")
+        else:
+            #f.write(
+            result += "<p> There are no case groups by jurisdiction to report</p> \n"
+            #)
 
-                out_sort_signatory['violtn_cnt'] = out_sort_signatory.apply(
-                    lambda x: "{0:,.0f}".format(x['violtn_cnt']), axis=1)
-                out_sort_signatory['ee_pmt_recv'] = out_sort_signatory.apply(
-                    lambda x: "{0:,.0f}".format(x['ee_pmt_recv']), axis=1)
+        # signatory
+        if signatories_report == 1 and not out_signatory_target.empty:
 
-                f.write("<P style='page-break-before: always'>")
-                out_sort_signatory.to_csv(sig_file_name_csv)
+            out_sort_signatory = pd.DataFrame()
+            out_sort_signatory = out_signatory_target.sort_values(
+                'legal_nm', ascending=True)
 
-                f.write("<h2>All signatory wage violators</h2> \n")
+            out_sort_signatory['violtn_cnt'] = out_sort_signatory.apply(
+                lambda x: "{0:,.0f}".format(x['violtn_cnt']), axis=1)
+            out_sort_signatory['ee_pmt_recv'] = out_sort_signatory.apply(
+                lambda x: "{0:,.0f}".format(x['ee_pmt_recv']), axis=1)
 
-                if not len(out_sort_signatory.index) == 0:
-                    f.write("<p>Signatory wage theft cases: ")
-                    f.write(str.format('{0:,.0f}', len(
-                        out_sort_signatory.index)))
-                    f.write("</p> \n")
+            f.write("<P style='page-break-before: always'>")
+            out_sort_signatory.to_csv(sig_file_name_csv)
 
-                if not out_sort_signatory['bw_amt'].sum() == 0:
-                    f.write("<p>Total signatory wage theft: $")
-                    f.write(str.format(
-                        '{0:,.0f}', out_sort_signatory['bw_amt'].sum()))
-                    f.write("</p> \n")
-                '''
-                if not out_sort_signatory['ee_violtd_cnt'].sum()==0:
-                    f.write("<p>Signatory wage employees violated: ")
-                    out_sort_signatory['ee_violtd_cnt'] = pd.to_numeric(out_sort_signatory['ee_violtd_cnt'], errors = 'corece')
-                    f.write(str.format('{0:,.0f}',out_sort_signatory['ee_violtd_cnt'].sum() ) )
-                    f.write("</p> \n")
+            f.write("<h2>All signatory wage violators</h2> \n")
 
-                if not out_sort_signatory['violtn_cnt'].sum()==0:
-                    f.write("<p>Signatory wage violations: ")
-                    out_sort_signatory['violtn_cnt'] = pd.to_numeric(out_sort_signatory['violtn_cnt'], errors = 'corece')
-                    f.write(str.format('{0:,.0f}',out_sort_signatory['violtn_cnt'].sum() ) )
-                    f.write("</p> \n")
-                '''
-
-                f.write("\n")
-
-                out_sort_signatory.to_html(
-                    f, max_rows=3000, columns=prevailing_header, index=False)
-
-                f.write("\n")
-
-            # prevailing wage
-            if prevailing_wage_report == 1 and not out_prevailing_target.empty:
-                out_sort_prevailing_wage = pd.DataFrame()
-                #out_sort_prevailing_wage = out_prevailing_target.sort_values('records', ascending=False)
-                out_sort_prevailing_wage = out_prevailing_target.sort_values(
-                    'legal_nm', ascending=True)
-
-                out_sort_prevailing_wage['violtn_cnt'] = out_sort_prevailing_wage.apply(
-                    lambda x: "{0:,.0f}".format(x['violtn_cnt']), axis=1)
-                out_sort_prevailing_wage['ee_pmt_recv'] = out_sort_prevailing_wage.apply(
-                    lambda x: "{0:,.0f}".format(x['ee_pmt_recv']), axis=1)
-
-                f.write("<P style='page-break-before: always'>")
-                out_sort_prevailing_wage.to_csv(prev_file_name_csv)
-
-                f.write("<h2>All prevailing wage violators</h2> \n")
-
-                f.write("<p>Prevailing wage theft cases: ")
+            if not len(out_sort_signatory.index) == 0:
+                f.write("<p>Signatory wage theft cases: ")
                 f.write(str.format('{0:,.0f}', len(
-                    out_sort_prevailing_wage.index)))
-                #f.write(str.format('{0:,.0f}',len(out_sort_prevailing_wage['records'].sum() ) ) )
+                    out_sort_signatory.index)))
                 f.write("</p> \n")
 
-                f.write("<p>Total prevailing wage theft: $")
+            if not out_sort_signatory['bw_amt'].sum() == 0:
+                f.write("<p>Total signatory wage theft: $")
                 f.write(str.format(
-                    '{0:,.0f}', out_sort_prevailing_wage['bw_amt'].sum()))
+                    '{0:,.0f}', out_sort_signatory['bw_amt'].sum()))
+                f.write("</p> \n")
+            '''
+            if not out_sort_signatory['ee_violtd_cnt'].sum()==0:
+                f.write("<p>Signatory wage employees violated: ")
+                out_sort_signatory['ee_violtd_cnt'] = pd.to_numeric(out_sort_signatory['ee_violtd_cnt'] )
+                f.write(str.format('{0:,.0f}',out_sort_signatory['ee_violtd_cnt'].sum() ) )
                 f.write("</p> \n")
 
-                f.write("<p>Total prevailing wage theft: $")
-                f.write(str.format(
-                    '{0:,.0f}', out_sort_prevailing_wage['bw_amt'].sum()))
+            if not out_sort_signatory['violtn_cnt'].sum()==0:
+                f.write("<p>Signatory wage violations: ")
+                out_sort_signatory['violtn_cnt'] = pd.to_numeric(out_sort_signatory['violtn_cnt'] )
+                f.write(str.format('{0:,.0f}',out_sort_signatory['violtn_cnt'].sum() ) )
                 f.write("</p> \n")
+            '''
 
-                # buggy 6/14/2021
-                # f.write("<p>Prevailing wage employees violated: ")
-                # out_sort_prevailing_wage['ee_violtd_cnt'] = pd.to_numeric(out_sort_prevailing_wage['ee_violtd_cnt'], errors = 'corece')
-                # f.write(str.format('{0:,.0f}',out_sort_prevailing_wage['ee_violtd_cnt'].sum() ) )
-                # f.write("</p> \n")
+            f.write("\n")
 
-                # f.write("<p>Prevailing wage violations: ")
-                # out_sort_prevailing_wage['violtn_cnt'] = pd.to_numeric(out_sort_prevailing_wage['violtn_cnt'], errors = 'corece')
-                # f.write(str.format('{0:,.0f}',out_sort_prevailing_wage['violtn_cnt'].sum() ) )
-                # f.write("</p> \n")
+            out_sort_signatory.to_html(
+                f, max_rows=3000, columns=prevailing_header, index=False)
 
-                f.write("\n")
-                # 12/25/2021 added "float_format=lambda x: '%10.2f' % x" per https://stackoverflow.com/questions/14899818/format-output-data-in-pandas-to-html
-                out_sort_prevailing_wage.to_html(
-                    f, max_rows=3000, columns=prevailing_header, index=False, float_format=lambda x: '%10.2f' % x)
+            f.write("\n")
 
-                f.write("\n")
+
+        # prevailing wage
+        if prevailing_wage_report == 1 and not out_prevailing_target.empty:
+            out_sort_prevailing_wage = pd.DataFrame()
+            #out_sort_prevailing_wage = out_prevailing_target.sort_values('records', ascending=False)
+            out_sort_prevailing_wage = out_prevailing_target.sort_values(
+                'legal_nm', ascending=True)
+
+            out_sort_prevailing_wage['violtn_cnt'] = out_sort_prevailing_wage.apply(
+                lambda x: "{0:,.0f}".format(x['violtn_cnt']), axis=1)
+            out_sort_prevailing_wage['ee_pmt_recv'] = out_sort_prevailing_wage.apply(
+                lambda x: "{0:,.0f}".format(x['ee_pmt_recv']), axis=1)
+
+            f.write("<P style='page-break-before: always'>")
+            out_sort_prevailing_wage.to_csv(prev_file_name_csv)
+
+            f.write("<h2>All prevailing wage violators</h2> \n")
+
+            f.write("<p>Prevailing wage theft cases: ")
+            f.write(str.format('{0:,.0f}', len(
+                out_sort_prevailing_wage.index)))
+            #f.write(str.format('{0:,.0f}',len(out_sort_prevailing_wage['records'].sum() ) ) )
+            f.write("</p> \n")
+
+            f.write("<p>Total prevailing wage theft: $")
+            f.write(str.format(
+                '{0:,.0f}', out_sort_prevailing_wage['bw_amt'].sum()))
+            f.write("</p> \n")
+
+            f.write("<p>Total prevailing wage theft: $")
+            f.write(str.format(
+                '{0:,.0f}', out_sort_prevailing_wage['bw_amt'].sum()))
+            f.write("</p> \n")
+
+            # buggy 6/14/2021
+            # f.write("<p>Prevailing wage employees violated: ")
+            # out_sort_prevailing_wage['ee_violtd_cnt'] = pd.to_numeric(out_sort_prevailing_wage['ee_violtd_cnt'] )
+            # f.write(str.format('{0:,.0f}',out_sort_prevailing_wage['ee_violtd_cnt'].sum() ) )
+            # f.write("</p> \n")
+
+            # f.write("<p>Prevailing wage violations: ")
+            # out_sort_prevailing_wage['violtn_cnt'] = pd.to_numeric(out_sort_prevailing_wage['violtn_cnt'] )
+            # f.write(str.format('{0:,.0f}',out_sort_prevailing_wage['violtn_cnt'].sum() ) )
+            # f.write("</p> \n")
+
+            f.write("\n")
+            # 12/25/2021 added "float_format=lambda x: '%10.2f' % x" per https://stackoverflow.com/questions/14899818/format-output-data-in-pandas-to-html
+            out_sort_prevailing_wage.to_html(
+                f, max_rows=3000, columns=prevailing_header, index=False, float_format=lambda x: '%10.2f' % x)
+
+            f.write("\n")
+        
+        result += '''
+            </body>
+            </html>
+            '''
+
+        with open(temp_file_name, 'a', encoding='utf-8') as f:  # append to report main file
+                f.write(result)
 
 
 def Clean_Repeat_Violator_HTML_Row(df, COLUMN_NAME):
@@ -1243,7 +1327,6 @@ def GroupByX(df, COLUMN_NAME):
             'count')  # count duplicates
 
         df['bw_amt'] = df.groupby(COLUMN_NAME)["bw_amt"].transform('sum')
-        #df['ee_pmt_due'] = df.groupby(COLUMN_NAME)["ee_pmt_due"].transform('sum')
         #df['backwage_owed'] = df.groupby(COLUMN_NAME)['backwage_owed'].transform('sum')
         df['violtn_cnt'] = df.groupby(
             COLUMN_NAME)["violtn_cnt"].transform('sum')
@@ -1278,10 +1361,6 @@ def GroupByMultpleCases(df, COLUMN_NAME):
             df['bw_amt'] = "0"
         else:
             df['bw_amt'] = df.groupby(COLUMN_NAME)["bw_amt"].transform('sum')
-        #if 'ee_pmt_due' not in df.columns:
-        #    df['ee_pmt_due'] = "0"
-        #else:
-        #    df['ee_pmt_due'] = df.groupby(COLUMN_NAME)["ee_pmt_due"].transform('sum')
         if 'backwage_owed' not in df.columns:
             df['backwage_owed'] = "0"
         else:
@@ -1365,12 +1444,22 @@ def GroupByMultpleAgency(df):
 
 
 def FilterForDate(df, YEAR_START, YEAR_END):
+    
+    if 'findings_end_date' not in df.columns:
+        df['findings_end_date'] = pd.to_datetime('today')
+    if 'findings_start_date' not in df.columns:
+        df['findings_start_date'] = pd.to_datetime('today')
+    
     df = df[
-        ((pd.to_datetime(df['findings_start_date'], dayfirst=True) > YEAR_START) & (pd.to_datetime(df['findings_start_date'], dayfirst=True) < YEAR_END)) |
-        (pd.isnull(df['findings_start_date']) & (pd.to_datetime(df['findings_end_date'], dayfirst=True) > YEAR_START) & (pd.to_datetime(df['findings_end_date'], dayfirst=True) < YEAR_END)) |
-        (pd.isnull(df['findings_start_date'])
-         & pd.isnull(df['findings_end_date']))
+        ((pd.to_datetime(df['findings_start_date'], dayfirst=True) >= YEAR_START) & 
+        (pd.to_datetime(df['findings_start_date'], dayfirst=True) <= YEAR_END)) |
+        
+        (pd.isnull(df['findings_start_date']) & (pd.to_datetime(df['findings_end_date'], dayfirst=True) >= YEAR_START) & 
+        (pd.to_datetime(df['findings_end_date'], dayfirst=True) <= YEAR_END)) | 
+        
+        (pd.isnull(df['findings_start_date']) & pd.isnull(df['findings_end_date']))
     ]
+
     return df
 
 
@@ -1393,9 +1482,9 @@ def Filter_for_Target_Industry(df, TARGET_INDUSTRY, infer_by_naics):
 def Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS):
     organization_list = ''.join(TARGET_ORGANIZATIONS[1]).split('|')
 
-    df_temp_0 = df.loc[df['legal_nm'].str.contains(
+    df_temp_0 = df.loc[df['legal_nm'].astype(str).str.contains(
         '|'.join(organization_list), case=False, na=False) ] #na=False https://stackoverflow.com/questions/66536221/getting-cannot-mask-with-non-boolean-array-containing-na-nan-values-but-the
-    df_temp_1 = df.loc[df['trade_nm'].str.contains(
+    df_temp_1 = df.loc[df['trade_nm'].astype(str).str.contains(
         '|'.join(organization_list), case=False, na=False) ]
 
     df_temp = pd.concat([df_temp_0, df_temp_1], ignore_index=True)
@@ -1403,14 +1492,17 @@ def Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS):
     return df_temp
 
 
-def Filter_for_Zipcode(df, TARGET_ZIPCODES, infer_zip):
+def Filter_for_Zipcode(df, TARGET_ZIPCODES, infer_zip, target_state):
     if TARGET_ZIPCODES[0] != '00000': # faster run for "All_Zipcode" condition
         TARGET_ZIPCODES_HERE = TARGET_ZIPCODES #make local copy
         if not infer_zip:
             for zipcode in TARGET_ZIPCODES_HERE:
                 if 'X' in zipcode: TARGET_ZIPCODES_HERE.remove(zipcode) #remove the dummy codes
         # Filter on region by zip code
-        df = df.loc[df['zip_cd'].isin(TARGET_ZIPCODES_HERE)] #<-- DLSE bug here is not finding zipcodes
+        if target_state == "California":
+            df = df.loc[df['st_cd']== "CA"] #hacketty time at 1:30 pm and somewhere to go Jan 11, 2024 by F Peterson
+        else:
+            df = df.loc[df['zip_cd'].isin(TARGET_ZIPCODES_HERE)] #<-- DLSE bug here is not finding zipcodes
     return df
 
 
@@ -1451,6 +1543,9 @@ def RemoveCompletedCases(df):
             (df["Note"] != 'Closed - Paid in Full (PIF)/Satisfied') &
             (df["Note"] != 'Full Satisfaction') &
             (df["Note"] != 'Vacated') &
+            (df["Case Status"] != 'Closed-Claimant Judgment') &
+            (df["Case Status"] != 'Closed - Satisfied') &
+            (df["Case Status"] != 'Open - Partial Payment/Satisfaction') &
             (df["Closure Disposition"] != 'Dismissed   Claimant Withdrew') &
             (df["Closure Disposition"] != 'Paid in Full   Post ODA') &
             (df["Closure Disposition"] != 'Paid in Full   Pre-Hearing') &
@@ -1517,7 +1612,7 @@ def RemoveCompletedCases(df):
     '''
 
     if 'bw_amt' and 'ee_pmt_recv' in df: #take cases that are open
-        tolerance = 1.05 #outstanding value must be greater than 105% of payment (less than 95% paid)
+        tolerance = 1.05 # outstanding value must be greater than 105% of payment (less than 95% paid)
         abs_tol = -0.001 # allows zero but no negative values
         df = df.loc[ 
             (df['bw_amt'] >= (df['ee_pmt_recv']*tolerance) ) & #more than 5% of amount still owed
@@ -1731,7 +1826,7 @@ def Infer_Industry(df, TARGET_INDUSTRY):
             df.loc[foundIt_ind3, 'industry'] = TARGET_INDUSTRY[x][0]
             df.loc[foundIt_ind3, 'trade2'] = "" #clear inference if found
 
-        # uses the existing NAICS coding and fill balnks with infered
+        # uses the existing NAICS coding and fill blanks with inferred
 
         df['industry'] = df.apply(
             lambda row:
@@ -1820,6 +1915,32 @@ def InferZipcodeFromCityName(df, cityDict):
     return df
 
 
+def InferZipcodeFromAddress(df, cityDict):
+
+    if 'street_addr' in df.columns: 
+
+        for city in cityDict:
+
+            zipcode_is_empty = (
+                ((df['zip_cd'] == '0' ) | (df['zip_cd'] == '99999' ) |(df['zip_cd'] == 0 ) | pd.isna(df['zip_cd']) | 
+                        (df['zip_cd'] == False) | (df['zip_cd'] == "" ) )  
+            )
+
+            test = cityDict[city][0]
+            foundCity = (
+                ((df['street_addr'].astype(str).str.contains(test, na=False, 
+                    case=False, flags=re.IGNORECASE)))
+                #((df['cty_nm'].astype(str).str.contains(PATTERN_CITY, na=False, 
+                #    case=False, flags=re.IGNORECASE)))
+            )
+
+            tempA = cityDict[city][len(cityDict[city]) - 1] #take last zipcode
+            tempB = generate_generic_zipcode_for_city(tempA)
+            df.loc[zipcode_is_empty * foundCity, "zip_cd"] = tempB
+    
+    return df
+
+
 def FillBlankZipcodes (df):
 
     zipcode_is_empty = (
@@ -1847,7 +1968,7 @@ def InferZipcodeFromCompanyName(df, cityDict):
         #PATTERN_CITY = '|'.join(cityDict[city][0])
 
         zipcode_is_empty = (
-            (pd.isna(df['cty_nm'])) &
+            ((pd.isna(df['cty_nm'])) | (df['cty_nm'] == '') ) &
             ((df['zip_cd'] == '0') | (df['zip_cd'] == '99999') |(df['zip_cd'] == "") | pd.isna(df['zip_cd']) | (df['zip_cd'] == 0)) #10/27/2022 changed False to 0
         )
         
@@ -1889,8 +2010,8 @@ def InferZipcodeFromJurisdictionName(df, cityDict):
         #PATTERN_CITY = '|'.join(cityDict[city][0])
 
         zipcode_is_empty = (
-            (pd.isna(df['cty_nm'])) &
-            ((df['zip_cd'] == '0') | (df['zip_cd'] == '99999') | (df['zip_cd'] == "") | (df['zip_cd'] == 0)) #10/27/2022 changed False to 0
+            ((pd.isna(df['cty_nm'])) | (df['cty_nm'] == '') ) &
+            ((df['zip_cd'] == '0') | (df['zip_cd'] == '99999') | (df['zip_cd'] == 99999)| (df['zip_cd'] == "") | (df['zip_cd'] == 0)) #10/27/2022 changed False to 0
         )
 
         test = cityDict[city][0]
@@ -1989,55 +2110,54 @@ def backwages_owed(df):
     df['backwage_owed'] = df['wages_owed'] + \
         df['cmp_assd_cnt'] + df['interest_owed'] #fill backwages as sum of wages, penalty, and interest
 
-    # add ee_pmt_due check if equal ?
-    if 'Paid' in df.columns:
-        # zero out if documented as paid
-        df['backwage_owed'] = np.where(
-            df['Paid'] == 'Y', 0, df['backwage_owed'])
-        # zero out if documented as paid
-        df['cmp_assd_cnt'] = np.where(df['Paid'] == 'Y', 0, df['cmp_assd_cnt'])
-        # zero out if documented as paid
-        df['interest_owed'] = np.where(
-            df['Paid'] == 'Y', 0, df['interest_owed'])
-
     # at some point, save this file for quicker reports and only run up to here when a new dataset is introduced
     return df
 
 
 def calculate_interest_owed(df):
-    if 'findings_start_date' and 'findings_end_date' in df.columns:
-        df['wages_owed'] = np.where(df['wages_owed'] < 0, 0, df['wages_owed'])
+    #remove negatives that are due to a bug somehwere
+    df['wages_owed'] = np.where(df['wages_owed'] < 0, 0, df['wages_owed'])
 
-        df['findings_start_date'] = pd.to_datetime(
-            df['findings_start_date'], errors='coerce')
-        # crashed here 2/5/2022 "Out of bounds nanosecond timestamp: 816-09-12 00:00:00"
+    if 'findings_start_date' not in df.columns:
+         df['findings_start_date'] = pd.to_datetime('today')
+    df['findings_start_date'] = pd.to_datetime(
+        df['findings_start_date'], errors='coerce')
+    # crashed here 2/5/2022 "Out of bounds nanosecond timestamp: 816-09-12 00:00:00"
+    
+    if 'findings_end_date' not in df.columns: 
+        df['findings_end_date'] = pd.to_datetime('today')
+    else:
         df['findings_end_date'] = pd.to_datetime(
             df['findings_end_date'], errors='coerce')
-        df['Calculate_start_date'] = df['findings_start_date'].fillna(
-            df['findings_end_date'])
-        df['Days_Unpaid'] = pd.to_datetime(
-            'today') - df['Calculate_start_date']
-        # df['Days_Unpaid'] = np.where(df['Days_Unpaid'] < pd.Timedelta(0,errors='coerce'), (pd.Timedelta(0, errors='coerce')), df['Days_Unpaid'] )
+    
+    df['Calculate_start_date'] = df['findings_start_date'].fillna(
+        df['findings_end_date'])
+    df['Days_Unpaid'] = pd.to_datetime(
+        'today') - df['Calculate_start_date']
+    # df['Days_Unpaid'] = np.where(df['Days_Unpaid'] < pd.Timedelta(0,errors='coerce'), (pd.Timedelta(0, errors='coerce')), df['Days_Unpaid'] )
 
-        df['Years_Unpaid'] = df['Days_Unpaid'].dt.days.div(365)
-        r = 10
-        n = 365
-        df['Interest_Accrued'] = (
-            df['wages_owed'] * (((1 + ((r/100.0)/n)) ** (n*df['Years_Unpaid'])))) - df['wages_owed']
-        df['Interest_Accrued'] = df['Interest_Accrued'].fillna(
-            df['Interest_Accrued'])
-        if 'Interest_Balance_Due' not in df.columns: df['Interest_Balance_Due'] = 0
-        df['Interest_Balance_Due'] = np.where(
-            df['Interest_Balance_Due'] == "", df['Interest_Accrued'], df['Interest_Balance_Due'])
-        # df['Interest_Balance_Due'] = np.where(df['Interest_Balance_Due'] == 0, df['Interest_Accrued'], df['Interest_Balance_Due'] ) #<--careful this does not overwite fully paid cases
-        df['Interest_Balance_Due'] = np.where(
-            df['Interest_Balance_Due'] == False, df['Interest_Accrued'], df['Interest_Balance_Due'])
-        if 'Interest_Payments_Recd' not in df.columns: df['Interest_Payments_Recd'] = 0
-        df['interest_owed'] = (
-            df['Interest_Balance_Due'] - df["Interest_Payments_Recd"])
-        df['interest_owed'] = np.where(
-            df['interest_owed'] < 0, 0, df['interest_owed'])
-        #total_int_bal = df['interest_owed'].sum()
+    #A = Interest_Owed
+    df['Years_Unpaid'] = df['Days_Unpaid'].dt.days.div(365)
+    r = 7 #26 U.S. Code § 6621 - Determination of rate of interest -- https://www.dol.gov/agencies/ebsa/employers-and-advisers/plan-administration-and-compliance/correction-programs/vfcp/table-of-underpayment-rates
+    n = 365
+    if 'Interest_Accrued' not in df.columns: df['Interest_Accrued'] = 0
+    df['Interest_Accrued'] = (
+        df['wages_owed'] * (((1 + ((r/100.0)/n)) ** (n*df['Years_Unpaid'])))) - df['wages_owed']
+    df['Interest_Accrued'] = df['Interest_Accrued'].fillna(
+        df['Interest_Accrued'])
+    
+    #B = Interest_Payments_Recd
+    if 'Interest_Payments_Recd' not in df.columns: df['Interest_Payments_Recd'] = 0
+    df['Interest_Payments_Recd'] = np.where(
+        df['Interest_Payments_Recd'] < 0, 0, df['Interest_Payments_Recd'])
+    
+    #Interest Owed = A - B
+    df['interest_owed'] = (
+        df['Interest_Accrued'] - df["Interest_Payments_Recd"])
+    #remove negatives that are due to a bug somehwere
+    df['interest_owed'] = np.where(
+        df['interest_owed'] < 0, 0, df['interest_owed'])
+
     return df
 
 
@@ -2126,13 +2246,13 @@ def compute_and_add_violation_count_assumptions(df):
         # by issue count
         if 'violation' in df.columns:
             df['violtn_cnt'] = df['violtn_cnt'].fillna(
-                df['violation'].str.count("Issue"))  # assume mean
-            df['violtn_cnt'] = np.where(df['violtn_cnt'] == "", df['violation'].str.count(
+                df['violation'].astype(str).str.count("Issue"))  # assume mean
+            df['violtn_cnt'] = np.where(df['violtn_cnt'] == "", df['violation'].astype(str).str.count(
                 "Issue"), df['violtn_cnt'])  # catch if na misses
             df['violtn_cnt'] = np.where(
-                df['violtn_cnt'] == 0, df['violation'].str.count("Issue"), df['violtn_cnt'])
+                df['violtn_cnt'] == 0, df['violation'].astype(str).str.count("Issue"), df['violtn_cnt'])
             df['violtn_cnt'] = np.where(
-                df['violtn_cnt'] == False, df['violation'].str.count("Issue"), df['violtn_cnt'])
+                df['violtn_cnt'] == False, df['violation'].astype(str).str.count("Issue"), df['violtn_cnt'])
             total_case_violtn = df['violtn_cnt'].sum()  # overwrite
 
         # violations
@@ -2964,22 +3084,20 @@ def CleanUpAgency(df, COLUMN):
 
 
 def CleanNumberColumns(column):
+    #column is a 'series'
 
     column = column.replace(
         to_replace="\$([0-9,\.]+).*", value=r"\1", regex=True)
-    # column = str(column) #.astype(str)
     # #column = column.str.strip()
     column = column.replace(' ', '')
-    # column = column.replace('$','')
-    # column = column.replace(',','')
-    column = column.replace("−", "-")
+    column = column.replace(',','', regex=True)
+    column = column.replace("−", "-", regex=True)
     column = column.replace('[)]', '', regex=True)
     column = column.replace('[(]', '-', regex=True)
-    #column.loc[column == '-', column] = 0
-    column = pd.to_numeric(column, errors='coerce')
-    column = column.astype(float)
+    column = column.fillna('0')
 
-    column = column.fillna(0)
+    column = pd.to_numeric(column, errors='coerce')
+
     column = column.abs()
 
     return column
@@ -2989,14 +3107,10 @@ def Cleanup_Number_Columns(df):
 
     if 'bw_amt' not in df.columns:
         df['bw_amt'] = 0
-    if 'ee_pmt_due' not in df.columns:
-        df['ee_pmt_due'] = 0
     if 'ee_violtd_cnt' not in df.columns:
         df['ee_violtd_cnt'] = 0
     if 'ee_pmt_recv' not in df.columns:
         df['ee_pmt_recv'] = 0
-    if 'Interest_Balance_Due' not in df.columns:
-        df['Interest_Balance_Due'] = 0
     if 'Interest_Payments_Recd' not in df.columns:
         df['Interest_Payments_Recd'] = 0
     if 'cmp_assd_cnt' not in df.columns:
@@ -3005,10 +3119,8 @@ def Cleanup_Number_Columns(df):
         df['violtn_cnt'] = 0
 
     df['bw_amt'] = CleanNumberColumns(df['bw_amt'])
-    df['ee_pmt_due'] = CleanNumberColumns(df['ee_pmt_due'])
     df['ee_violtd_cnt'] = CleanNumberColumns(df['ee_violtd_cnt'])
     df['ee_pmt_recv'] = CleanNumberColumns(df['ee_pmt_recv'])
-    df['Interest_Balance_Due'] = CleanNumberColumns(df['Interest_Balance_Due'])
     df['Interest_Payments_Recd'] = CleanNumberColumns(
         df['Interest_Payments_Recd'])
     df['cmp_assd_cnt'] = CleanNumberColumns(df['cmp_assd_cnt'])
@@ -3021,7 +3133,6 @@ def Cleanup_Number_Columns(df):
 def Clean_Summary_Values(DF_OG_VLN):
 
     DF_OG_VLN['bw_amt'] = CleanNumberColumns(DF_OG_VLN['bw_amt'])
-    DF_OG_VLN['ee_pmt_due'] = CleanNumberColumns(DF_OG_VLN['ee_pmt_due'])
     DF_OG_VLN['violtn_cnt'] = CleanNumberColumns(DF_OG_VLN['violtn_cnt'])
     DF_OG_VLN['ee_violtd_cnt'] = CleanNumberColumns(DF_OG_VLN['ee_violtd_cnt'])
     DF_OG_VLN['ee_pmt_recv'] = CleanNumberColumns(DF_OG_VLN['ee_pmt_recv'])
@@ -3033,8 +3144,6 @@ def FormatNumbersHTMLRow(df):
     if not df.empty:
         df['bw_amt'] = df.apply(
             lambda x: "{0:,.0f}".format(x['bw_amt']), axis=1)
-        df['ee_pmt_due'] = df.apply(
-            lambda x: "{0:,.0f}".format(x['ee_pmt_due']), axis=1)
         df['ee_violtd_cnt'] = df.apply(
             lambda x: "{0:,.0f}".format(x['ee_violtd_cnt']), axis=1)
         df['ee_pmt_recv'] = df.apply(
@@ -3045,45 +3154,51 @@ def FormatNumbersHTMLRow(df):
     return df
 
 
-# drop duplicated backwage values, keeping the first
-def DropDuplicateBackwage(df, FLAG_DUPLICATE):
+# Flag duplicated backwage values
+def FlagDuplicateBackwage(df, FLAG_DUPLICATE):
     if not df.empty and 'case_id' in df.columns:
-        df['case_id'] = df['case_id'].str.strip()  # remove spaces
-        df["ee_pmt_due_x"] = df["ee_pmt_due"]
 
-        df["_DUP_BW"] = df.duplicated(
+        #Clean
+        df['case_id'] = df['case_id'].str.strip()  #remove spaces
+
+        #Catch clear duplicated cases -- so far to 500k records none found in DLSE or WHD
+        df["_DUP_BW"] = df.duplicated( #catch clear duplicated cases
             subset=['case_id', 'legal_nm', 'violation', 'bw_amt'], keep=False)
+        
+        #Catch scenario where $0 payment -- infrequent to have pmt on some violations but not all
         df["_DUP_PMT_REC"] = df.duplicated(
             subset=['case_id', 'legal_nm', 'violation', 'ee_pmt_recv'], keep=False)
 
-        # violation is ignored due to a specific error in the dataset--however, for generality, this should check that violation are different and then rzero if value is the same
+        #DO NOT USE -- violation is ignored due to a specific error in the dataset-- 
+        #only use for visual check
         df["_DUP_PMT_DUE"] = df.duplicated(
-            subset=['case_id', 'legal_nm', 'ee_pmt_due'], keep=False)
-
-        df["_DUP_PMT_DUE_X"] = df.duplicated(
-            subset=['case_id', 'legal_nm', 'ee_pmt_due'], keep='first')
-        df["ee_pmt_due_x"] = np.where(
-            df['_DUP_PMT_DUE_X'] == True, 0, df["ee_pmt_due_x"])
-
-        # drop for report
-        if FLAG_DUPLICATE == 0:
-            df["ee_pmt_due"] = np.where(
-                df['_DUP_PMT_DUE_X'] == True, 0, df["ee_pmt_due"])
+            subset=['case_id', 'legal_nm', 'bw_amt'], keep=False)
+            
     return df
 
 
 def DropDuplicateRecords(df, FLAG_DUPLICATE):
 
     if not df.empty and 'case_id' in df.columns:
+        
+        #CLEAN
         df['case_id'] = df['case_id'].str.strip()  # remove spaces
 
-        # always remove full duplicates and nearly full duplicates
+        # DELETE DUPLICTAES 
+        # always remove full duplicates
         df = df.drop_duplicates(keep='first')
-        # assumes that ee_pmt_due will sort same as ee_pmt_recv and that both values are either present or not
-        df = df.sort_values('ee_pmt_recv', ascending=False).drop_duplicates(
-            ['case_id', 'violation', 'bw_amt'], keep='first').sort_index()
-
-        # always label
+        #improved sort with sum of backwage oweb and interest owed
+        df['Sort_$'] = df['bw_amt'] + df['interest_owed']
+        #Sort by ['Sort_$','Businesstype'], to place duplicate with $ and the Corp at the top and kept while $0 and Individuals are removed
+        if FLAG_DUPLICATE == 0:
+            df = df.sort_values(['Sort_$','Businesstype'], ascending=[False,False]).drop_duplicates(
+                ['case_id', 'violation'], keep='first').sort_index()
+        else:
+            df["_DELETED_DUP"] = df.sort_values(['Sort_$','Businesstype'], ascending=[False,True]).duplicated(
+                 subset=['case_id', 'violation'], keep='first')
+            
+        # TEST SCENARIO
+        # LABEL DUPLICATES REMAINING -- in 500k records these three scenarios have never occured
         #df["_DUP_Person"] = df.duplicated(subset=['Submitter_Email', 'Responsible_Person_Phone'], keep=False)
         df["_Case_X"] = df.duplicated(
             subset=['case_id', 'violation', 'bw_amt'], keep=False)
@@ -3092,12 +3207,15 @@ def DropDuplicateRecords(df, FLAG_DUPLICATE):
         df["_L-NM_X"] = df.duplicated(subset=['case_id', 'legal_nm',
                                               'street_addr', 'violation', 'bw_amt'], keep=False)
 
-        # drop for report
+        # DELETE DUPLICTAES REMAINING -- in 500k records these three scenarios have never occured
         if FLAG_DUPLICATE == 0:
+            #"_Case_X"
             df = df.drop_duplicates(
                 subset=['case_id', 'violation', 'bw_amt'], keep='first')
+            #"_T_NM_X"
             df = df.drop_duplicates(
                 subset=['case_id', 'trade_nm', 'street_addr', 'violation', 'bw_amt'], keep='first')
+            #"_L-NM_X"
             df = df.drop_duplicates(
                 subset=['case_id', 'legal_nm', 'street_addr', 'violation', 'bw_amt'], keep='first')
 
@@ -3208,35 +3326,57 @@ def Setup_Regular_headers(df):  # DSLE, WHD, etc headers
 
     df = df.rename(columns={
         'naics_code_description': 'naics_desc.',
-        'EE_Payments_Received': 'ee_pmt_recv',  # causing trouble 11/1/2020
-        'Balance_Due_to_Employee(s)': 'ee_pmt_due',
-        'street_addr_1_txt': 'street_addr',
-        'legal_name': 'legal_nm',
-        'Jurisdiction_or_Project_Name': 'juris_or_proj_nm',
-        'case_violtn_cnt': 'violtn_cnt',
-        'bw_atp_amt': 'bw_amt',
         'trade': 'industry',
 
+        'street_addr_1_txt': 'street_addr',
+        
+        'case_violtn_cnt': 'violtn_cnt',
+        'EE_Payments_Received': 'ee_pmt_recv',  # causing trouble 11/1/2020
+        'Balance Due to Employee(s)': "DNU_Balance_Due_to_Employee(s)",  #in DLSE, this is wrong -- DNU, Do Not Use
+        'Judgment Total': 'bw_amt',
+        'bw_atp_amt': 'bw_amt',
+        
         #DLSE specific to conform to WHD -- added 10/2/2022
         'Case Number': 'case_id',
+        'Case #:': 'case_id', #redundant scenario
+        'Judgment Status': 'Case Status', #redundant scenario only for new DLSE format
+        'Judgment Name': 'case_id', #redundant to 'Case Number' scenario only for new DLSE format
+        'Jurisdiction_or_Project_Name': 'juris_or_proj_nm',
+
         'Account - DBA':'trade_nm',
+        'Sub Contractor':'trade_nm',#redundant scenario
         'Employer':'legal_nm',
+        'legal_name': 'legal_nm',
+        'Defendant Name':'legal_nm', #redundant to 'Employer' scenario only for new DLSE format
+        'Defendant/Employer Name':'legal_nm', #redundant to 'Employer' scenario only for new DLSE format
+        'Prime Contractor':'legal_nm', #redundant scenario only for new DLSE format
 
         'Primary Address Street':'street_addr',
         'Primary Address City': 'cty_nm',
         'Primary Address State': 'st_cd',
+        'Defendant Address':'street_addr',
         
         'NAICS Code': 'naic_cd',
         'NAICS Code Title': 'naics_desc.', #'naics_desc.',
+        'NAICS Industry': 'naics_desc.', #redundant to 'NAICS Code Title' scenario only for new DLSE format
+        'Industry (NAICS)': 'naics_desc.', #redundant to 'NAICS Code Title' scenario only for new DLSE format
 
         #'':'case_violtn_cnt',
         #'':'cmp_assd_cnt',
         #'':'ee_violtd_cnt',
         'EE(s) Amt Assessed':'bw_amt',
         "EE Payments Rec'd":'ee_pmt_recv',
+        "total_CWPA_amount_collected":'ee_pmt_recv', #redundant scenario only for new DLSE format
 
         'Date of Docket':'findings_start_date',
+        'Date Filed':'findings_start_date', #redundant to 'Date of Docket' scenario only for new DLSE format
+        'Date Docketed:':'findings_start_date', #redundant scenario only for new DLSE format
+        'Judgment Entry Date':'findings_start_date', #redundant to 'Date of Docket' scenario only for new DLSE format
         'Case Closed Date':'findings_end_date',
+        'Date Closed:':'findings_end_date', #redundant scenario only for new DLSE format
+
+        'Interest Balance Due': 'DNU_Interest_Balance', #this is DLSE outdated -- DNU, Do Not Use
+        "Interest Payments Rec'd":'Interest_Payments_Recd',
 
         'Case Issue Type':'violation',
         'DIR Office':'Jurisdiction_region_or_General_Contractor'
@@ -3251,6 +3391,10 @@ def Setup_Regular_headers(df):  # DSLE, WHD, etc headers
 
     if 'street_addr' not in df.columns:
         df['street_addr'] = ""
+    if 'cty_nm' not in df.columns:
+        df['cty_nm'] = ""
+    if 'st_cd' not in df.columns:
+        df['st_cd'] = ""
     if 'zip_cd' not in df.columns:
         df['zip_cd'] = '0' #10/27/2022 change from 0 to False -- then to '0'
 
@@ -3277,10 +3421,10 @@ def Setup_Regular_headers(df):  # DSLE, WHD, etc headers
 
     if 'ee_pmt_recv' not in df.columns:
         df['ee_pmt_recv'] = 0
-    if 'ee_pmt_due' not in df.columns:
-        df['ee_pmt_due'] = 0
-    if 'Paid' not in df.columns:
-        df['Paid'] = ""
+    if 'interest_owed' not in df.columns:
+        df['interest_owed'] = 0
+    if 'cmp_assd_cnt' not in df.columns:
+        df['cmp_assd_cnt'] = 0
 
     if 'records' not in df.columns:
         df['records'] = 0
@@ -3291,6 +3435,12 @@ def Setup_Regular_headers(df):  # DSLE, WHD, etc headers
         df['juris_or_proj_nm'] = ""
     if 'Jurisdiction_region_or_General_Contractor' not in df.columns:
         df['Jurisdiction_region_or_General_Contractor'] = ""
+
+    if "Case Stage" not in df.columns:
+        df["Case Stage"] = ""
+    if "Closure Disposition" not in df.columns:
+        df["Closure Disposition"] = ""
+    
 
     return df
 
@@ -3314,15 +3464,23 @@ def Define_Column_Types(df):
         )
         df['zip_cd'] = df['zip_cd'].replace('nan', '0', regex=True)
 
-        df['Prevailing'] = pd.to_numeric(
-            df['Prevailing'], errors='coerce')
-        df["Signatory"] = pd.to_numeric(
-            df["Signatory"], errors='coerce')
-        df['bw_amt'] = pd.to_numeric(df['bw_amt'], errors='coerce')
-        df['ee_pmt_recv'] = pd.to_numeric(
-            df['ee_pmt_recv'], errors='coerce')
-        df['ee_pmt_due'] = pd.to_numeric(
-            df['ee_pmt_due'], errors='coerce')
+        if is_string_series(df['Prevailing']):
+            df['Prevailing'] = pd.to_numeric(df['Prevailing'], errors='coerce')
+        if is_string_series(df["Signatory"]):
+            df["Signatory"] = pd.to_numeric(df["Signatory"], errors='coerce')
+        
+        if is_string_series(df['bw_amt']):
+            df['bw_amt'] = pd.to_numeric(
+                df['bw_amt'].str.replace(',', '', regex=True) , errors='coerce')
+        if is_string_series(df['ee_pmt_recv']):
+            df['ee_pmt_recv'] = pd.to_numeric(
+                df['ee_pmt_recv'].str.replace(',', '', regex=True) , errors='coerce')
+        if is_string_series(df['cmp_assd_cnt']):    
+            df['cmp_assd_cnt'] = pd.to_numeric(
+                df['cmp_assd_cnt'].str.replace(',', '', regex=True) , errors='coerce')
+        if is_string_series(df['interest_owed']):   
+            df['interest_owed'] = pd.to_numeric(
+                df['interest_owed'].str.replace(',', '', regex=True) , errors='coerce')
 
         df['legal_nm'] = df['legal_nm'].str.upper()
         df['trade_nm'] = df['trade_nm'].str.upper()
@@ -3332,6 +3490,15 @@ def Define_Column_Types(df):
 
     return df
 
+def is_string_series(s : pd.Series): #https://stackoverflow.com/questions/43049545/python-check-if-dataframe-column-contain-string-type
+    if isinstance(s.dtype, pd.StringDtype):
+        # The series was explicitly created as a string series (Pandas>=1.0.0)
+        return True
+    elif s.dtype == 'object':
+        # Object series, check each value
+        return all((v is None) or isinstance(v, str) for v in s)
+    else:
+        return False
 
 def Signatory_Library():
 
@@ -3420,7 +3587,7 @@ def Signatory_Library():
     return SIGNATORIES
 
 
-def Read_Violation_Data(TEST_CASES, url, out_file_report):
+def Read_Violation_Data(TEST_CASES, url, out_file_report, bug_log_csv):
 
     df_csv = pd.DataFrame()
     df_csv = read_from_url(url, TEST_CASES)
@@ -3449,8 +3616,10 @@ def save_backup_to_folder(df_csv, out_file_report_name = 'backup_', out_file_rep
 
 
 def read_from_local(path, TEST_CASES):
-    df_csv = pd.read_csv(path, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
+    #df_csv = pd.read_csv(path, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
+    df_csv = pd.read_csv(path, encoding = 'utf8', low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
     return df_csv 
+
 
 
 def read_from_url(url, TEST_CASES):
@@ -3460,8 +3629,11 @@ def read_from_url(url, TEST_CASES):
         df_csv = pd.read_csv(buf, compression='zip', low_memory=False,
                              thousands=',', encoding="ISO-8859-1", sep=',', nrows=TEST_CASES, on_bad_lines="skip")
     else:
+        #df_csv = pd.read_csv(buf, low_memory=False, thousands=',',
+        #                     encoding="ISO-8859-1", sep=',', nrows=TEST_CASES, on_bad_lines="skip")
         df_csv = pd.read_csv(buf, low_memory=False, thousands=',',
-                             encoding="ISO-8859-1", sep=',', nrows=TEST_CASES, on_bad_lines="skip")
+                             encoding='utf8', sep=',', nrows=TEST_CASES, on_bad_lines="skip")
+        
     return df_csv
 
 
@@ -3482,8 +3654,8 @@ def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
     # all data summary block
     if TEST != 3:
         textFile.write("<p>These data are a combination of the Department of Labor Wage and Hour Division cases (not all result in judgments), the Division of Labor Standards Enforcement judgments, "
-                       "The WHD data were obtained from the DOL, the DLSE data were obtained through a Section 6250 CA Public Records Act request (up to Aug 1, 2019 and does not include purged cases "
-                       "which are those settled and then purged typically after three years).</p>")
+                       "The WHD data were obtained from the DOL, the DLSE data pre-2020 were obtained through a Section 6250 CA Public Records Act request (does not include purged cases "
+                       "which are those settled and then purged typically after three years), and then post-2020 DLSE data are from the CA DIR websearch portal.</p>")
 
     textFile.write("\n")
 
@@ -3508,11 +3680,6 @@ def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
         textFile.write(str.format('{0:,.0f}', DF_OG_VLN['bw_amt'].sum()))
         textFile.write(" in backwages")
 
-    # if not DF_OG_VLN['ee_pmt_due'].sum()==0:
-    # 	textFile.write(", and  $ ")
-    # 	textFile.write(str.format('{0:,.0f}',DF_OG_VLN['ee_pmt_due'].sum() ) )
-    # 	textFile.write(" in unpaid backwages")
-
     # <--i have no idea, it works fin above but here I had to do this 11/3/2020
     test_sum = DF_OG_VLN['ee_pmt_recv'].sum()
     if not test_sum == 0:
@@ -3525,7 +3692,7 @@ def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
     textFile.write(" This is approximately a ")
     textFile.write(str.format(
         '{0:,.0f}', (DF_OG_VLN['bw_amt'].sum()/22000000000)*100))
-    textFile.write("-percent sample of an estimated actual $22B annually in wage theft that occurs nationally (see https://blog.tsheets.com/2018/news/cost-of-wage-theft).</p>")
+    textFile.write("-percent sample of an estimated actual $22B annually in wage theft that occurs nationally (see blog.tsheets.com/2018/news/cost-of-wage-theft).</p>")
 
     textFile.write("\n")
 
@@ -3533,23 +3700,8 @@ def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
         textFile.write(
             "<p>The Federal WHD data goes back to 2000, and the State DLSE data goes back to 2000.</p>")
 
-    '''
-	textFile.write( "<p>Dataset date range: ")
-	DF_MIN_OG = "<undefined>"
-	if not df.empty:
-		DF_MIN_OG = min(pd.to_datetime(DF_OG_ALL['findings_start_date'].dropna() ) )
-		textFile.write( DF_MIN_OG.strftime("%m/%d/%Y") )
-	textFile.write(" to ")
-	DF_MAX_OG = "<undefined>"
-	if not df.empty:
-		DF_MAX_OG = max(pd.to_datetime(DF_OG_ALL['findings_start_date'].dropna() ) )
-		textFile.write( DF_MAX_OG.strftime("%m/%d/%Y") )
-	textFile.write("</p>")
-	'''
-
     textFile.write("<p> These data are internally incomplete, and do not include private lawsuits, stop notices, and complaints to the awarding agency, contractor, employment department, licensing board, and district attorney. ")
-    textFile.write(
-        "Therefore, the following is a sample given the above data constraints and the reluctance by populations to file wage and hour claims.</p>")
+    textFile.write("Therefore, the following is a sample given the above data constraints and the reluctance by populations to file wage and hour claims.</p>")
 
     textFile.write("\n")
     textFile.write("\n")
@@ -3580,16 +3732,16 @@ def City_Summary_Block_4_Zipcode_and_Industry(df, df_max_check, TARGET_INDUSTRY,
     # 	"bw_amt":'sum',
     # 	"violtn_cnt":'sum',
     # 	"ee_violtd_cnt":'sum',
-    # 	"ee_pmt_due": 'sum',
     # 	"records": 'sum',
     # 	}).reset_index().sort_values(["zip_cd"], ascending=True)
     zipcode = ""
     for zipcode, df_zipcode in df.groupby(level=0):  # .groupby(level=0):
 
         # print theft level in $ and employees
-        test_num1 = pd.to_numeric(df_zipcode['bw_amt'].sum(), errors='coerce')
+        test_num1 = pd.to_numeric(
+            df_zipcode['bw_amt'].sum() )
         test_num2 = pd.to_numeric(
-            df_zipcode['ee_violtd_cnt'].sum(), errors='coerce')
+            df_zipcode['ee_violtd_cnt'].sum() )
 
         if test_num1 < 3000:
             # result +="<p> has no backwage data.</p>""
@@ -3691,7 +3843,7 @@ def City_Summary_Block(city_cases, df, total_ee_violtd, total_bw_atp, total_case
     # 	result += ( "<p>Actual date range: <undefined></p> \n")
 
     result += "<p>"
-    test_num1 = pd.to_numeric(df['bw_amt'].sum(), errors='coerce')
+    test_num1 = pd.to_numeric(df['bw_amt'].sum() )
     # if test_num1 > 3000:
     # 	result +="Wage theft is a concern in the City of "
     # 	result += cty_nm.title()
@@ -3718,7 +3870,7 @@ def City_Summary_Block(city_cases, df, total_ee_violtd, total_bw_atp, total_case
         result += ", "
 
     # total theft $
-    #test_num1 = pd.to_numeric(df['bw_amt'].sum(), errors='coerce')
+    #test_num1 = pd.to_numeric(df['bw_amt'].sum() )
     if test_num1 < 1 and city_cases < 1:
         do_nothing = ""
         #result +=" and, there is no backwage data. "
@@ -3732,7 +3884,7 @@ def City_Summary_Block(city_cases, df, total_ee_violtd, total_bw_atp, total_case
         result += " resulting in stolen wages. "
 
     # total unpaid theft $
-    test_num0 = pd.to_numeric(df['ee_pmt_recv'].sum(), errors='coerce')
+    test_num0 = pd.to_numeric(df['ee_pmt_recv'].sum() )
     if test_num0 < 1:
         do_nothing = ""
         #result +="Of that, an unknown amount is still due to the workers of this city. "
@@ -3742,12 +3894,12 @@ def City_Summary_Block(city_cases, df, total_ee_violtd, total_bw_atp, total_case
         result += " has been returned to the workers of this city. "
 
     # total number of violations
-    test_num2 = pd.to_numeric(df['ee_violtd_cnt'].sum(), errors='coerce')
+    test_num2 = pd.to_numeric(df['ee_violtd_cnt'].sum() )
     if test_num2 < 1:
         do_nothing = ""
         #result +="Therefore, there is no case evidence of workers affected by stolen wages. "
     else:
-        test_num3 = pd.to_numeric(df['violtn_cnt'].sum(), errors='coerce')
+        test_num3 = pd.to_numeric(df['violtn_cnt'].sum() )
         if math.isclose(test_num2, 1.0, rel_tol=0.05, abs_tol=0.0):
             result += "The theft comprises at least one discrete wage-and-hour violation "
         else:
@@ -3823,102 +3975,8 @@ def City_Summary_Block(city_cases, df, total_ee_violtd, total_bw_atp, total_case
         f.write(result)
 
 
-def Regional_All_Industry_Summary_Block(out_counts, df, total_ee_violtd, total_bw_atp, total_case_violtn, unique_legalname, agency_df, OPEN_CASES, textFile):
-    textFile.write("<h2>Summary for All Industries</h2> \n")
-
-    if not df.empty:
-        textFile.write(f"<p>Actual date range: ")
-        DF_MIN = min(pd.to_datetime(
-            df['findings_start_date'].dropna(), errors='coerce'))
-        DF_MAX = max(pd.to_datetime(
-            df['findings_start_date'].dropna(), errors='coerce'))
-        textFile.write(DF_MIN.strftime("%m/%Y"))
-        textFile.write(" to ")
-        textFile.write(DF_MAX.strftime("%m/%Y"))
-        textFile.write("</p> \n")
-    else:
-        textFile.write("<p>Actual date range: <undefined></p> \n")
-
-    if OPEN_CASES == 1:
-        textFile.write(
-            "<p>This report has cases removed that are documented as paid or claimant withdrew or the amount repaid matches the backwages owed.</p> \n")
-
-    if not len(out_counts.index) == 0:
-        textFile.write("<p>Wage theft cases: ")
-        textFile.write(str.format('{0:,.0f}', len(out_counts.index)))
-        textFile.write("</p> \n")
-
-    if not out_counts['wages_owed'].sum() == 0:
-        textFile.write("<p>Total wage theft:  $ ")
-        textFile.write(str.format(
-            '{0:,.0f}', out_counts['wages_owed'].sum()))  # bw_amt
-        if not df.empty:
-            if total_ee_violtd == 0:
-                textFile.write(
-                    " <i> Note: Backwages per employee violated is not calculated in this report</i></p> \n")
-            else:
-                textFile.write(" <i>(gaps estimated as $")
-                textFile.write(str.format(
-                    '{0:,.0f}', total_bw_atp//total_ee_violtd))
-                textFile.write(
-                    " in backwages per employee violated--plus interest and penalties)</i> \n")
-        textFile.write("</p>")
-
-    if not out_counts['backwage_owed'].sum() == 0:
-        textFile.write(
-            "<p>Including monetary penalties and accrued interest, the amount owed is:  $ ")
-        textFile.write(str.format(
-            '{0:,.0f}', out_counts['backwage_owed'].sum()))  # bw_amt
-        textFile.write("</p>")
-
-    # if not out_counts['ee_pmt_due'].sum()==0:
-    # 	textFile.write("<p>Total unpaid wage theft:  $ ")
-    # 	textFile.write(str.format('{0:,.0f}',out_counts['ee_pmt_due'].sum() ) )
-    # 	textFile.write("</p>")
-
-    # text_sum_bug_fix = out_counts['ee_pmt_recv'].sum()
-    # if not text_sum_bug_fix==0:
-    # 	textFile.write("<p>Total paid wage theft:  $ ")
-    # 	textFile.write(str.format('{0:,.0f}',text_sum_bug_fix ) )
-    # 	textFile.write("</p>")
-
-    if not out_counts['ee_violtd_cnt'].sum() == 0:
-        textFile.write("<p>Total employees: ")
-        textFile.write(str.format(
-            '{0:,.0f}', out_counts['ee_violtd_cnt'].sum()))
-        textFile.write("</p> \n")
-
-    if not out_counts['violtn_cnt'].sum() == 0:
-        textFile.write("<p>Total violations: ")
-        textFile.write(str.format('{0:,.0f}', out_counts['violtn_cnt'].sum()))
-        if not df.empty:
-            if total_ee_violtd == 0:
-                textFile.write(
-                    " <i> Note: Violations per employee is not calculated in this report</i></p> \n")
-            else:
-                textFile.write(" <i>(gaps estimated as ")
-                textFile.write(str.format(
-                    '{0:,.2g}', total_case_violtn//total_ee_violtd))
-                textFile.write(" violation(s) per employee violated)</i>")
-        textFile.write("</p>")
-
-    textFile.write("\n")
-    textFile.write("\n")
-
-    textFile.write("<p>Companies that are involved in multiple cases: ")
-    textFile.write(str.format('{0:,.0f}', len(unique_legalname.index)))  # here
-    textFile.write("</p> \n")
-
-    if not len(agency_df.index) == 0:
-        textFile.write("<p>Companies that are cited by multiple agencies: ")
-        textFile.write(str.format('{0:,.0f}', len(agency_df.index)))  # here
-        textFile.write("</p> \n")
-
-    textFile.write("\n")
-    textFile.write("\n")
-
-
 def Industry_Summary_Block(out_counts, df, total_ee_violtd, total_bw_atp, total_case_violtn, unique_legalname, agency_df, OPEN_CASES, textFile):
+    
     textFile.write("<h2>Summary for Reported Industry</h2> \n")
 
     if not df.empty:
@@ -3945,7 +4003,10 @@ def Industry_Summary_Block(out_counts, df, total_ee_violtd, total_bw_atp, total_
             "<p>This report has cases removed that are documented as paid or claimant withdrew or the amount repaid matches the backwages owed.</p> \n")
 
     if not len(out_counts.index) == 0:
-        textFile.write("<p>Wage theft cases: ")
+        if OPEN_CASES == 1:
+            textFile.write("<p>Active Wage theft cases: ")
+        else:
+            textFile.write("<p>Total wage theft cases: ")
         textFile.write(str.format('{0:,.0f}', len(out_counts.index)))
         textFile.write("</p> \n")
 
@@ -3963,16 +4024,15 @@ def Industry_Summary_Block(out_counts, df, total_ee_violtd, total_bw_atp, total_
                 textFile.write(" in backwages per employee violated)</i> \n")
         textFile.write("</p>")
 
-    # if not out_counts['ee_pmt_due'].sum()==0:
-    # 	textFile.write("<p>Total unpaid wage theft:  $ ")
-    # 	textFile.write(str.format('{0:,.0f}',out_counts['ee_pmt_due'].sum() ) )
-    # 	textFile.write("</p>")
-
-    # text_sum_bug_fix = out_counts['ee_pmt_recv'].sum()
-    # if not text_sum_bug_fix==0:
-    # 	textFile.write("<p>Total paid wage theft:  $ ")
-    # 	textFile.write(str.format('{0:,.0f}',text_sum_bug_fix ) )
-    # 	textFile.write("</p>")
+    if not out_counts['backwage_owed'].sum() == 0:
+        textFile.write(
+            "<p>Including monetary penalties and accrued interest, the amount owed is:  $ ")
+        textFile.write(str.format(
+            '{0:,.0f}', out_counts['backwage_owed'].sum()))  # bw_amt
+        textFile.write("</p>")
+    else: 
+        textFile.write(
+            " <i> Note: Monetary penalties and accrued interest not calculated in this report</i></p> \n")
 
     if not out_counts['ee_violtd_cnt'].sum() == 0:
         textFile.write("<p>Total employees: ")
@@ -4010,6 +4070,46 @@ def Industry_Summary_Block(out_counts, df, total_ee_violtd, total_bw_atp, total_
     textFile.write("\n")
 
 
+def Proportion_Summary_Block(out_counts, total_ee_violtd, total_bw_atp, total_case_violtn, unique_legalname, agency_df, 
+                             YEAR_START, YEAR_END, OPEN_CASES, target_jurisdition, TARGET_INDUSTRY, case_disposition_series, textFile):
+
+    if not len(out_counts.index) == 0:
+        textFile.write("\n")
+        textFile.write("\n")
+
+        textFile.write("<p>Number and proportion of wage theft</p>")
+    
+        #variables
+        total_number_of_cases = str.format('{0:,.0f}', case_disposition_series.sum() )
+        
+        report_type = "cases"
+        if OPEN_CASES:
+            report_type = "judgments"
+        formated_start = YEAR_START.strftime("%m/%Y")
+
+        #TEXT
+        textFile.write(f"<p> Out of {total_number_of_cases} wage theft {report_type} against \
+                {TARGET_INDUSTRY[0][0]} industry companies in {target_jurisdition} \
+                from {formated_start} to the present: </p>")
+        
+        textFile.write("<ul>")
+
+        count = 0
+        for n in case_disposition_series:
+            test_spot = case_disposition_series.index[count]
+            #test_spot = test_spot.encode(sys.stdout.encoding, errors='replace')
+            textFile.write(f"<li>{n} are {test_spot} \
+                ({str.format('{0:,.0%}', float(n)/float(total_number_of_cases.replace(',','')))}).</li>")
+            textFile.write("\n")
+            count = (count +1)
+            
+            #textFile.write(f"<li>{n} are on {case_disposition_series.index[count] } </li>")
+        textFile.write("</ul>") 
+        
+        textFile.write("\n")
+        textFile.write("\n")
+
+
 def Notes_Block(textFile, default_zipcode="####X"):
 
     textFile.write("<p>Notes:</p>")
@@ -4025,9 +4125,9 @@ def Notes_Block(textFile, default_zipcode="####X"):
 
     textFile.write(
         "<p>Note that categorizations are based on both documented data and intelligent inferences, therefore, there are errors. ")
-    textFile.write("For the fields used to prepare this report, please see https://docs.google.com/spreadsheets/d/19EPT9QlUgemOZBiGMrtwutbR8XyKwnrEhB5rZpZqM98/edit?usp=sharing . ")
-    textFile.write("And for the industry categories, which are given shortened names here, please see https://www.naics.com/search/ . ")
-    textFile.write("To see a visualization of the data by zip code and industry, please see (last updated Feb 2020) https://public.tableau.com/profile/forest.peterson#!/vizhome/Santa_Clara_County_Wage_Theft/SantaClaraCounty . </p>")
+    textFile.write("For the fields used to prepare this report, please see <a href='https://docs.google.com/spreadsheets/d/19EPT9QlUgemOZBiGMrtwutbR8XyKwnrEhB5rZpZqM98/'>https://docs.google.com/spreadsheets/d/19EPT9QlUgemOZBiGMrtwutbR8XyKwnrEhB5rZpZqM98/</a> . ")
+    textFile.write("And for the industry categories, which are given shortened names here, please see <a href='https://www.naics.com/search/'>https://www.naics.com/search/</a>  . ")
+    #textFile.write("To see a visualization of the data by zip code and industry, please see (last updated Feb 2020) <a href='https://public.tableau.com/profile/forest.peterson#!/vizhome/Santa_Clara_County_Wage_Theft/SantaClaraCounty'></a> . </p>")
 
     textFile.write("\n")
 
@@ -4069,17 +4169,17 @@ def Methods_Block(textFile):
     textFile.write("<ul>")
     textFile.write("<li>interestd due less interest payments recieved</li>")
     textFile.write(
-        "<li>df['interest_owed'] = df['Interest_Balance_Due'] - df['Interest_Payments_Recd])</li>")
+        "<li>df['interest_owed'] = df['Interest_Accrued'] - df['Interest_Payments_Recd])</li>")
     textFile.write("</ul>")
 
     textFile.write("<p>")
-    textFile.write("interest_balance_due: ")
+    textFile.write("interest_owed: ")
     textFile.write("</p>")
     textFile.write("<ul>")
     textFile.write(
         "<li>where interest balance due is missing, then infer an interest balance based on a calaculated compounded interest of the backwages owed</li>")
     textFile.write(
-        "<li>df['Interest_Balance_Due'] = np.where(df['Interest_Balance_Due'] == "", df['Interest_Accrued'], df['Interest_Balance_Due']</li>")
+        "<li>df['interest_owed'] = np.where(df['interest_owed'] == "", df['Interest_Accrued'], df['interest_owed']</li>")
     textFile.write(
         "<li>df['Interest_Accrued'] = (df['wages_owed'] * (((1 + ((r/100.0)/n)) ** (n*df['Years_Unpaid']))) ) - df['wages_owed']</li>")
     textFile.write("</ul>")
@@ -4099,6 +4199,28 @@ def Methods_Block(textFile):
     textFile.write("\n")
     textFile.write("\n")
 
+def Sources_Block(textFile):
+    textFile.write("<p>")
+    textFile.write("Data Sources: ")
+    textFile.write("</p>")
+
+    textFile.write("<p>")
+
+    textFile.write("<ul>")
+    textFile.write(
+        "<li>CA Dept. of Labor Standards Enforcement (DLSE) Judgements from Aug 2019 to Jan 2024 <a href='https://cadir.my.site.com/'>https://cadir.my.site.com/</a>  </li>")
+    textFile.write(
+        "<li>CA Dept. of Labor Standards Enforcement (DLSE) Wage Claim Adjudications (WCA) from Aug 2019 to Jan 2024 <a href='https://cadir.my.site.com/wcsearch/s/'>https://cadir.my.site.com/wcsearch/s/</a>  </li>")
+    textFile.write(
+        "<li>CA Dept. of Labor Standards Enforcement (DLSE) Wage Claim Adjudications (WCA) from Jan 2001 to Jul 2019 <a href='https://www.researchgate.net/publication/357767172_California_Dept_of_Labor_Standards_Enforcement_DLSE_PRA_Wage_Claim_Adjudications_WCA_for_all_DLSE_offices_from_January_2001_to_July_2019'>https://www.researchgate.net/publication/357767172_California_Dept_of_Labor_Standards_Enforcement_DLSE_PRA_Wage_Claim_Adjudications_WCA_for_all_DLSE_offices_from_January_2001_to_July_2019</a>  </li>")
+    textFile.write(
+        "<li>US DOL WHD Enforcement Database Compliance Actions from Jan 2005 to Jan 2024 <a href='https://enforcedata.dol.gov/views/data_catalogs.php'>https://enforcedata.dol.gov/views/data_catalogs.php</a> </li>")
+    textFile.write("</ul>")
+
+    textFile.write("</p>")
+
+    textFile.write("\n")
+    textFile.write("\n")
 
 def Signatory_to_Nonsignatory_Block(df1, df2, filename):
     # construction
@@ -4161,8 +4283,10 @@ def Footer_Block(TEST, textFile):
     textFile.write(pd.to_datetime('today').strftime("%m/%d/%Y"))
     textFile.write("</p> \n")
 
-    textFile.write("<p>Based on open source software prepared by the Center for Integrated Facility Engineering (CIFE) at Stanford University in collaboration with the Santa Clara County Wage Theft Coalition. These data have not been audited and, therefore, are only intended as an indication of wage theft.</p> \n")
-    
+    textFile.write("<p>Palo Alto Data Group pulled a list from databases of all sector judgments and adjudications \
+                to generate this report using an open source software that was prepared by the Center for Integrated Facility Engineering (CIFE) \
+                   at Stanford University in collaboration with the Santa Clara County Wage Theft Coalition. These data \
+                   have not been audited and, therefore, are only intended as an indication of wage theft.</p> \n")
 
 #write_to_html_file(new_df_3, header_HTML_EMP3, "", file_path('py_output/A4W_Summary_by_Emp_for_all2.html') )
 
