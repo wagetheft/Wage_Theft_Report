@@ -262,8 +262,8 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         #includeOfficeData = False -- unused
     url_list = [
         ["temp", includeTestData,'TEST'], 
-        #["temp", includeFedData,'DOL_WHD'], 
-        #["temp", includeStateData,'DIR_DLSE'],
+        ["temp", includeFedData,'DOL_WHD'], 
+        ["temp", includeStateData,'DIR_DLSE'],
         ["temp", includeStateData,'DLSE_WageClaim'],
         ["temp", includeStateData,'DLSE_J-23'],
         ["temp", includeStateData,'DLSE_J-5413']
@@ -320,8 +320,8 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
         url_list = [
             [url0, includeTestData,'TEST'], 
-            #[url1, includeFedData,'DOL_WHD'], 
-            #[url2, includeStateData,'DIR_DLSE'],
+            [url1, includeFedData,'DOL_WHD'], 
+            [url2, includeStateData,'DIR_DLSE'],
             [TEST1, includeStateData,'DLSE_WageClaim'],
             [TEST2, includeStateData,'DLSE_J-23'],
             [TEST3, includeStateData,'DLSE_J-5413']
