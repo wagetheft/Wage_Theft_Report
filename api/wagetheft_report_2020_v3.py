@@ -84,9 +84,9 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 
 def main():
     # settings****************************************************
-    PARAM_1_TARGET_STATE = "California" #"California"
+    PARAM_1_TARGET_STATE = "" #"California"
     PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
-    PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode"
+    PARAM_1_TARGET_ZIPCODE = "San_Jose_Zipcode" #"San_Jose_Zipcode"
     PARAM_2_TARGET_INDUSTRY = "Construction" #'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS'
     PARAM_3_TARGET_ORGANIZATION = "" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
     PARAM_YEAR_START = pd.to_datetime('today') - pd.DateOffset(years=4)
@@ -1551,9 +1551,35 @@ def RemoveCompletedCases(df):
             (df["Note"] != 'Closed - Paid in Full (PIF)/Satisfied') &
             (df["Note"] != 'Full Satisfaction') &
             (df["Note"] != 'Vacated') &
+
             (df["Case Status"] != 'Closed-Claimant Judgment') &
             (df["Case Status"] != 'Closed - Satisfied') &
             #(df["Case Status"] != 'Open - Partial Payment/Satisfaction') &
+
+            (df["Case Status"] != 'Dismissed   Claimant Withdrew') &
+            (df["Case Status"] != 'Paid in Full   Post ODA') &
+            (df["Case Status"] != 'Paid in Full   Pre-Hearing') &
+            (df["Case Status"] != 'Settled   At Conference') &
+            (df["Case Status"] != 'Settled   At hearing') &
+            (df["Case Status"] != 'Settled   Pre-Conference') &
+            (df["Case Status"] != 'Settled   Pre-hearing') &
+            (df["Case Status"] != 'Settled   Post Hearing (Post Judgment, Prior to JEU referral)') &
+            (df["Case Status"] != 'Settled   Post Hearing (Prior to ODA)') &
+            (df["Case Status"] != 'Settled   Post Hearing (Post ODA, Prior to Judgment)') &
+            (df["Case Status"] != 'Settled   Post Appeal') &
+            (df["Case Status"] != 'Plaintiff rec d ODA') &
+            (df["Case Status"] != 'Paid in Full   Post Judgment Entry') &
+            (df["Case Status"] != 'Duplicate') &
+            (df["Case Status"] != 'duplicate') &
+            (df["Case Status"] != 'Duplicate Case') &
+            (df["Case Status"] != 'Duplicate Claim') &
+            (df["Case Status"] != 'ODA - Dft') &
+            (df["Case Status"] != 'Outside settlement between parties') &
+            (df["Case Status"] != 'Parties settled outside the office') &
+            (df["Case Status"] != 'Payment remitted to Labor Commissioner because employer cannot locate employee') &
+            (df["Case Status"] != 'Pd prior to PHC') & 
+            (df["Case Status"] != 'nothing owed still employed') &
+            
             (df["Closure Disposition"] != 'Dismissed   Claimant Withdrew') &
             (df["Closure Disposition"] != 'Paid in Full   Post ODA') &
             (df["Closure Disposition"] != 'Paid in Full   Pre-Hearing') &
@@ -1577,6 +1603,7 @@ def RemoveCompletedCases(df):
             (df["Closure Disposition - Other Reason"] != 'Payment remitted to Labor Commissioner because employer cannot locate employee') &
             (df["Closure Disposition - Other Reason"] != 'Pd prior to PHC') & 
             (df["Closure Disposition - Other Reason"] != 'nothing owed still employed') &
+            
             (df["Reason For Closing"] != 'Plt settled w/Dft - SofJ') &
             (df["Reason For Closing"] != 'conceded wages paid by employer. no claims by plaintiff') &
             (df["Reason For Closing"] != 'duplicate') &
@@ -3360,7 +3387,11 @@ def Setup_Regular_headers(df):  # DSLE, WHD, etc headers
         #DLSE specific to conform to WHD -- added 10/2/2022
         'Case Number': 'case_id',
         'Case #:': 'case_id', #redundant scenario
+        
         'Judgment Status': 'Case Status', #redundant scenario only for new DLSE format
+        "Closure Disposition": 'Case Status',
+        "Case Stage": 'Case Status',
+        
         'Judgment Name': 'case_id', #redundant to 'Case Number' scenario only for new DLSE format
         'Jurisdiction_or_Project_Name': 'juris_or_proj_nm',
 
@@ -4037,7 +4068,7 @@ def Industry_Summary_Block(out_counts, df, total_ee_violtd, total_bw_atp, total_
         else:
             textFile.write("<p>Total wage theft cases: ")
         textFile.write(str.format('{0:,.0f}', len(out_counts.index)))
-        textFile.write(" <i>(Note: sum is of several types of 'open' disposition types)</i></p> \n")
+        textFile.write(" <i>(Note: sum is of several types of 'open' disposition)</i></p> \n")
 
     if not out_counts['bw_amt'].sum() == 0:
         textFile.write("<p>Total wage theft:  $ ")
@@ -4163,7 +4194,7 @@ def Notes_Block(textFile, default_zipcode="####X"):
 
     textFile.write("\n")
 
-    textFile.write("<p>The DIR DLSE uses one case per employee while the DOL WHD combines employeees into one case. </p>")
+    textFile.write("<p>The DIR DLSE uses one case per employee while the DOL WHD combines employees into one case. </p>")
 
 
     textFile.write("\n")
