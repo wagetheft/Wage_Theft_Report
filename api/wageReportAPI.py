@@ -39,8 +39,8 @@ def generateFile():
     only_sig_summaries = parameters["only_sig_summaries"]
     include_top_viol_tables = parameters["include_top_viol_tables"]
     
-    YEAR_START = parameters["YEAR_START"] if "YEAR_START" in parameters else ""
-    YEAR_END = parameters["YEAR_END"] if "YEAR_END" in parameters else ""
+    YEAR_START_TEXT = parameters["YEAR_START"] if "YEAR_START" in parameters else 'today'
+    YEAR_END_TEXT = parameters["YEAR_END"] if "YEAR_END" in parameters else 'today'
 
     #valid stuff
     if includeFedData == 0 and includeStateData == 0:
@@ -66,7 +66,7 @@ def generateFile():
     report_file_name = generateWageReport(target_state, target_county, target_city, target_industry, target_organization, includeFedData, \
                                           includeStateJudgements, includeStateCases, infer_zip, prevailing_wage_report, signatories_report, \
                                             open_cases_only, include_tables, include_summaries, only_sig_summaries, \
-                                            include_top_viol_tables, use_assumptions, infer_by_naics, YEAR_START, YEAR_END)
+                                            include_top_viol_tables, use_assumptions, infer_by_naics, YEAR_START_TEXT, YEAR_END_TEXT)
 
     try:
         return send_file(report_file_name, as_attachment=True)

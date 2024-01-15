@@ -84,24 +84,31 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 
 def main():
     # settings****************************************************
-    PARAM_1_TARGET_STATE = "" #"California"
+    PARAM_1_TARGET_STATE = "California" #"California"
     PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
-    PARAM_1_TARGET_ZIPCODE = "San_Jose_Zipcode" #"San_Jose_Zipcode"
+    PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode"
     PARAM_2_TARGET_INDUSTRY = "Construction" #'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS'
     PARAM_3_TARGET_ORGANIZATION = "" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
-    PARAM_YEAR_START = pd.to_datetime('today') - pd.DateOffset(years=4)
-    PARAM_YEAR_END = pd.to_datetime('today')
+    
+    PARAM_YEAR_START = "" # defualt is 'today' - years=4 #or "05/01/2019"
+    PARAM_YEAR_END = "" #default is 'today'
+    
     OPEN_CASES = 1 # 1 for open cases only (or nearly paid off), 0 for all cases
+    
     USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
     INFER_NAICS = 1  # 1 to infer code by industry NAICS sector
     INFER_ZIP = 1  # 1 to infer zip code
-    federal_data = 1 # 1 to include federal data
-    state_data = 1  # 1 to include state data
+    
+    federal_data = 0 # 1 to include federal data
+    state_judgements = 1
+    state_cases = 0
+    
     # report output block settings****************************************************
     TABLES = 0  # 1 for tables and 0 for just text description
     SUMMARY = 0  # 1 for summaries and 0 for none
-    SUMMARY_SIG = 1 # 1 for summaries only of regions with significant wage theft (more than $10,000), 0 for all
-    TOP_VIOLATORS = 1  # 1 for tables of top violators and 0 for none
+    SUMMARY_SIG = 0 # 1 for summaries only of regions with significant wage theft (more than $10,000), 0 for all
+    TOP_VIOLATORS = 0  # 1 for tables of top violators and 0 for none
+    include_methods = 0
     prevailing_wage_report = 0 # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
     signatories_report = 0 # 1 to include signatories (typically, this report is only for union compliance officers) 0 to exclude signatories
 
@@ -116,17 +123,17 @@ def main():
 
     # API call***************************************************************************
     generateWageReport(PARAM_1_TARGET_STATE, PARAM_1_TARGET_COUNTY, PARAM_1_TARGET_ZIPCODE, PARAM_2_TARGET_INDUSTRY, PARAM_3_TARGET_ORGANIZATION,
-                       federal_data, state_data, INFER_ZIP, prevailing_wage_report, signatories_report,
-                       OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG,
+                       federal_data, state_judgements, state_cases, INFER_ZIP, prevailing_wage_report, signatories_report,
+                       OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG, include_methods,
                        TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS,PARAM_YEAR_START, PARAM_YEAR_END)
 
 # Functions*************************************************
 
 
 def generateWageReport(target_state, target_county, target_city, target_industry, target_organization,
-                        includeFedData, includeStateData, infer_zip, prevailing_wage_report, signatories_report,
-                        open_cases_only, include_tables, include_summaries, only_sig_summaries,
-                        include_top_viol_tables, use_assumptions, infer_by_naics,YEAR_START, YEAR_END):
+                        includeFedData, includeStateJudgements, includeStateCases, infer_zip, prevailing_wage_report, signatories_report,
+                        open_cases_only, include_tables, include_summaries, only_sig_summaries, include_methods,
+                        include_top_viol_tables, use_assumptions, infer_by_naics, YEAR_START_TEXT, YEAR_END_TEXT):
 
     warnings.filterwarnings("ignore", category=UserWarning)
     start_time = time.time()
@@ -134,10 +141,15 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     # Defaults start
     if target_industry == "": target_industry = "All NAICS"
     if target_city == "": target_city = "All_Zipcode"
-    if YEAR_START == "":
+    if YEAR_START_TEXT == "":
         YEAR_START = pd.to_datetime('today') - pd.DateOffset(years=4)
-    if YEAR_END == "":
+    else:
+        YEAR_START = pd.to_datetime(YEAR_START_TEXT)
+
+    if YEAR_END_TEXT == "":
         YEAR_END = pd.to_datetime('today')
+    else: 
+        YEAR_END = pd.to_datetime(YEAR_END_TEXT)
     # Defaults end
     
     # Settings External - start
@@ -257,16 +269,17 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     if (TEST_ == 1): 
         includeTestData = 1
         includeFedData = 0
-        includeStateData = 0
+        includeStateJudgements = 0
+        includeStateCases = 0
         #includeLocalData = False -- unused
         #includeOfficeData = False -- unused
     url_list = [
         ["temp", includeTestData,'TEST'], 
         ["temp", includeFedData,'DOL_WHD'], 
-        ["temp", includeStateData,'DIR_DLSE'],
-        ["temp", includeStateData,'DLSE_WageClaim'],
-        ["temp", includeStateData,'DLSE_J-23'],
-        ["temp", includeStateData,'DLSE_J-5413']
+        ["temp", includeStateCases,'DIR_DLSE'],
+        ["temp", includeStateCases,'DLSE_WageClaim'],
+        ["temp", includeStateJudgements,'DLSE_J-23'],
+        ["temp", includeStateJudgements,'DLSE_J-5413']
         #includeLocalData = False -- unused
         #includeOfficeData = False -- unused
         ]
@@ -321,10 +334,10 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         url_list = [
             [url0, includeTestData,'TEST'], 
             [url1, includeFedData,'DOL_WHD'], 
-            [url2, includeStateData,'DIR_DLSE'],
-            [TEST1, includeStateData,'DLSE_WageClaim'],
-            [TEST2, includeStateData,'DLSE_J-23'],
-            [TEST3, includeStateData,'DLSE_J-5413']
+            [url2, includeStateCases,'DIR_DLSE'],
+            [TEST1, includeStateCases,'DLSE_WageClaim'],
+            [TEST2, includeStateJudgements,'DLSE_J-23'],
+            [TEST3, includeStateJudgements,'DLSE_J-5413']
             #includeLocalData = False -- unused
             #includeOfficeData = False -- unused
             ]
@@ -540,7 +553,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     textFile.write("<html><body> \n")
 
     Title_Block(TEST_, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
-                prevailing_wage_report, includeFedData, includeStateData, textFile)
+                prevailing_wage_report, includeFedData, includeStateCases, includeStateJudgements, open_cases_only, textFile)
 
     if Nonsignatory_Ratio_Block == True:
         #Signatory_to_Nonsignatory_Block(DF_OG, DF_OG, textFile)
@@ -589,20 +602,21 @@ def generateWageReport(target_state, target_county, target_city, target_industry
             prev_file_name_csv, TEST_)
     time_2 = time.time()
 
-    textFile = open(temp_file_name, 'a')
-    textFile.write("<html><body> \n")
-    textFile.write("<HR> </HR>")  # horizontal line
-    textFile.write("<h1> Notes and methods summary</h1>")  # horizontal line
+    if include_methods:
+        textFile = open(temp_file_name, 'a')
+        textFile.write("<html><body> \n")
+        textFile.write("<HR> </HR>")  # horizontal line
+        textFile.write("<h1> Notes and methods summary</h1>")  # horizontal line
 
-    Footer_Block(TEST_, textFile)
+        Footer_Block(TEST_, textFile)
 
-    Notes_Block(textFile)
+        Notes_Block(textFile)
 
-    Methods_Block(textFile)
+        Methods_Block(textFile)
 
-    Sources_Block(textFile)
+        Sources_Block(textFile)
 
-    textFile.write("</html></body>")
+        textFile.write("</html></body>")
 
     # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
     log_number+=1
@@ -3696,27 +3710,66 @@ def read_from_url(url, TEST_CASES, trigger):
     return df_csv
 
 
-def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY, prevailing_wage_report, federal_data, state_data, textFile):
+def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY, prevailing_wage_report, federal_data, \
+                includeStateCases, includeStateJudgements, open_cases_only, textFile):
+    scale = ""
+    if open_cases_only:
+        scale = "Unpaid"
+    else:
+        scale = "Total"
+
     textFile.write(
-        f"<h1>DRAFT REPORT: Wage Theft in the Jurisdiction of {target_jurisdition} for {TARGET_INDUSTRY[0][0]} Industry</h1> \n")
+        f"<h1>DRAFT REPORT: {scale} Wage Theft in the Jurisdiction of {target_jurisdition} for {TARGET_INDUSTRY[0][0]} Industry</h1> \n")
     if prevailing_wage_report == 1:
         textFile.write(
             f"<h2 align=center>***PREVAILING WAGE REPORT***</h2> \n")
-    if federal_data == 1 and state_data == 0:
+    if (federal_data == 1) and ((includeStateCases and includeStateJudgements) == 0):
         textFile.write(
             f"<h2 align=center>***FEDERAL DOL WHD DATA ONLY***</h2> \n")  # 2/5/2022
-    if federal_data == 0 and state_data == 1:
+    if federal_data == 0 and ((includeStateCases or includeStateJudgements) == 1):
         textFile.write(
             f"<h2 align=center>***CA STATE DLSE DATA ONLY***</h2> \n")
     textFile.write("\n")
 
     # all data summary block
     if TEST != 3:
-        textFile.write("<p>These data are a combination of the Department of Labor Wage and Hour Division cases (not all result in judgments), "
-                       "the Division of Labor Standards Enforcement judgments, and Division of Labor Standards Enforcement Wage Claim Adjudications. "
-                       "The WHD data were obtained from the DOL, the DLSE data pre-2020 were obtained through a Section 6250 CA Public Records Act request (does not include purged cases "
-                       "which are those settled and then purged typically after three years), and then post-2020 DLSE data are from the CA DIR websearch portal.</p>")
+        plural = ""
+        if (federal_data == 1) and (includeStateCases == 0) and (includeStateJudgements) == 0:
+            plural = "the Department of Labor Wage and Hour Division cases (not all result \
+                       in judgments)"
+        if (federal_data == 0) and (includeStateCases == 1) and (includeStateJudgements) == 0:
+            plural = "the Division of Labor Standards Enforcement Wage Claim Adjudications"
+        if (federal_data == 0) and (includeStateCases == 0) and (includeStateJudgements == 1):
+            plural = "the Division of Labor Standards Enforcement judgments"
 
+        if (federal_data == 1) and (includeStateCases == 1) and (includeStateJudgements == 0):
+            plural = "a combination of the Department of Labor Wage and Hour Division cases (not all result \
+                       in judgments) and the Division of Labor Standards Enforcement Wage Claim Adjudications"
+        if (federal_data == 1) and (includeStateCases == 0) and (includeStateJudgements == 1):
+            plural = "a combination of the Department of Labor Wage and Hour Division cases (not all result \
+                       in judgments) and the Division of Labor Standards Enforcement judgments"
+        if (federal_data == 0) and (includeStateCases == 1) and (includeStateJudgements == 1):
+            plural = "a combination of the Division of Labor Standards Enforcement Wage Claim Adjudications and \
+                        the Division of Labor Standards Enforcement judgments"
+        if (federal_data == 1) and (includeStateCases == 1) and (includeStateJudgements == 1):
+            plural = "a combination of the Division of Labor Standards Enforcement Wage Claim Adjudications, \
+                the Division of Labor Standards Enforcement Wage Claim Adjudications, \
+                    and the Division of Labor Standards Enforcement judgments"
+            
+        source_fed = ""
+        if (federal_data == 1):
+            source_fed = "WHD data were obtained from the DOL"
+        source_state = ""
+        if (includeStateCases == 1) or (includeStateJudgements == 1):
+            source_state = "DLSE data pre-2020 were obtained through a Section 6250 CA Public Records Act request \
+                       (does not include purged cases which are those settled and then purged typically after three years), \
+                       and then post-2020 DLSE data are from the CA DIR websearch portal"
+        tense = ""
+        if (federal_data == 1) and ((includeStateCases == 1) or (includeStateJudgements == 1)):
+            tense = ", and the "
+        
+        textFile.write(f"<p>These data are {plural}. The {source_fed} {tense} {source_state}.</p>")
+        
     textFile.write("\n")
 
     textFile.write(
@@ -3757,8 +3810,19 @@ def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
     textFile.write("\n")
 
     if TEST != 3:
-        textFile.write(
-            "<p>The Federal WHD data goes back to 2000, and the State DLSE data goes back to 2000.</p>")
+
+        fed_range = ""
+        state_range = ""
+        if (federal_data == 1):
+            fed_range = "total Federal WHD dataset goes back to 2000"
+        if (includeStateCases == 1) or (includeStateJudgements == 1):
+            state_range = "total State DLSE dataset goes back to 2000"
+        tense = ""
+        if (federal_data == 1) and ((includeStateCases == 1) or (includeStateJudgements == 1)):
+            tense = ", and "
+
+
+        textFile.write(f"<p>The {fed_range} {tense} {state_range}.</p>")
 
     textFile.write("<p> These data are internally incomplete, and do not include private lawsuits, stop notices, and complaints to the awarding agency, contractor, employment department, licensing board, and district attorney. ")
     textFile.write("Therefore, the following is a sample given the above data constraints and the reluctance by populations to file wage and hour claims.</p>")
@@ -4137,7 +4201,8 @@ def Proportion_Summary_Block(out_counts, total_ee_violtd, total_bw_atp, total_ca
         textFile.write("\n")
         textFile.write("\n")
 
-        textFile.write("<p>Number and proportion of wage theft</p>")
+        textFile.write("<p>")
+        textFile.write("Number and proportion of wage theft -- ")
     
         #variables
         total_number_of_cases = str.format('{0:,.0f}', len(case_disposition_series ) )
@@ -4150,24 +4215,31 @@ def Proportion_Summary_Block(out_counts, total_ee_violtd, total_bw_atp, total_ca
         formated_start = YEAR_START.strftime("%m/%Y")
 
         #TEXT
-        textFile.write(f"<p> Out of all {total_number_of_cases} wage theft {report_type} against \
+        textFile.write(f" out of all {total_number_of_cases} wage theft {report_type} against \
                 {TARGET_INDUSTRY[0][0]} industry companies in {target_jurisdition} \
-                from {formated_start} to the present: </p>")
+                from {formated_start} to the present:")
+        textFile.write("</p>")
         
         textFile.write("<ul>")
 
         case_disposition_series = case_disposition_series.value_counts()
         
         count = 0
+        cutoff_size = 1
         for n in case_disposition_series:
             test_spot = case_disposition_series.index[count] #len(test_spot)
-            textFile.write(f"<li>{n} are {test_spot} \
-                ({str.format('{0:,.0%}', float(n)/float(total_number_of_cases.replace(',','')))}).</li>")
-            textFile.write("\n")
+            if n > cutoff_size:
+                textFile.write(f"<li>{n} are {test_spot} \
+                    ({str.format('{0:,.0%}', float(n)/float(total_number_of_cases.replace(',','')))}).</li>")
+                textFile.write("\n")
             count = (count +1)
             
             #textFile.write(f"<li>{n} are on {case_disposition_series.index[count] } </li>")
+
+        textFile.write(f"<li><i>*disposition types with less than {cutoff_size + 1} records are not listed</i></li>")
         textFile.write("</ul>") 
+
+        
         
         textFile.write("\n")
         textFile.write("\n")
