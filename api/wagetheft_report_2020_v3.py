@@ -108,7 +108,6 @@ def main():
     SUMMARY = 1  # 1 for summaries and 0 for none
     SUMMARY_SIG = 0 # 1 for summaries only of regions with significant wage theft (more than $10,000), 0 for all
     TOP_VIOLATORS = 1  # 1 for tables of top violators and 0 for none
-    include_methods = 0
     prevailing_wage_report = 0 # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
     signatories_report = 0 # 1 to include signatories (typically, this report is only for union compliance officers) 0 to exclude signatories
 
@@ -125,7 +124,7 @@ def main():
     generateWageReport(PARAM_1_TARGET_STATE, PARAM_1_TARGET_COUNTY, PARAM_1_TARGET_ZIPCODE, PARAM_2_TARGET_INDUSTRY, \
                        PARAM_3_TARGET_ORGANIZATION,
                        federal_data, state_judgements, state_cases, INFER_ZIP, prevailing_wage_report, signatories_report,
-                       OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG, include_methods,
+                       OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG, 
                        TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS,PARAM_YEAR_START, PARAM_YEAR_END)
 
 # Functions*************************************************
@@ -133,13 +132,14 @@ def main():
 
 def generateWageReport(target_state, target_county, target_city, target_industry, target_organization,
                         includeFedData, includeStateJudgements, includeStateCases, infer_zip, prevailing_wage_report, signatories_report,
-                        open_cases_only, include_tables, include_summaries, only_sig_summaries, include_methods,
+                        open_cases_only, include_tables, include_summaries, only_sig_summaries, 
                         include_top_viol_tables, use_assumptions, infer_by_naics, YEAR_START_TEXT, YEAR_END_TEXT):
 
     warnings.filterwarnings("ignore", category=UserWarning)
     start_time = time.time()
 
     # Defaults start
+    include_methods = True
     if target_industry == "": target_industry = "All NAICS"
     if target_city == "": target_city = "All_Zipcode"
     if YEAR_START_TEXT == "":
