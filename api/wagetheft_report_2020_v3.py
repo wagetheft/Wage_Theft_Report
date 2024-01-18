@@ -87,27 +87,27 @@ def main():
     PARAM_1_TARGET_STATE = "California" #"California"
     PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
     PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode"
-    PARAM_2_TARGET_INDUSTRY = "Construction" #'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS'
-    PARAM_3_TARGET_ORGANIZATION = "" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
+    PARAM_2_TARGET_INDUSTRY = "" #'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS'
+    PARAM_3_TARGET_ORGANIZATION = "Granite Construction" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
     
-    PARAM_YEAR_START = "" # defualt is 'today' - years=4 #or "05/01/2019"
+    PARAM_YEAR_START = "2016/05/01" # defualt is 'today' - years=4 #or "2016/05/01"
     PARAM_YEAR_END = "" #default is 'today'
     
-    OPEN_CASES = 1 # 1 for open cases only (or nearly paid off), 0 for all cases
+    OPEN_CASES = 0 # 1 for open cases only (or nearly paid off), 0 for all cases
     
     USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
     INFER_NAICS = 1  # 1 to infer code by industry NAICS sector
     INFER_ZIP = 1  # 1 to infer zip code
     
-    federal_data = 0 # 1 to include federal data
+    federal_data = 1 # 1 to include federal data
     state_judgements = 1
-    state_cases = 0
+    state_cases = 1
     
     # report output block settings****************************************************
-    TABLES = 0  # 1 for tables and 0 for just text description
-    SUMMARY = 0  # 1 for summaries and 0 for none
+    TABLES = 1  # 1 for tables and 0 for just text description
+    SUMMARY = 1  # 1 for summaries and 0 for none
     SUMMARY_SIG = 0 # 1 for summaries only of regions with significant wage theft (more than $10,000), 0 for all
-    TOP_VIOLATORS = 0  # 1 for tables of top violators and 0 for none
+    TOP_VIOLATORS = 1  # 1 for tables of top violators and 0 for none
     include_methods = 0
     prevailing_wage_report = 0 # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
     signatories_report = 0 # 1 to include signatories (typically, this report is only for union compliance officers) 0 to exclude signatories
@@ -122,7 +122,8 @@ def main():
     # https://www.goodjobsfirst.org/violation-tracker
 
     # API call***************************************************************************
-    generateWageReport(PARAM_1_TARGET_STATE, PARAM_1_TARGET_COUNTY, PARAM_1_TARGET_ZIPCODE, PARAM_2_TARGET_INDUSTRY, PARAM_3_TARGET_ORGANIZATION,
+    generateWageReport(PARAM_1_TARGET_STATE, PARAM_1_TARGET_COUNTY, PARAM_1_TARGET_ZIPCODE, PARAM_2_TARGET_INDUSTRY, \
+                       PARAM_3_TARGET_ORGANIZATION,
                        federal_data, state_judgements, state_cases, INFER_ZIP, prevailing_wage_report, signatories_report,
                        OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG, include_methods,
                        TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS,PARAM_YEAR_START, PARAM_YEAR_END)
@@ -553,7 +554,8 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     textFile.write("<html><body> \n")
 
     Title_Block(TEST_, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
-                prevailing_wage_report, includeFedData, includeStateCases, includeStateJudgements, open_cases_only, textFile)
+                prevailing_wage_report, includeFedData, includeStateCases, includeStateJudgements, target_organization,
+                open_cases_only, textFile)
 
     if Nonsignatory_Ratio_Block == True:
         #Signatory_to_Nonsignatory_Block(DF_OG, DF_OG, textFile)
@@ -3711,7 +3713,7 @@ def read_from_url(url, TEST_CASES, trigger):
 
 
 def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY, prevailing_wage_report, federal_data, \
-                includeStateCases, includeStateJudgements, open_cases_only, textFile):
+                includeStateCases, includeStateJudgements, target_organization, open_cases_only, textFile):
     scale = ""
     if open_cases_only:
         scale = "Unpaid"
@@ -3729,6 +3731,10 @@ def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
     if federal_data == 0 and ((includeStateCases or includeStateJudgements) == 1):
         textFile.write(
             f"<h2 align=center>***CA STATE DLSE DATA ONLY***</h2> \n")
+    if target_organization != '':
+            f"<h2 align+center> ORGANIZATION SEARCH <\h2>"
+            f"<h2 align+center> {target_organization} <\h2>"    
+    
     textFile.write("\n")
 
     # all data summary block
