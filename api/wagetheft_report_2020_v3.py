@@ -84,18 +84,18 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 
 def main():
     # settings****************************************************
-    PARAM_1_TARGET_STATE = "California" #"California"
+    PARAM_1_TARGET_STATE = "" #"California"
     PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
     PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode"
     PARAM_2_TARGET_INDUSTRY = "" #'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS'
     PARAM_3_TARGET_ORGANIZATION = "Granite Construction" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
     
-    PARAM_YEAR_START = "2016/05/01" # defualt is 'today' - years=4 #or "2016/05/01"
+    PARAM_YEAR_START = "" # defualt is 'today' - years=4 #or "2016/05/01"
     PARAM_YEAR_END = "" #default is 'today'
     
     OPEN_CASES = 0 # 1 for open cases only (or nearly paid off), 0 for all cases
     
-    USE_ASSUMPTIONS = 1  # 1 to fill violation and ee gaps with assumed values
+    USE_ASSUMPTIONS = 0  # 1 to fill violation and ee gaps with assumed values
     INFER_NAICS = 1  # 1 to infer code by industry NAICS sector
     INFER_ZIP = 1  # 1 to infer zip code
     
@@ -786,11 +786,12 @@ def inference_function(df, cityDict, TARGET_INDUSTRY,
     log_number+=1
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
 
-    time_1 = time.time()
-    df = fill_case_status_for_missing_enddate(df)
-    time_2 = time.time()
-    log_number+=1
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+    #coulf be buggy 1/18/2024 so removed
+    #time_1 = time.time()
+    #df = fill_case_status_for_missing_enddate(df)
+    #time_2 = time.time()
+    #log_number+=1
+    #append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
 
     return df
 
@@ -3493,6 +3494,8 @@ def Setup_Regular_headers(df):  # DSLE, WHD, etc headers
         df['interest_owed'] = 0
     if 'cmp_assd_cnt' not in df.columns:
         df['cmp_assd_cnt'] = 0
+    if df['backwage_owed'] not in df.columns:
+        df['backwage_owed'] = df['bw_amt'] + df['Interest Balance Due'] # <-- could be a problem
 
     if 'records' not in df.columns:
         df['records'] = 0
