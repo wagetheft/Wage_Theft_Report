@@ -27,6 +27,7 @@ def generateFile():
     includeFedData = parameters["includeFedData"]
     includeStateJudgements = parameters["includeStateJudgements"]
     includeStateCases = parameters["includeStateCases"]
+    
     infer_zip = parameters["infer_zip"]
     use_assumptions = parameters["use_assumptions"]
     infer_by_naics = parameters["infer_by_naics"]
@@ -43,9 +44,10 @@ def generateFile():
     YEAR_END_TEXT = parameters["YEAR_END"] if "YEAR_END" in parameters else 'today'
 
     #valid stuff
-    if includeFedData == 0 and includeStateData == 0:
+    if includeFedData == 0 and includeStateJudgements == 0 and includeStateCases == 0:
         includeFedData = 1
-        includeStateData = 1
+        includeStateJudgements == 1
+        includeStateCases == 1
     if include_tables == 0 and include_top_viol_tables == 0:
         include_top_viol_tables = 1
     if only_sig_summaries == 1:
@@ -57,7 +59,7 @@ def generateFile():
         target_industry = "WTC NAICS"
     if parameters["target_city"] == "":
         target_county = "Santa_Clara_County"
-    if parameters["includeStateData"] == 1:
+    if parameters["includeStateJudgements"] == 1 or parameters["includeStateCases"] == 1:
         infer_zip = 1
         infer_by_naics = 1
 
