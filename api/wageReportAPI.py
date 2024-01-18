@@ -75,15 +75,9 @@ def generateFile():
     except Exception as e:
         return "Server error", 500
 
+def checkValidInput(inputDict: dict) -> bool:
+    toCheck = ["target_city", "target_industry", "target_organization", "includeFedData", "includeStateJudgements", "includeStateCases",
+                "infer_zip", "prevailing_wage_report", "signatories_report", "open_cases_only", "include_tables", "include_summaries",
+                "only_sig_summaries",  "include_top_viol_tables",  "use_assumptions",  "infer_by_naics", "YEAR_START", "YEAR_END"]
+    return all(key in inputDict for key in toCheck)
 
-def checkValidInput(inputDict) -> bool:
-    if "target_city" not in inputDict or "target_industry" not in inputDict or "target_organization" not in inputDict or \
-        "includeFedData" not in inputDict or "includeStateJudgements" not in inputDict or "includeStateCases" not in inputDict\
-            or "infer_zip" not in inputDict or \
-            "prevailing_wage_report" not in inputDict or "signatories_report" not in inputDict or "open_cases_only" not in inputDict \
-                or "include_tables" not in inputDict or "include_summaries" not in inputDict or "only_sig_summaries" not in inputDict or \
-                    "include_top_viol_tables" not in inputDict or "use_assumptions" not in inputDict or \
-                        "infer_by_naics" not in inputDict or "YEAR_START"  not in inputDict or "YEAR_END" not in inputDict :
-        return False
-
-    return True
