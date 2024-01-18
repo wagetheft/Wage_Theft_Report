@@ -40,7 +40,7 @@ def generateFile():
     only_sig_summaries = parameters["only_sig_summaries"]
     include_top_viol_tables = parameters["include_top_viol_tables"]
     
-    YEAR_START_TEXT = parameters["YEAR_START"] if "YEAR_START" in parameters else 'today'
+    YEAR_START_TEXT = parameters["YEAR_START"] if "YEAR_START" in parameters else ''
     YEAR_END_TEXT = parameters["YEAR_END"] if "YEAR_END" in parameters else 'today'
 
     #valid stuff
