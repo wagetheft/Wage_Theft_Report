@@ -84,11 +84,11 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 
 def main():
     # settings****************************************************
-    PARAM_1_TARGET_STATE = "" #"California"
+    PARAM_1_TARGET_STATE = "California" #"California"
     PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
     PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode"
     PARAM_2_TARGET_INDUSTRY = "" #'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS'
-    PARAM_3_TARGET_ORGANIZATION = "Granite Construction" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
+    PARAM_3_TARGET_ORGANIZATION = "Plumbing" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
     
     PARAM_YEAR_START = "" # defualt is 'today' - years=4 #or "2016/05/01"
     PARAM_YEAR_END = "" #default is 'today'
@@ -139,6 +139,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     start_time = time.time()
 
     # Defaults start
+    use_assumptions = 1
     include_methods = True
     if target_industry == "": target_industry = "All NAICS"
     if target_city == "": target_city = "All_Zipcode"
@@ -171,7 +172,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     # Settings Internal - end
 
     # Settings Internal that will Move to UI Options - start
-    Nonsignatory_Ratio_Block = False
+    Nonsignatory_Ratio_Block = False #<-- always true
     # Settings Internal that will Move to UI Options - end
 
     #LIBRARIES - start
@@ -207,7 +208,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     file_type = '.html'
     out_file_report = '_theft_summary_'
-    temp_file_name = os.path.join(abs_path, (file_name+out_file_report).replace(
+    temp_file_name = os.path.join(abs_path, (file_name+out_file_report+target_organization).replace(
         ' ', '_') + file_type)  # <-- absolute dir and file name
 
     file_type = '.csv'
@@ -1515,7 +1516,7 @@ def Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS):
 
 
 def Filter_for_Zipcode(df, TARGET_ZIPCODES, infer_zip, target_state):
-    if TARGET_ZIPCODES[0] != '00000': # faster run for "All_Zipcode" condition
+    if TARGET_ZIPCODES[1] != '00000': # faster run for "All_Zipcode" condition
         TARGET_ZIPCODES_HERE = TARGET_ZIPCODES #make local copy
         if not infer_zip:
             for zipcode in TARGET_ZIPCODES_HERE:
@@ -4157,6 +4158,9 @@ def Industry_Summary_Block(out_counts, df, total_ee_violtd, total_bw_atp, total_
                 textFile.write(" in backwages per employee violated)</i> \n")
         textFile.write("</p>")
 
+    if 'backwage_owed' not in out_counts.columns: #<-- probably a problem point
+        out_counts['backwage_owed'] = 0
+    
     if not out_counts['backwage_owed'].sum() == 0:
         textFile.write(
             "<p>Including monetary penalties and accrued interest, the amount owed is:  $ ")
