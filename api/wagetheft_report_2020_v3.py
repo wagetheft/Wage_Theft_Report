@@ -3731,9 +3731,9 @@ def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
     if federal_data == 0 and ((includeStateCases or includeStateJudgements) == 1):
         textFile.write(
             f"<h2 align=center>***CA STATE DLSE DATA ONLY***</h2> \n")
-    if target_organization != '':
-            f"<h2 align+center> ORGANIZATION SEARCH <\h2>"
-            f"<h2 align+center> {target_organization} <\h2>"    
+    if len(target_organization) > 3:
+        textFile.write(f"<h2 align=center> ORGANIZATION SEARCH </h2> \n")
+        textFile.write(f"<h2 align=center> {target_organization} </h2> \n")  
     
     textFile.write("\n")
 
