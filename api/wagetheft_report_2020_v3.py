@@ -275,6 +275,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         includeStateCases = 0
         #includeLocalData = False -- unused
         #includeOfficeData = False -- unused
+    
     url_list = [
         ["temp", includeTestData,'TEST'], 
         ["temp", includeFedData,'DOL_WHD'], 
@@ -313,7 +314,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
             #df_backup = pd.read_csv(f, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
             df_backup = pd.read_csv(f, encoding = 'utf8', low_memory=False, thousands=',', nrows=TEST_CASES, dtype={'zip_cd': 'str'} )
             DF_OG = pd.concat([df_backup, DF_OG], ignore_index=True)
-        
+
     else: #read new files from url source
         count = 1
 
@@ -351,7 +352,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
             url = n[0]
             out_file_report = n[2]
             df_url = pd.DataFrame()
-            df_url = Read_Violation_Data(TEST_CASES, url, out_file_report, trigger, bug_log_csv)
+            df_url = Read_Violation_Data(TEST_CASES, url, out_file_report, trigger, bug_log_csv, abs_path, file_name)
             df_url = df_url.replace('\s', ' ', regex=True)  # remove line returns
             df_url = clean_function(RunFast, df_url, FLAG_DUPLICATE, bug_log, LOGBUG, log_number)
             df_url = inference_function(df_url, cityDict, TEMP_TARGET_INDUSTRY, 
@@ -359,15 +360,15 @@ def generateWageReport(target_state, target_county, target_city, target_industry
                 bug_log, LOGBUG, log_number)
             save_backup_to_folder(df_url, url_backup_file+str(count), url_backup_path)
             count += 1
+
             DF_OG = pd.concat([df_url, DF_OG], ignore_index=True)
             trigger = False
             
     time_2 = time.time()
     append_log(bug_log, LOGBUG, f"Time to read csv(s) " + "%.5f" % (time_2 - time_1) + "\n")
-
+    
     out_target = DF_OG.copy()  # new df -- hold df_csv as a backup and only df from this point on
     
-    #out_target.to_csv(os.path.join(abs_path, (file_name+'test_0_out_file_report').replace(' ', '_') + '.csv'))
     for n in url_list: #filter dataset for this run -- example, remove fed and state
         if n[1] == 0: # if data set should be removed
             out_target = out_target[(out_target.juris_or_proj_nm != n[2])] #save every data set except what is to be removed
@@ -1448,8 +1449,8 @@ def fill_case_status_for_missing_enddate(df):
         df['findings_start_date'] = ""
     if 'findings_end_date' not in df.columns:
         df['findings_end_date'] = ""
-    if 'Case Status' not in df.columns:
-        df['Case Status'] = ""
+    #if 'Case Status' not in df.columns:
+    #    df['Case Status'] = ""
 
     enddate_missing = (
         ((df['findings_end_date'] == '0' ) | (df['findings_end_date'] == 0 ) | pd.isna(df['findings_end_date']) | 
@@ -3388,62 +3389,68 @@ def Signatory_List_Cleanup(df_signatory):
     return df_signatory
 
 
-def Setup_Regular_headers(df):  # DSLE, WHD, etc headers
+def Setup_Regular_headers(df, abs_path, file_name):  # DSLE, WHD, etc headers
 
     df = df.rename(columns={
-        'naics_code_description': 'naics_desc.',
+        
         'trade': 'industry',
 
-        'street_addr_1_txt': 'street_addr',
-        
         'case_violtn_cnt': 'violtn_cnt',
-        'EE_Payments_Received': 'ee_pmt_recv',  # causing trouble 11/1/2020
+        
         'Balance Due to Employee(s)': "DNU_Balance_Due_to_Employee(s)",  #in DLSE, this is wrong -- DNU, Do Not Use
-        'Judgment Total': 'bw_amt',
-        'bw_atp_amt': 'bw_amt',
+        
+        'Judgment Total': 'bw_amt_1',
+        'bw_atp_amt': 'bw_amt_2',
+        'EE(s) Amt Assessed':'bw_amt_3',
         
         #DLSE specific to conform to WHD -- added 10/2/2022
-        'Case Number': 'case_id',
-        'Case #:': 'case_id', #redundant scenario
+        'Case Number': 'case_id_1',
+        'Case #:': 'case_id_2', #redundant scenario
+        'Judgment Name': 'case_id_3', #redundant to 'Case Number' scenario only for new DLSE format
         
-        'Judgment Status': 'Case Status', #redundant scenario only for new DLSE format
-        "Closure Disposition": 'Case Status',
-        "Case Stage": 'Case Status',
+        'Judgment Status': 'Case Status 3', #redundant scenario only for new DLSE format
+        "Closure Disposition": 'Case Status 2',
+        "Case Stage": 'Case Status 1',
         
-        'Judgment Name': 'case_id', #redundant to 'Case Number' scenario only for new DLSE format
         'Jurisdiction_or_Project_Name': 'juris_or_proj_nm',
 
-        'Account - DBA':'trade_nm',
-        'Sub Contractor':'trade_nm',#redundant scenario
-        'Employer':'legal_nm',
-        'legal_name': 'legal_nm',
-        'Defendant Name':'legal_nm', #redundant to 'Employer' scenario only for new DLSE format
-        'Defendant/Employer Name':'legal_nm', #redundant to 'Employer' scenario only for new DLSE format
-        'Prime Contractor':'legal_nm', #redundant scenario only for new DLSE format
+        'Account - DBA':'trade_nm_1',
+        'Sub Contractor':'trade_nm_2',#redundant scenario
+        
+        'Employer':'legal_nm_1',
+        'legal_name': 'legal_nm_2',
+        'Defendant Name':'legal_nm_3', #redundant to 'Employer' scenario only for new DLSE format
+        'Defendant/Employer Name':'legal_nm_4', #redundant to 'Employer' scenario only for new DLSE format
+        'Prime Contractor':'legal_nm_5', #redundant scenario only for new DLSE format
 
-        'Primary Address Street':'street_addr',
+        'street_addr_1_txt': 'street_addr_1',
+        'Primary Address Street':'street_addr_2',
+        'Defendant Address':'street_addr_3',
+
         'Primary Address City': 'cty_nm',
         'Primary Address State': 'st_cd',
-        'Defendant Address':'street_addr',
         
         'NAICS Code': 'naic_cd',
-        'NAICS Code Title': 'naics_desc.', #'naics_desc.',
-        'NAICS Industry': 'naics_desc.', #redundant to 'NAICS Code Title' scenario only for new DLSE format
-        'Industry (NAICS)': 'naics_desc.', #redundant to 'NAICS Code Title' scenario only for new DLSE format
+
+        'NAICS Code Title': 'naics_desc._1', #'naics_desc.',
+        'NAICS Industry': 'naics_desc._2', #redundant to 'NAICS Code Title' scenario only for new DLSE format
+        'Industry (NAICS)': 'naics_desc._3', #redundant to 'NAICS Code Title' scenario only for new DLSE format
+        'naics_code_description': 'naics_desc._4',
 
         #'':'case_violtn_cnt',
         #'':'cmp_assd_cnt',
         #'':'ee_violtd_cnt',
-        'EE(s) Amt Assessed':'bw_amt',
-        "EE Payments Rec'd":'ee_pmt_recv',
-        "total_CWPA_amount_collected":'ee_pmt_recv', #redundant scenario only for new DLSE format
+        "EE Payments Rec'd":'ee_pmt_recv_1',
+        "total_CWPA_amount_collected":'ee_pmt_recv_2', #redundant scenario only for new DLSE format
+        'EE_Payments_Received': 'ee_pmt_recv_3',  # causing trouble 11/1/2020
 
-        'Date of Docket':'findings_start_date',
-        'Date Filed':'findings_start_date', #redundant to 'Date of Docket' scenario only for new DLSE format
-        'Date Docketed:':'findings_start_date', #redundant scenario only for new DLSE format
-        'Judgment Entry Date':'findings_start_date', #redundant to 'Date of Docket' scenario only for new DLSE format
-        'Case Closed Date':'findings_end_date',
-        'Date Closed:':'findings_end_date', #redundant scenario only for new DLSE format
+        'Date of Docket':'findings_start_date_1',
+        'Date Filed':'findings_start_date_2', #redundant to 'Date of Docket' scenario only for new DLSE format
+        'Date Docketed:':'findings_start_date_3', #redundant scenario only for new DLSE format
+        'Judgment Entry Date':'findings_start_date_4', #redundant to 'Date of Docket' scenario only for new DLSE format
+        
+        'Case Closed Date':'findings_end_date_1',
+        'Date Closed:':'findings_end_date_2', #redundant scenario only for new DLSE format
 
         'Interest Balance Due': 'DNU_Interest_Balance', #this is DLSE outdated -- DNU, Do Not Use
         "Interest Payments Rec'd":'Interest_Payments_Recd',
@@ -3451,6 +3458,8 @@ def Setup_Regular_headers(df):  # DSLE, WHD, etc headers
         'Case Issue Type':'violation',
         'DIR Office':'Jurisdiction_region_or_General_Contractor'
     })
+
+    #df.to_csv(os.path.join(abs_path, (file_name+'test_df_3_report').replace(' ', '_') + '.csv'))
 
     if 'trade_nm' not in df.columns:
         df['trade_nm'] = ""
@@ -3495,8 +3504,10 @@ def Setup_Regular_headers(df):  # DSLE, WHD, etc headers
         df['interest_owed'] = 0
     if 'cmp_assd_cnt' not in df.columns:
         df['cmp_assd_cnt'] = 0
-    if df['backwage_owed'] not in df.columns:
-        df['backwage_owed'] = df['bw_amt'] + df['Interest Balance Due'] # <-- could be a problem
+    if 'DNU_Interest_Balance' not in df.columns:
+        df['DNU_Interest_Balance'] = 0
+    if 'backwage_owed' not in df.columns:
+        df['backwage_owed'] = df['bw_amt'] + df['DNU_Interest_Balance'] # <-- could be a problem
 
     if 'records' not in df.columns:
         df['records'] = 0
@@ -3510,8 +3521,97 @@ def Setup_Regular_headers(df):  # DSLE, WHD, etc headers
 
     if "Case Stage" not in df.columns:
         df["Case Stage"] = ""
+    if "Case Status" not in df.columns:
+        df["Case Status"] = ""
     if "Closure Disposition" not in df.columns:
         df["Closure Disposition"] = ""
+
+    if "findings_start_date" not in df.columns:
+        df["findings_start_date"] = ""
+    if "findings_end_date" not in df.columns:
+        df["findings_end_date"] = ""
+    if "case_id" not in df.columns:
+        df["case_id"] = ""
+    if "naics_desc." not in df.columns:
+        df["naics_desc."] = ""
+
+    if 'findings_end_date_1' in df.columns:
+        df['findings_end_date'] = np.where(df['findings_end_date'].isnull(), df['findings_end_date_1'], df['findings_end_date'])
+    if 'findings_end_date_2' in df.columns:
+        df['findings_end_date'] = np.where(df['findings_end_date'].isnull(), df['findings_end_date_2'], df['findings_end_date'])
+
+    if 'Case Status 1' in df.columns:
+        df['Case Status'] = np.where(df['Case Status'].isnull(), df['Case Status 1'], df['Case Status'])
+    if 'Case Status 2' in df.columns:  
+        df['Case Status'] = np.where(df['Case Status'].isnull(), df['Case Status 2'], df['Case Status'])
+    if 'Case Status 3' in df.columns:
+        df['Case Status'] = np.where(df['Case Status'].isnull(), df['Case Status 3'], df['Case Status'])
+
+    if 'bw_amt_1' in df.columns:
+        df['bw_amt'] = np.where(df['bw_amt'].isnull(), df['bw_amt_1'], df['bw_amt'])
+    if 'bw_amt_2' in df.columns:
+        df['bw_amt'] = np.where(df['bw_amt'].isnull(), df['bw_amt_2'], df['bw_amt'])
+    if 'bw_amt_3' in df.columns:
+        df['bw_amt'] = np.where(df['bw_amt'].isnull(), df['bw_amt_3'], df['bw_amt'])
+
+    if 'case_id_1' in df.columns:
+        df['case_id'] = np.where(df['case_id'].isnull(), df['case_id_1'], df['case_id'])
+    if 'case_id_2' in df.columns:
+        df['case_id'] = np.where(df['case_id'].isnull(), df['case_id_2'], df['case_id'])
+    if 'case_id_3' in df.columns:
+        df['case_id'] = np.where(df['case_id'].isnull(), df['case_id_3'], df['case_id'])
+
+    if 'trade_nm_1' in df.columns:
+        df['trade_nm'] = np.where(df['trade_nm'].isnull(), df['trade_nm_1'], df['trade_nm'])
+    if 'trade_nm_2' in df.columns:
+        df['trade_nm'] = np.where(df['trade_nm'].isnull(), df['trade_nm_2'], df['trade_nm'])
+
+    if 'legal_nm_1' in df.columns:
+        df['legal_nm'] = np.where(df['legal_nm'].isnull(), df['legal_nm_1'], df['legal_nm'])
+    if 'legal_nm_2' in df.columns:
+        df['legal_nm'] = np.where(df['legal_nm'].isnull(), df['legal_nm_2'], df['legal_nm'])
+    if 'legal_nm_3' in df.columns:
+        df['legal_nm'] = np.where(df['legal_nm'].isnull(), df['legal_nm_3'], df['legal_nm'])
+    if 'legal_nm_4' in df.columns:
+        df['legal_nm'] = np.where(df['legal_nm'].isnull(), df['legal_nm_4'], df['legal_nm'])
+    if 'legal_nm_5' in df.columns:
+        df['legal_nm'] = np.where(df['legal_nm'].isnull(), df['legal_nm_5'], df['legal_nm'])
+
+    if 'street_addr_1' in df.columns:
+        df['street_addr'] = np.where(df['street_addr'].isnull(), df['street_addr_1'], df['street_addr'])
+    if 'street_addr_2' in df.columns:  
+        df['street_addr'] = np.where(df['street_addr'].isnull(), df['street_addr_2'], df['street_addr'])
+    if 'street_addr_3' in df.columns:  
+        df['street_addr'] = np.where(df['street_addr'].isnull(), df['street_addr_3'], df['street_addr'])
+
+    if 'naics_desc._1' in df.columns:  
+        df['naics_desc.'] = np.where(df['naics_desc.'].isnull(), df['naics_desc._1'], df['naics_desc.'])
+    if 'naics_desc._2' in df.columns:      
+        df['naics_desc.'] = np.where(df['naics_desc.'].isnull(), df['naics_desc._2'], df['naics_desc.'])
+    if 'naics_desc._3' in df.columns:      
+        df['naics_desc.'] = np.where(df['naics_desc.'].isnull(), df['naics_desc._3'], df['naics_desc.'])
+    if 'naics_desc._4' in df.columns:      
+        df['naics_desc.'] = np.where(df['naics_desc.'].isnull(), df['naics_desc._4'], df['naics_desc.'])
+
+    if 'ee_pmt_recv_1' in df.columns:
+        df['ee_pmt_recv'] = np.where(df['ee_pmt_recv'].isnull(), df['ee_pmt_recv_1'], df['ee_pmt_recv'])
+    if 'ee_pmt_recv_2' in df.columns:
+        df['ee_pmt_recv'] = np.where(df['ee_pmt_recv'].isnull(), df['ee_pmt_recv_2'], df['ee_pmt_recv'])
+    if 'ee_pmt_recv_3' in df.columns:
+        df['ee_pmt_recv'] = np.where(df['ee_pmt_recv'].isnull(), df['ee_pmt_recv_3'], df['ee_pmt_recv'])
+    if 'ee_pmt_recv_4' in df.columns:
+        df['ee_pmt_recv'] = np.where(df['ee_pmt_recv'].isnull(), df['ee_pmt_recv_4'], df['ee_pmt_recv'])
+
+    if 'findings_start_date_1' in df.columns:
+        df['findings_start_date'] = np.where(df['findings_start_date'].isnull(), df['findings_start_date_1'], df['findings_start_date'])
+    if 'findings_start_date_2' in df.columns:
+        df['findings_start_date'] = np.where(df['findings_start_date'].isnull(), df['findings_start_date_2'], df['findings_start_date'])
+    if 'findings_start_date_3' in df.columns:
+        df['findings_start_date'] = np.where(df['findings_start_date'].isnull(), df['findings_start_date_3'], df['findings_start_date'])
+    if 'findings_start_date_4' in df.columns:
+        df['findings_start_date'] = np.where(df['findings_start_date'].isnull(), df['findings_start_date_4'], df['findings_start_date'])
+
+    #df.to_csv(os.path.join(abs_path, (file_name+'test_df_4_report').replace(' ', '_') + '.csv'))
     
 
     return df
@@ -3659,13 +3759,13 @@ def Signatory_Library():
     return SIGNATORIES
 
 
-def Read_Violation_Data(TEST_CASES, url, out_file_report, trigger, bug_log_csv):
+def Read_Violation_Data(TEST_CASES, url, out_file_report, trigger, bug_log_csv, abs_path, file_name):
 
     df_csv = pd.DataFrame()
     df_csv = read_from_url(url, TEST_CASES, trigger)
 
     df_csv['juris_or_proj_nm'] = out_file_report
-    df_csv = Setup_Regular_headers(df_csv)
+    df_csv = Setup_Regular_headers(df_csv, abs_path, file_name)
 
     save_backup_to_folder(df_csv, out_file_report + '_backup', "csv_read_backup/")
 
