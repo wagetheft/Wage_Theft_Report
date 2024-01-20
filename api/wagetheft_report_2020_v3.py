@@ -1304,9 +1304,8 @@ def Clean_Repeat_Violator_HTML_Row(df, COLUMN_NAME):
     df = df[df.records > 1]
 
     if df.empty:
-        df = df.append({
-            COLUMN_NAME: "no records",
-        }, ignore_index=True)
+        df = df.insert(len(df.columns), "no records", [])
+        #df = df.append({ COLUMN_NAME: "no records",}, ignore_index=True) #append is deptricated -- revised 1/19/2024
     return df
 
 
@@ -3249,6 +3248,7 @@ def DropDuplicateRecords(df, FLAG_DUPLICATE):
     if not df.empty and 'case_id' in df.columns:
         
         #CLEAN
+        df = df.astype({'case_id': 'str'})
         df['case_id'] = df['case_id'].str.strip()  # remove spaces
 
         # DELETE DUPLICTAES 
