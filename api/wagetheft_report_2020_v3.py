@@ -235,7 +235,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         abs_path, (file_name+out_file_report).replace(' ', '_') + file_type)
 
     bugFile = ""
-    log_number = 0
+    log_number = 1
     if LOGBUG: 
         bugFile = open(bug_log, 'w')
         debug_fileSetup_def(bugFile)
@@ -252,7 +252,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     target_jurisdition = JURISDICTON_NAME + TARGET_ZIPCODES[0].replace("_"," ")
     target_industry = TARGET_INDUSTRY[0][0]
     time_2 = time.time()
-    log_number+=1
+    log_number = 2
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n") 
     # endregion definition*******************************************************************
 
@@ -394,91 +394,101 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         time_1 = time.time()
         out_target = infer_signatory_cases(out_target, SIGNATORY_INDUSTRY)
         time_2 = time.time()
-        log_number+=1
-        append_log(bug_log, LOGBUG, f"Time to infer signatories " + "%.5f" % (time_2 - time_1) + "\n")
+        log_number = "signatories_report"
+        append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
 
-    # note--estimate back wage, penaly, and interest, based on violation
+    # note--estimate back wage, penalty, and interest, based on violation
     time_1 = time.time()
     if use_assumptions: 
-        out_target = calculate_interest_owed(out_target)
-        #NEED TO DEBUG out_target = infer_wage_penalty(out_target)  # B backwage, M monetary penalty
-        out_target = backwages_owed(out_target)
         out_target = compute_and_add_violation_count_assumptions(out_target)
+        out_target = infer_backwages(out_target)  # B backwage, M monetary penalty
+        out_target = infer_wage_penalty(out_target)  # B backwage, M monetary penalty
+        out_target = wages_owed(out_target)
+        out_target = calculate_interest_owed(out_target)
+        out_target = backwages_owed(out_target)
         # out_target.to_csv(bug_log_csv) #debug outfile
-    
-    case_disposition_series = out_target['Case Status'].copy()
     
     if open_cases_only == 1: 
         out_target = RemoveCompletedCases(out_target)
     
-    total_ee_violtd = out_target['ee_violtd_cnt'].sum()
-    
-    from pandas.api.types import is_string_dtype
+    time_2 = time.time()
+    log_number = "optional assumptions, open cases"
+    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
 
-    if is_string_dtype(out_target['bw_amt']):
-        out_target['bw_amt'] = out_target['bw_amt'].str.replace("$", "")
-        out_target['bw_amt'] = out_target['bw_amt'].str.replace(",", "")
-        out_target['bw_amt'] = pd.to_numeric(out_target['bw_amt'], errors='coerce')
-    total_bw_atp = out_target['bw_amt'].sum()
+    #*****EXTRACT VALUES FOR REPORT
+    time_1 = time.time()
+    case_disposition_series = out_target['Case Status'].copy()
     
+    total_ee_violtd = out_target['ee_violtd_cnt'].sum()
+    total_bw_atp = out_target['bw_amt'].sum()
     total_case_violtn = out_target['violtn_cnt'].sum()
 
     time_2 = time.time()
-    log_number+=1
+    log_number = "3 copy column and sum columns"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
 
     # filter
-    time_1 = time.time()
-    unique_legalname_sig = GroupByX(out_target, 'legal_nm')
-    time_2 = time.time()
-    log_number+=1
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
+    out_prevailing_target = pd.DataFrame()
+    out_signatory_target = pd.DataFrame()
+    if 'Prevailing' in out_target.columns or "Signatory" in out_target.columns:
+        time_1 = time.time()
+        unique_legalname_sig = GroupByX(out_target, 'legal_nm')
+        time_2 = time.time()
+        log_number = "4 optional GroupByX for prevail and sig"
+        append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
 
-    #unique_legalname_sig  = unique_legalname_sig[~unique_legalname_sig.index.duplicated()]
-    time_1 = time.time()
+        #unique_legalname_sig  = unique_legalname_sig[~unique_legalname_sig.index.duplicated()]
+        time_1 = time.time()
 
-    if 'Prevailing' in out_target.columns:
-        out_prevailing_target = unique_legalname_sig.loc[unique_legalname_sig['Prevailing'] == 1]
+        if 'Prevailing' in out_target.columns:
+            out_prevailing_target = unique_legalname_sig.loc[unique_legalname_sig['Prevailing'] == 1]
 
-    if "Signatory" in out_target.columns:
-        out_signatory_target = unique_legalname_sig.loc[unique_legalname_sig["Signatory"] == 1]
+        if "Signatory" in out_target.columns:
+            out_signatory_target = unique_legalname_sig.loc[unique_legalname_sig["Signatory"] == 1]
+        
+        time_2 = time.time()
+        log_number = "5 optional prevailing and signatory process"
+        append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
+    
     if signatories_report == 0 and 'Signatory' and 'legal_nm' and 'trade_nm' in out_target.columns:
-        # unused out_target = out_target.loc[out_target['Signatory']!=1] #filter
-        out_target['legal_nm'] = np.where(
-            out_target['Signatory'] == 1, "masked", out_target['legal_nm'])
-        out_target['trade_nm'] = np.where(
-            out_target['Signatory'] == 1, "masked", out_target['trade_nm'])
-        out_target['street_addr'] = np.where(
-            out_target['Signatory'] == 1, "masked", out_target['street_addr'])
-        out_target['case_id_1'] = np.where(
-            out_target['Signatory'] == 1, "masked", out_target['case_id_1'])
-        if 'DIR_Case_Name' in out_target.columns:
-            out_target['DIR_Case_Name'] = np.where(
-                out_target['Signatory'] == 1, "masked", out_target['DIR_Case_Name'])
-    time_2 = time.time()
-    log_number+=1
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
+            time_1 = time.time()
+            # unused out_target = out_target.loc[out_target['Signatory']!=1] #filter
+            out_target['legal_nm'] = np.where(
+                out_target['Signatory'] == 1, "masked", out_target['legal_nm'])
+            out_target['trade_nm'] = np.where(
+                out_target['Signatory'] == 1, "masked", out_target['trade_nm'])
+            out_target['street_addr'] = np.where(
+                out_target['Signatory'] == 1, "masked", out_target['street_addr'])
+            out_target['case_id_1'] = np.where(
+                out_target['Signatory'] == 1, "masked", out_target['case_id_1'])
+            if 'DIR_Case_Name' in out_target.columns:
+                out_target['DIR_Case_Name'] = np.where(
+                    out_target['Signatory'] == 1, "masked", out_target['DIR_Case_Name'])
+            time_2 = time.time()
+            log_number = "optional signatory report"
+            append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
+    
     # create csv output file**********************************
-    # option to_csv_test_header = ['trade_nm','legal_nm','industry']
-    # option out_target[to_csv_test_header]
     
     time_1 = time.time()
     # added to prevent bug that outputs 2x
     out_target = out_target.drop_duplicates(keep='last')
     out_target.to_csv(temp_file_name_csv, encoding="utf-8-sig")
     time_2 = time.time()
-    log_number+=1
+    log_number = "6 drop_duplicates + print backup"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
     
-    # summary
+    # summary -- these are not used
     time_1 = time.time()
     all_unique_legalname = GroupByMultpleCases(out_target, 'legal_nm')
     all_unique_legalname = all_unique_legalname.sort_values(
-        by=['records'], ascending=False)
+        by=['records'], ascending=False) #this is never used
+    
     all_agency_df = GroupByMultpleAgency(out_target)
-    all_agency_df = all_agency_df.sort_values(by=['records'], ascending=False)
+    all_agency_df = all_agency_df.sort_values(by=['records'], ascending=False)  #this is never used
+    
     time_2 = time.time()
-    log_number+=1
+    log_number = "7 never used group by legal name + all agency thing"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
 
     # group repeat offenders************************************
@@ -497,7 +507,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     out_target = unique_legalname.copy()
     time_2 = time.time()
-    log_number+=1
+    log_number = "8 group by eight criteria"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
 
     # sort and format************************************
@@ -522,7 +532,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     unique_owner = unique_owner.sort_values(by=['records'], ascending=False)
     agency_df = agency_df.sort_values(by=['records'], ascending=False)
     time_2 = time.time()
-    log_number+=1
+    log_number = "9 sort a series of different"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
 
     # Format for summary
@@ -535,7 +545,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     DF_OG_VLN = DropDuplicateRecords(DF_OG_VLN, FLAG_DUPLICATE, bug_log_csv)
     DF_OG_VLN = Clean_Summary_Values(DF_OG_VLN)
     time_2 = time.time()
-    log_number+=1
+    log_number = "10 drop duplicates and clean summary"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
 
     # report headers***************************************************
@@ -562,7 +572,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     multi_agency_header = header + ["agencies", "agency_names", "street_addr"]
     time_2 = time.time()
-    log_number+=1
+    log_number = "11 make header lists"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
 
     # textfile output***************************************
@@ -594,7 +604,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     textFile.write("<HR> </HR>")  # horizontal line
 
     time_2 = time.time()
-    log_number+=1
+    log_number = 12
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
 
     # HTML closing
@@ -603,7 +613,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     textFile.write("</html></body>")
     textFile.close()
     time_2 = time.time()
-    log_number+=1
+    log_number = "13 HTML Closing"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
 
     # TABLES
@@ -642,7 +652,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         textFile.write("</html></body>")
 
     # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
-    log_number+=1
+    log_number = 14
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
 
     append_log(bug_log, LOGBUG, f"Time to finish report " + "%.5f" % (time_2 - time_0) + "\n")
@@ -719,7 +729,7 @@ def get_key_from_value(d, val): #https://note.nkmk.me/en/python-dict-get-key-fro
 
 
 def generate_generic_zipcode_for_city(tempA, n_char = 1):
-    #add a generic zipcode for each city -- used later to filter records:
+    #adding a generic zipcode for each city -- used later to filter records:
     position = len(tempA)
     # n_char -- replace just last zip code char seems to work best
     suffix = "X" * n_char
@@ -735,9 +745,14 @@ def clean_function(RunFast, df, FLAG_DUPLICATE, bug_log, LOGBUG, log_number, bug
         
         time_1 = time.time()
         df = Cleanup_Number_Columns(df)
-        df = Cleanup_Text_Columns(df)
         time_2 = time.time()
-        log_number+=1
+        log_number = "Cleanup number columns"
+        append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+        
+        time_1 = time.time()
+        df = Cleanup_Text_Columns(df, bug_log, LOGBUG, bug_log_csv)
+        time_2 = time.time()
+        log_number = "Cleanup text columns"
         append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
 
         #time_1 = time.time()
@@ -749,7 +764,7 @@ def clean_function(RunFast, df, FLAG_DUPLICATE, bug_log, LOGBUG, log_number, bug
         time_1 = time.time()
         df = Define_Column_Types(df)
         time_2 = time.time()
-        log_number+=1
+        log_number = "Define_Column_Types"
         append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
 
         # remove duplicate cases using case_id and violation as a unique key
@@ -757,7 +772,7 @@ def clean_function(RunFast, df, FLAG_DUPLICATE, bug_log, LOGBUG, log_number, bug
         df = DropDuplicateRecords(df, FLAG_DUPLICATE, bug_log_csv)
         df = FlagDuplicateBackwage(df, FLAG_DUPLICATE)
         time_2 = time.time()
-        log_number+=1
+        log_number = "DropDuplicateRecords"
         append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
         
     return df
@@ -774,20 +789,20 @@ def inference_function(df, cityDict, TARGET_INDUSTRY,
     #if infer_zip == 1: 
     InferZipcode(df, cityDict)
     time_2 = time.time()
-    log_number+=1
+    log_number = "InferZipcode"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
 
     time_1 = time.time()
     df = Infer_Industry(df, TARGET_INDUSTRY)
     time_2 = time.time()
-    log_number+=1
+    log_number = "Infer_Industry"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
     # unused df = Filter_for_Target_Industry(df,TARGET_INDUSTRY) ##debug 12/23/2020 <-- run here for faster time but without global summary
     
     time_1 = time.time()
     df = InferAgencyFromCaseIDAndLabel(df, 'juris_or_proj_nm')
     time_2 = time.time()
-    log_number+=1
+    log_number = "InferAgency"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
     # use for debugging df.to_csv(bug_log_csv) #debug outfile
 
@@ -797,13 +812,13 @@ def inference_function(df, cityDict, TARGET_INDUSTRY,
     if is_string_series(df['Prevailing']):
         df['Prevailing'] = pd.to_numeric(df['Prevailing'], errors='coerce')
     time_2 = time.time()
-    log_number+=1
+    log_number = "infer_prevailing_wage_cases"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
 
     time_1 = time.time()
     df = wages_owed(df)
     time_2 = time.time()
-    log_number+=1
+    log_number = "calc wages_owed"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
 
     #coulf be buggy 1/18/2024 so removed
@@ -840,7 +855,7 @@ def filter_function(df, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only,
     if (TARGET_ORGANIZATIONS[1] != ""): 
         df = Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS)  #<--- BUGGY HERE 1/12/2023 2x records -- hacky fix w/ dup removal
     time_2 = time.time()
-    log_number+=1
+    log_number = "Filter_for_Target_Industry and Organization"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
 
     #df.to_csv(os.path.join(abs_path, (file_name+'test_4_out_file_report').replace(' ', '_') + '.csv'))
@@ -1168,7 +1183,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
         else:
             result += "<p> There are no groups by legal name to report</p> \n"
 
-        if not unique_tradename.empty and TEST != 3:
+        if not unique_tradename.empty and not (unique_tradename['trade_nm'].isna().all() | (unique_tradename['trade_nm']=="").all()) and TEST != 3:
             # by unique_trade_nm
             result += "<h2>Group by trade name and sort by records</h2> \n"
             result += unique_tradename.head(row_head).to_html(
@@ -1311,12 +1326,12 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
                 f.write(result)
 
 
-def Clean_Repeat_Violator_HTML_Row(df, COLUMN_NAME):
+def Clean_Repeat_Violator_HTML_Row(df, COLUMN_NAME): #idk what this if for anymore -- F.PEterson 4/19/2024
     # https://stackoverflow.com/questions/18172851/deleting-dataframe-row-in-pandas-based-on-column-value
     df = df[df.records > 1]
     
     if COLUMN_NAME in df.columns:
-        if df[COLUMN_NAME].notna().all():
+        if (df[COLUMN_NAME].isna().all() | (df[COLUMN_NAME]=="").all()):
             df[COLUMN_NAME] = "no records"
     else:
         df = df.assign(COLUMN_NAME = "no records")
@@ -1330,7 +1345,7 @@ def Clean_Repeat_Violator_HTML_Row(df, COLUMN_NAME):
 
 def GroupByX(df, COLUMN_NAME):
 
-    if COLUMN_NAME in df.columns and not df[COLUMN_NAME].notna().all(): #revised 4/18/2024 from isnull() to .notna()
+    if COLUMN_NAME in df.columns and not (df[COLUMN_NAME].isna().all() | (df[COLUMN_NAME]=="").all() ) : 
 
         df = df[df[COLUMN_NAME].notnull()]
         df = df[df[COLUMN_NAME] != 'nan']
@@ -1362,7 +1377,7 @@ def GroupByX(df, COLUMN_NAME):
 
 def GroupByMultpleCases(df, COLUMN_NAME):
 
-    if COLUMN_NAME in df.columns and not df[COLUMN_NAME].notna().all(): #revised 4/18/2024 from isnull() to .notna()
+    if COLUMN_NAME in df.columns and not (df[COLUMN_NAME].isna().all() | (df[COLUMN_NAME]=="").all() ): 
 
         df = df[df[COLUMN_NAME].notnull()]
         df = df[df[COLUMN_NAME] != 'nan']
@@ -1472,12 +1487,12 @@ def fill_case_status_for_missing_enddate(df):
 
     enddate_missing = (
         ((df['findings_end_date'] == '0' ) | (df['findings_end_date'] == 0 ) | pd.isna(df['findings_end_date']) | 
-        (df['findings_end_date'] == False) | (df['findings_end_date'] == "" ) | (df['findings_end_date'].notna() ) )  
+        (df['findings_end_date'] == False) | (df['findings_end_date'] == "" ) | (df['findings_end_date'].isna() ) )  
     )
 
     casestatus_missing = (
         ((df['Case Status'] == '0' ) | (df['Case Status'] == 0 ) | pd.isna(df['Case Status']) | 
-        (df['Case Status'] == False) | (df['Case Status'] == "" ) | (df['Case Status'].notna() ))  
+        (df['Case Status'] == False) | (df['Case Status'] == "" ) | (df['Case Status'].isna() ))  
     )
     
     df.loc[enddate_missing & casestatus_missing, "Case Status"] = "APPEARS OPEN: NO END + NO STATUS"
@@ -1888,7 +1903,7 @@ def Infer_Industry(df, TARGET_INDUSTRY):
                 df.loc[foundIt_ind1, 'trade2'] = TARGET_INDUSTRY[x][0]
 
             foundIt_ind2 = (  # uses the exisiting NAICS descriptions to fill gaps in the data
-                ((df['industry'] == "") ^ df['industry'].notna() ) &
+                ((df['industry'] == "") | df['industry'].isna() ) &
                 df['naics_desc.'].astype(str).str.contains(PATTERN_IND, na=False, flags=re.IGNORECASE, regex=True) &
                 ~df['naics_desc.'].astype(str).str.contains(
                     PATTERN_EXCLUDE, na=False, flags=re.IGNORECASE, regex=True)
@@ -1975,8 +1990,7 @@ def InferZipcodeFromCityName(df, cityDict):
             #PATTERN_CITY = '|'.join(upper_region)
 
             zipcode_is_empty = (
-                ((df['zip_cd'] == '0' ) | (df['zip_cd'] == '99999' ) |(df['zip_cd'] == 0 ) | pd.isna(df['zip_cd']) | 
-                    (df['zip_cd'] == False) | (df['zip_cd'] == "" ) | (df['zip_cd'].notna()) )  
+                ((df['zip_cd'].isna()) | (df['zip_cd'] == "" ) | (df['zip_cd'] == '0' ) | (df['zip_cd'] == '99999' ) |(df['zip_cd'] == 0 ) ) 
             )
 
             test = cityDict[city][0]
@@ -2001,8 +2015,7 @@ def InferZipcodeFromAddress(df, cityDict):
         for city in cityDict:
 
             zipcode_is_empty = (
-                ((df['zip_cd'] == '0' ) | (df['zip_cd'] == '99999' ) |(df['zip_cd'] == 0 ) | pd.isna(df['zip_cd']) | 
-                        (df['zip_cd'] == False) | (df['zip_cd'] == "" ) | (df['zip_cd'].notna()) )  
+                ((df['zip_cd'].isna()) | (df['zip_cd'] == "" ) | (df['zip_cd'] == '0' ) | (df['zip_cd'] == '99999' ) |(df['zip_cd'] == 0 ) ) 
             )
 
             test = cityDict[city][0]
@@ -2020,18 +2033,6 @@ def InferZipcodeFromAddress(df, cityDict):
     return df
 
 
-def FillBlankZipcodes (df):
-
-    zipcode_is_empty = (
-        ((df['zip_cd'] == '0' ) | (df['zip_cd'] == 0 ) | pd.isna(df['zip_cd']) | 
-        (df['zip_cd'] == False) | (df['zip_cd'] == "" ) | (df['zip_cd'].notna()) )  
-    )
-    
-    df.loc[zipcode_is_empty, "zip_cd"] = "99999"
-
-    return df
-
-
 def InferZipcodeFromCompanyName(df, cityDict):
     # fill nan zip code by assumed zip by city name in trade name; ex. "Cupertino Elec."
     if 'cty_nm' not in df.columns:
@@ -2046,9 +2047,10 @@ def InferZipcodeFromCompanyName(df, cityDict):
     for city in cityDict:
         #PATTERN_CITY = '|'.join(cityDict[city][0])
 
+        citynameisempty = ((pd.isna(df['cty_nm'])) | (df['cty_nm'] == '') )
+
         zipcode_is_empty = (
-            ((pd.isna(df['cty_nm'])) | (df['cty_nm'] == '') ) &
-            ((df['zip_cd'] == '0') | (df['zip_cd'] == '99999') |(df['zip_cd'] == "") | (df['zip_cd'].notna()) | pd.isna(df['zip_cd']) | (df['zip_cd'] == 0)) #10/27/2022 changed False to 0
+            ((df['zip_cd'].isna()) | (df['zip_cd'] == "" ) | (df['zip_cd'] == '0' ) | (df['zip_cd'] == '99999' ) |(df['zip_cd'] == 0 ) ) 
         )
         
         test = cityDict[city][0]
@@ -2064,7 +2066,7 @@ def InferZipcodeFromCompanyName(df, cityDict):
 
         tempA = cityDict[city][len(cityDict[city]) - 1] #take last zipcode
         tempB = generate_generic_zipcode_for_city(tempA)
-        df.loc[zipcode_is_empty * foundZipbyCompany2,'zip_cd'] = tempB
+        df.loc[(zipcode_is_empty & citynameisempty) * foundZipbyCompany2,'zip_cd'] = tempB
 
     return df
 
@@ -2088,9 +2090,10 @@ def InferZipcodeFromJurisdictionName(df, cityDict):
 
         #PATTERN_CITY = '|'.join(cityDict[city][0])
 
+        citynameisempty = ((pd.isna(df['cty_nm'])) | (df['cty_nm'] == '') )
+
         zipcode_is_empty = (
-            ((pd.isna(df['cty_nm'])) | (df['cty_nm'] == '') ) &
-            ((df['zip_cd'] == '0') | (df['zip_cd'] == '99999') | (df['zip_cd'] == 99999) | (df['zip_cd'] == "") | (df['zip_cd'].notna())| (df['zip_cd'] == 0)) #10/27/2022 changed False to 0
+            ((df['zip_cd'].isna()) | (df['zip_cd'] == "" ) | (df['zip_cd'] == '0' ) | (df['zip_cd'] == '99999' ) |(df['zip_cd'] == 0 ) ) 
         )
 
         test = cityDict[city][0]
@@ -2106,7 +2109,18 @@ def InferZipcodeFromJurisdictionName(df, cityDict):
 
         tempA = cityDict[city][len(cityDict[city]) - 1] #take last zipcode
         tempB = generate_generic_zipcode_for_city(tempA)
-        df.loc[zipcode_is_empty * foundZipbyCompany2, 'zip_cd'] = tempB
+        df.loc[(citynameisempty & zipcode_is_empty) * foundZipbyCompany2, 'zip_cd'] = tempB
+
+    return df
+
+
+def FillBlankZipcodes (df):
+
+    zipcode_is_empty = (
+        ( (df['zip_cd'].isna()) | (df['zip_cd'] == "" ) | (df['zip_cd'] == '0' ) | (df['zip_cd'] == 0 ) )  
+    )
+    
+    df.loc[zipcode_is_empty, "zip_cd"] = "99999"
 
     return df
 
@@ -2162,22 +2176,7 @@ def lookuplist(trade, list_x, col):
 
 
 def wages_owed(df):
-    
-    # backwage estimate
-    # df['bw_amt'] = df['bw_amt'].fillna(estimated_bw_plug) #assume mean or $1000 minimum to estimate in zero situation
-    # df['bw_amt'] = np.where(df['bw_amt'].notna(), estimated_bw_plug, df['bw_amt']) # catch if na misses
-    # df['bw_amt'] = np.where(df['bw_amt'] == 0, estimated_bw_plug, df['bw_amt']) # catch if na misses
-    # df['bw_amt'] = np.where(df['bw_amt'] == False, estimated_bw_plug, df['bw_amt']) # catch if na misses
-    # total_bw_atp = df['bw_amt'].sum() #overwrite
 
-    from pandas.api.types import is_string_dtype
-
-    if is_string_dtype(df['bw_amt']):
-        df['bw_amt'] = df['bw_amt'].str.replace("$", "")
-        df['bw_amt'] = df['bw_amt'].str.replace(",", "")
-    if is_string_dtype(df["ee_pmt_recv"]):
-        df["ee_pmt_recv"] = df["ee_pmt_recv"].str.replace("$", "")
-        df["ee_pmt_recv"] = df["ee_pmt_recv"].str.replace(",", "")
     df['wages_owed'] = (pd.to_numeric(df['bw_amt'], errors='coerce') - pd.to_numeric(df["ee_pmt_recv"], errors='coerce') ) #added to_numeric() 4/18/2024 to fix str error
     df['wages_owed'] = np.where((df['wages_owed'] < 0), 0, df['wages_owed'])  # overwrite
 
@@ -2189,7 +2188,7 @@ def backwages_owed(df):
     #estimated_bw_plug = max(total_bw_atp//total_ee_violtd,1000)
 
     # montetary penalty only if backwage is zero -- often penalty is in the backwage column
-    # df['cmp_assd_cnt'] = np.where(df['bw_amt'].notna(), estimated_bw_plug * 0.25, df['cmp_assd_cnt'])
+    # df['cmp_assd_cnt'] = np.where((df['bw_amt'].isna() | (df['bw_amt']=="")), estimated_bw_plug * 0.25, df['cmp_assd_cnt'])
     # df['cmp_assd_cnt'] = np.where(df['bw_amt'] == 0, estimated_bw_plug * 0.25, df['cmp_assd_cnt'])
     # df['cmp_assd_cnt'] = np.where(df['bw_amt'] == False, estimated_bw_plug * 0.25, df['cmp_assd_cnt'])
     if 'cmp_assd_cnt' not in df.columns: df['cmp_assd_cnt'] = 0
@@ -2253,10 +2252,37 @@ def calculate_interest_owed(df):
     return df
 
 
+def infer_backwages(df):
+
+    mean_backwage = df['bw_amt'].mean()
+
+    if (mean_backwage) == 0 or (mean_backwage > 4000):
+        mean_backwage = 3368 #plug amount $2,000
+
+    if 'assumed_backwage' not in df.columns: df['assumed_backwage'] = "NO"
+
+    df['ee_violtd_cnt'] = np.where(((df['ee_violtd_cnt'] == 0) | (df['ee_violtd_cnt'] == "") | (
+        df['ee_violtd_cnt'] == '0') | (df['ee_violtd_cnt'] == False) | (df['ee_violtd_cnt'].isna()) ), 1, df['ee_violtd_cnt']) #default 1
+    
+    df['violtn_cnt'] = np.where(((df['violtn_cnt'] == 0) | (df['violtn_cnt'] == "") | (
+        df['violtn_cnt'] == '0') | (df['violtn_cnt'] == False) | (df['violtn_cnt'].isna()) ), df['ee_violtd_cnt'], df['violtn_cnt']) #default equal to # of employees
+
+    df['assumed_backwage'] = np.where(((df['bw_amt'] == 0) | (df['bw_amt'] == "") | (
+        df['bw_amt'] == '0') | (df['bw_amt'] == False) | (df['bw_amt'].isna()) ), "YES", df['assumed_backwage'])
+    
+    df['bw_amt'] = np.where(((df['bw_amt'] == 0) | (df['bw_amt'] == "") | (
+        df['bw_amt'] == '0') | (df['bw_amt'] == False) | (df['bw_amt'].isna()) ), df['ee_violtd_cnt'] * mean_backwage , df['bw_amt'])
+
+    return df
+
+
 def infer_wage_penalty(df):
 
     mean_backwage = df['bw_amt'].mean()
+    if (mean_backwage == 0) | (mean_backwage > 4000):
+        mean_backwage = 3368 #plug amount $2,000
     #mean_backwage = df[df['bw_amt']!=0].mean()
+    generic_penalty = mean_backwage * 0.125 #default is 12.5% of mean wage 
 
     # lookup term / (1) monetary penalty
     A = ["ACCESS TO PAYROLL", 750]  # $750
@@ -2300,24 +2326,27 @@ def infer_wage_penalty(df):
     AH = ["L.C. 1771", 125]  # 5 x $25
     AI = ["L.C. 1774", 125]  # 5 x $25
     AJ = ["LC 1774", 125]  # 5 x $25
-    AK = ["", mean_backwage]  # <blank> plug mean wage
-    # generic monetary penalty is 25% of backwages
+    AK = ["", generic_penalty]  # <blank>
+    AL = [False, generic_penalty]  # <blank>
+    AM = [np.nan, generic_penalty]  # <blank>
+    AN = [pd.NA, generic_penalty]  # <blank>
 
     penalties = [['MONETARY_PENALTY'], A, B, C, D, E, F, G, H, I, J, K, K1, L, M, N,
-                 O, P, Q, R, S, T, U, V, W, X, Y, Z, AA, AB, AC, AD, AE, AF, AG, AH, AI, AJ, AK]
+                 O, P, Q, R, S, T, U, V, W, X, Y, Z, AA, AB, AC, AD, AE, AF, AG, AH, AI, AJ, AK, AL, AM, AN]
 
-    if 'assumed_backwage' not in df.columns: df['assumed_backwage'] = 0
-    df['assumed_backwage'] = np.where(((df['bw_amt'] == 0) | (df['bw_amt'] == "") | (
-        df['bw_amt'] == 0) | (df['bw_amt'] == False) | (df['bw_amt'].notna()) ), 1, df['assumed_backwage'])
+    if 'violation' in df.columns: 
+        if 'cmp_assd_cnt' not in df.columns: df['cmp_assd_cnt'] = 0 #Civil Monttary Penalties
+        if 'assumed_cmp_assd' not in df.columns: df['assumed_cmp_assd'] = "NO" #test to debug
 
-    if 'violation' in df.columns:
-        if 'bw_amt' not in df.columns: df['bw_amt'] = 0 #test to debug
-        if 'violation' not in df.columns: df['violation'] = "" #test to debug
-
-        df['bw_amt'] = df.apply(
-            lambda x: lookuplist(x['violation'], penalties, 1)
-            if (x['assumed_backwage'] == 1)
-            else x['bw_amt'], axis=1)
+        #needs a multiplier for number fo violation
+        df['cmp_assd_cnt'] = df.apply(
+            lambda x: lookuplist(x['violation'], (x['ee_violtd_cnt'] * penalties), 1)
+            if (x['assumed_cmp_assd'] == "YES")
+            else x['cmp_assd_cnt'], axis=1)
+    
+    df['cmp_assd_cnt'] = np.where((df['cmp_assd_cnt'].isna() | (df['cmp_assd_cnt']=="") | 
+                                   (df['cmp_assd_cnt'] == 0) | (df['cmp_assd_cnt'] == '0')),
+                                   generic_penalty, df['cmp_assd_cnt'])
 
     return df
 
@@ -2328,24 +2357,30 @@ def compute_and_add_violation_count_assumptions(df):
         # DLSE cases are for one employee -- introduces an error when the dataset is violation records--need to remove duplicates
         df['ee_violtd_cnt'] = df['ee_violtd_cnt'].fillna(1)
         df['ee_violtd_cnt'] = np.where(
-            df['ee_violtd_cnt'].notna(), 1, df['ee_violtd_cnt'])  # catch if na misses
+            (df['ee_violtd_cnt'].isna() | (df['ee_violtd_cnt']=="")), 1, df['ee_violtd_cnt'])  # catch if na misses
         df['ee_violtd_cnt'] = np.where(
-            df['ee_violtd_cnt'] == 0, 1, df['ee_violtd_cnt'])  # catch if na misses
+            ((df['ee_violtd_cnt'] == 0) | (df['ee_violtd_cnt'] == '0')), 1, df['ee_violtd_cnt'])  # catch if na misses
         df['ee_violtd_cnt'] = np.where(
             df['ee_violtd_cnt'] == False, 1, df['ee_violtd_cnt'])  # catch if na misses
         total_ee_violtd = df['ee_violtd_cnt'].sum()  # overwrite
 
         # by issue count
-        if 'violation' in df.columns:
-            df['violtn_cnt'] = df['violtn_cnt'].fillna(
-                df['violation'].astype(str).str.count("Issue"))  # assume mean
-            df['violtn_cnt'] = np.where(df['violtn_cnt'].notna(), df['violation'].astype(str).str.count(
-                "Issue"), df['violtn_cnt'])  # catch if na misses
-            df['violtn_cnt'] = np.where(
-                df['violtn_cnt'] == 0, df['violation'].astype(str).str.count("Issue"), df['violtn_cnt'])
-            df['violtn_cnt'] = np.where(
-                df['violtn_cnt'] == False, df['violation'].astype(str).str.count("Issue"), df['violtn_cnt'])
-            total_case_violtn = df['violtn_cnt'].sum()  # overwrite
+        if 'violation' not in df.columns:
+            df['violation'] = ""
+
+        df['violtn_cnt'] = df['violtn_cnt'].fillna(
+            df['violation'].astype(str).str.count("Issue"))  # assume mean
+        df['violtn_cnt'] = np.where((df['violtn_cnt'].isna() | (df['violtn_cnt']=="")), df['violation'].astype(str).str.count(
+            "Issue"), df['violtn_cnt'])  # catch if na misses
+        df['violtn_cnt'] = np.where(
+            ((df['violtn_cnt'] == 0) | (df['violtn_cnt'] == '0')), df['violation'].astype(str).str.count("Issue"), df['violtn_cnt'])
+        df['violtn_cnt'] = np.where(
+            df['violtn_cnt'] == False, df['violation'].astype(str).str.count("Issue"), df['violtn_cnt'])
+        
+        df['violtn_cnt'] = np.where((df['violtn_cnt'].isna() | (df['violtn_cnt']=="") |(df['violtn_cnt']=="0") | 
+                                     (df['violtn_cnt'] == 0) | (df['violtn_cnt'] == False) ), df['ee_violtd_cnt'], df['violtn_cnt'])  # catch if all misses
+        
+        total_case_violtn = df['violtn_cnt'].sum()  # overwrite
 
         # violations
         # safe assumption: violation count is always more then the number of employees
@@ -2359,9 +2394,9 @@ def compute_and_add_violation_count_assumptions(df):
             df['violtn_cnt'] = df['violtn_cnt'].fillna(
                 estimated_violations_per_emp)  # assume mean
             df['violtn_cnt'] = np.where(
-                df['violtn_cnt'].notna(), (estimated_violations_per_emp), df['violtn_cnt'])  # catch if na misses
+                (df['violtn_cnt'].isna() | (df['violtn_cnt']=="")), (estimated_violations_per_emp), df['violtn_cnt'])  # catch if na misses
             df['violtn_cnt'] = np.where(
-                df['violtn_cnt'] == 0, (estimated_violations_per_emp), df['violtn_cnt'])
+                ((df['violtn_cnt'] == 0) | (df['violtn_cnt'] == '0')), (estimated_violations_per_emp), df['violtn_cnt'])
             df['violtn_cnt'] = np.where(
                 df['violtn_cnt'] == False, (estimated_violations_per_emp), df['violtn_cnt'])
 
@@ -3178,6 +3213,11 @@ def CleanUpAgency(df, COLUMN):
 
 def CleanNumberColumns(column):
     #column is a 'series'
+    from pandas.api.types import is_string_dtype
+
+    if is_string_dtype(column):
+        column = column.str.replace("$", "")
+        column = column.str.replace(",", "")
 
     column = column.replace(
         to_replace="\$([0-9,\.]+).*", value=r"\1", regex=True)
@@ -3282,20 +3322,11 @@ def DropDuplicateRecords(df, FLAG_DUPLICATE, bug_log_csv):
         # always remove full duplicates
         df = df.drop_duplicates(keep='first')
 
-        from pandas.api.types import is_string_dtype
-
-        #improved sort with sum of backwage oweb and interest owed
-        if is_string_dtype(df['bw_amt']):
-            df['bw_amt'] = df['bw_amt'].str.replace("$", "")
-            df['bw_amt'] = df['bw_amt'].str.replace(",", "")
-        if is_string_dtype(df['interest_owed']):
-            df['interest_owed'] = df['interest_owed'].str.replace("$", "")
-            df['interest_owed'] = df['interest_owed'].str.replace(",", "")
         df['Sort_$'] = pd.to_numeric(df['bw_amt'], errors='coerce') + pd.to_numeric(df['interest_owed'], errors='coerce')
 
         #Sort by ['Sort_$','Businesstype'], to place duplicate with $ and the Corp at the top and kept while $0 and Individuals are removed
-        ALL_EMPTY_CASE_ID = df['case_id_1'].notna().all()
-        ALL_EMPTY_VIOLATION = df['violation'].notna().all()
+        ALL_EMPTY_CASE_ID = (df['case_id_1'].isna().all() | (df['case_id_1']=="").all() )
+        ALL_EMPTY_VIOLATION = (df['violation'].isna().all() | (df['violation']=="").all() )
         if FLAG_DUPLICATE == 0 and not ALL_EMPTY_CASE_ID and not ALL_EMPTY_VIOLATION: #delete
             df = df.sort_values(['Sort_$','Businesstype'], ascending=[False,False]).drop_duplicates(
                 ['case_id_1', 'violation'], keep='first').sort_index()
@@ -3330,17 +3361,28 @@ def DropDuplicateRecords(df, FLAG_DUPLICATE, bug_log_csv):
 
 # aggregated functions*********************************
 
-def Cleanup_Text_Columns(df):
+def Cleanup_Text_Columns(df, bug_log, LOGBUG, bug_log_csv):
 
+    function_name = "Cleanup_Text_Columns"
+    
+    time_1 = time.time()
     df = ReplaceAddressAbreviations(df)
     # https://pypi.org/project/pyspellchecker/
     df = RemoveDoubleSpacesFromAddresses(df)
     df = RemovePunctuationFromAddresses(df)  # once more
     # https://pypi.org/project/pyspellchecker/
     df = RemoveDoubleSpacesFromAddresses(df)
+    time_2 = time.time()
+    log_number = "appreviation, punctuation, and spaces"
+    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
 
+    time_1 = time.time()
     df = RemovePunctuationFromCity(df)  # once more
+    time_2 = time.time()
+    log_number = "RemovePunctuationFromCity"
+    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
 
+    time_1 = time.time()
     df = StripPunctuationFromNames(df)
     df = RemoveDoubleSpacesFromCompanyName(df)
     df = MoveCorportationBusinessTypeToBusinessTypeColumn(df)
@@ -3349,7 +3391,11 @@ def Cleanup_Text_Columns(df):
     df = MoveBusinessTypeToBusinessTypeColumn(df)
     df = MoveCompanyLiabilityTermsToLiabilityTypeColumn(df)
     df = StripPunctuationFromNames(df)
+    time_2 = time.time()
+    log_number = "Move Business Type"
+    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
 
+    """
     # run a second time
     df = RemoveDoubleSpacesFromCompanyName(df)
     df = StripPunctuationFromNames(df)
@@ -3369,6 +3415,7 @@ def Cleanup_Text_Columns(df):
     df = MoveBusinessTypeToBusinessTypeColumn(df)
     df = MoveCompanyLiabilityTermsToLiabilityTypeColumn(df)
     df = StripPunctuationFromNames(df)
+    """
 
     return df
 
@@ -3428,7 +3475,7 @@ def Signatory_List_Cleanup(df_signatory):
     return df_signatory
 
 
-def Setup_Regular_headers(df, abs_path, file_name):  # DSLE, WHD, etc headers
+def Setup_Regular_headers(df, abs_path, file_name, bug_log_csv):  # DSLE, WHD, etc headers
 
     df = df.rename(columns={
         
@@ -3576,82 +3623,83 @@ def Setup_Regular_headers(df, abs_path, file_name):  # DSLE, WHD, etc headers
         df["naics_desc."] = ""
 
     if 'findings_end_date_1' in df.columns:
-        df['findings_end_date'] = np.where(df['findings_end_date'].notna(), df['findings_end_date_1'], df['findings_end_date'])
+        df['findings_end_date'] = np.where((df['findings_end_date'].isna() | (df['findings_end_date']=="")), df['findings_end_date_1'], df['findings_end_date'])
     if 'findings_end_date_2' in df.columns:
-        df['findings_end_date'] = np.where(df['findings_end_date'].notna(), df['findings_end_date_2'], df['findings_end_date'])
+        df['findings_end_date'] = np.where((df['findings_end_date'].isna() | (df['findings_end_date']=="")), df['findings_end_date'])
 
     if 'Case Status 1' in df.columns:
-        df['Case Status'] = np.where(df['Case Status'].notna(), df['Case Status 1'], df['Case Status'])
+        df['Case Status'] = np.where((df['Case Status'].isna() | (df['Case Status']=="")), df['Case Status 1'], df['Case Status'])
     if 'Case Status 2' in df.columns:  
-        df['Case Status'] = np.where(df['Case Status'].notna(), df['Case Status 2'], df['Case Status'])
+        df['Case Status'] = np.where((df['Case Status'].isna() | (df['Case Status']=="")), df['Case Status 2'], df['Case Status'])
     if 'Case Status 3' in df.columns:
-        df['Case Status'] = np.where(df['Case Status'].notna(), df['Case Status 3'], df['Case Status'])
+        df['Case Status'] = np.where((df['Case Status'].isna() | (df['Case Status']=="")), df['Case Status 3'], df['Case Status'])
 
     if 'bw_amt_1' in df.columns:
-        df['bw_amt'] = np.where(df['bw_amt'].notna(), df['bw_amt_1'], df['bw_amt'])
+        df['bw_amt'] = np.where((df['bw_amt'].isna() | (df['bw_amt']=="")), df['bw_amt_1'], df['bw_amt'])
     if 'bw_amt_2' in df.columns:
-        df['bw_amt'] = np.where(df['bw_amt'].notna(), df['bw_amt_2'], df['bw_amt'])
+        df['bw_amt'] = np.where((df['bw_amt'].isna() | (df['bw_amt']=="")), df['bw_amt_2'], df['bw_amt'])
     if 'bw_amt_3' in df.columns:
-        df['bw_amt'] = np.where(df['bw_amt'].notna(), df['bw_amt_3'], df['bw_amt'])
+        df['bw_amt'] = np.where((df['bw_amt'].isna() | (df['bw_amt']=="")), df['bw_amt_3'], df['bw_amt'])
 
     if 'case_id' in df.columns:
-        df['case_id_1'] = np.where(df['case_id_1'].notna(), df['case_id'], df['case_id_1'])
+        df['case_id_1'] = np.where((df['case_id_1'].isna() |(df['case_id_1']=="")), df['case_id'], df['case_id_1'])
     if 'case_id_2' in df.columns:
-        df['case_id_1'] = np.where(df['case_id_1'].notna(), df['case_id_2'], df['case_id_1'])
+        df['case_id_1'] = np.where((df['case_id_1'].isna() |(df['case_id_1']=="")), df['case_id_2'], df['case_id_1'])
     if 'case_id_3' in df.columns:
-        df['case_id_1'] = np.where(df['case_id_1'].notna(), df['case_id_3'], df['case_id_1'])
+        df['case_id_1'] = np.where((df['case_id_1'].isna() |(df['case_id_1']=="")), df['case_id_3'], df['case_id_1'])
     if 'case_id_4' in df.columns:
-        df['case_id_1'] = np.where(df['case_id_1'].notna(), df['case_id_4'], df['case_id_1'])
+        df['case_id_1'] = np.where((df['case_id_1'].isna() |(df['case_id_1']=="")), df['case_id_4'], df['case_id_1'])
 
     if 'trade_nm_1' in df.columns:
-        df['trade_nm'] = np.where(df['trade_nm'].notna(), df['trade_nm_1'], df['trade_nm'])
+        df['trade_nm'] = np.where((df['trade_nm'].isna() |(df['trade_nm']=="")), df['trade_nm_1'], df['trade_nm'])
     if 'trade_nm_2' in df.columns:
-        df['trade_nm'] = np.where(df['trade_nm'].notna(), df['trade_nm_2'], df['trade_nm'])
+        df['trade_nm'] = np.where((df['trade_nm'].isna() |(df['trade_nm']=="")), df['trade_nm_2'], df['trade_nm'])
 
     if 'legal_nm_1' in df.columns:
-        df['legal_nm'] = np.where(df['legal_nm'].notna(), df['legal_nm_1'], df['legal_nm'])
+        df['legal_nm'] = np.where((df['legal_nm'].isna() | (df['legal_nm']=="")), df['legal_nm_1'], df['legal_nm'])
     if 'legal_nm_2' in df.columns:
-        df['legal_nm'] = np.where(df['legal_nm'].notna(), df['legal_nm_2'], df['legal_nm'])
+        df['legal_nm'] = np.where((df['legal_nm'].isna() | (df['legal_nm']=="")), df['legal_nm_2'], df['legal_nm'])
     if 'legal_nm_3' in df.columns:
-        df['legal_nm'] = np.where(df['legal_nm'].notna(), df['legal_nm_3'], df['legal_nm'])
+        df['legal_nm'] = np.where((df['legal_nm'].isna() | (df['legal_nm']=="")), df['legal_nm_3'], df['legal_nm'])
     if 'legal_nm_4' in df.columns:
-        df['legal_nm'] = np.where(df['legal_nm'].notna(), df['legal_nm_4'], df['legal_nm'])
+        df['legal_nm'] = np.where((df['legal_nm'].isna() | (df['legal_nm']=="")), df['legal_nm_4'], df['legal_nm'])
     if 'legal_nm_5' in df.columns:
-        df['legal_nm'] = np.where(df['legal_nm'].notna(), df['legal_nm_5'], df['legal_nm'])
+        df['legal_nm'] = np.where((df['legal_nm'].isna() | (df['legal_nm']=="")), df['legal_nm_5'], df['legal_nm'])
+    
 
     if 'street_addr_1' in df.columns:
-        df['street_addr'] = np.where(df['street_addr'].notna(), df['street_addr_1'], df['street_addr'])
+        df['street_addr'] = np.where((df['street_addr'].isna() | (df['street_addr']=="")), df['street_addr_1'], df['street_addr'])
     if 'street_addr_2' in df.columns:  
-        df['street_addr'] = np.where(df['street_addr'].notna(), df['street_addr_2'], df['street_addr'])
+        df['street_addr'] = np.where((df['street_addr'].isna() | (df['street_addr']=="")), df['street_addr_2'], df['street_addr'])
     if 'street_addr_3' in df.columns:  
-        df['street_addr'] = np.where(df['street_addr'].notna(), df['street_addr_3'], df['street_addr'])
+        df['street_addr'] = np.where((df['street_addr'].isna() | (df['street_addr']=="")), df['street_addr_3'], df['street_addr'])
 
     if 'naics_desc._1' in df.columns:  
-        df['naics_desc.'] = np.where(df['naics_desc.'].notna(), df['naics_desc._1'], df['naics_desc.'])
+        df['naics_desc.'] = np.where((df['naics_desc.'].isna() | (df['naics_desc.']=="")), df['naics_desc._1'], df['naics_desc.'])
     if 'naics_desc._2' in df.columns:      
-        df['naics_desc.'] = np.where(df['naics_desc.'].notna(), df['naics_desc._2'], df['naics_desc.'])
+        df['naics_desc.'] = np.where((df['naics_desc.'].isna() | (df['naics_desc.']=="")), df['naics_desc._2'], df['naics_desc.'])
     if 'naics_desc._3' in df.columns:      
-        df['naics_desc.'] = np.where(df['naics_desc.'].notna(), df['naics_desc._3'], df['naics_desc.'])
+        df['naics_desc.'] = np.where((df['naics_desc.'].isna() | (df['naics_desc.']=="")), df['naics_desc._3'], df['naics_desc.'])
     if 'naics_desc._4' in df.columns:      
-        df['naics_desc.'] = np.where(df['naics_desc.'].notna(), df['naics_desc._4'], df['naics_desc.'])
+        df['naics_desc.'] = np.where((df['naics_desc.'].isna() | (df['naics_desc.']=="")), df['naics_desc._4'], df['naics_desc.'])
 
     if 'ee_pmt_recv_1' in df.columns:
-        df['ee_pmt_recv'] = np.where(df['ee_pmt_recv'].notna(), df['ee_pmt_recv_1'], df['ee_pmt_recv'])
+        df['ee_pmt_recv'] = np.where((df['ee_pmt_recv'].isna() | (df['ee_pmt_recv']=="")), df['ee_pmt_recv_1'], df['ee_pmt_recv'])
     if 'ee_pmt_recv_2' in df.columns:
-        df['ee_pmt_recv'] = np.where(df['ee_pmt_recv'].notna(), df['ee_pmt_recv_2'], df['ee_pmt_recv'])
+        df['ee_pmt_recv'] = np.where((df['ee_pmt_recv'].isna() | (df['ee_pmt_recv']=="")), df['ee_pmt_recv_2'], df['ee_pmt_recv'])
     if 'ee_pmt_recv_3' in df.columns:
-        df['ee_pmt_recv'] = np.where(df['ee_pmt_recv'].notna(), df['ee_pmt_recv_3'], df['ee_pmt_recv'])
+        df['ee_pmt_recv'] = np.where((df['ee_pmt_recv'].isna() | (df['ee_pmt_recv']=="")), df['ee_pmt_recv_3'], df['ee_pmt_recv'])
     if 'ee_pmt_recv_4' in df.columns:
-        df['ee_pmt_recv'] = np.where(df['ee_pmt_recv'].notna(), df['ee_pmt_recv_4'], df['ee_pmt_recv'])
+        df['ee_pmt_recv'] = np.where((df['ee_pmt_recv'].isna() | (df['ee_pmt_recv']=="")), df['ee_pmt_recv_4'], df['ee_pmt_recv'])
 
     if 'findings_start_date_1' in df.columns:
-        df['findings_start_date'] = np.where(df['findings_start_date'].notna(), df['findings_start_date_1'], df['findings_start_date'])
+        df['findings_start_date'] = np.where((df['findings_start_date'].isna() | (df['findings_start_date']=="")), df['findings_start_date_1'], df['findings_start_date'])
     if 'findings_start_date_2' in df.columns:
-        df['findings_start_date'] = np.where(df['findings_start_date'].notna(), df['findings_start_date_2'], df['findings_start_date'])
+        df['findings_start_date'] = np.where((df['findings_start_date'].isna() | (df['findings_start_date']=="")), df['findings_start_date_2'], df['findings_start_date'])
     if 'findings_start_date_3' in df.columns:
-        df['findings_start_date'] = np.where(df['findings_start_date'].notna(), df['findings_start_date_3'], df['findings_start_date'])
+        df['findings_start_date'] = np.where((df['findings_start_date'].isna() | (df['findings_start_date']=="")), df['findings_start_date_3'], df['findings_start_date'])
     if 'findings_start_date_4' in df.columns:
-        df['findings_start_date'] = np.where(df['findings_start_date'].notna(), df['findings_start_date_4'], df['findings_start_date'])
+        df['findings_start_date'] = np.where((df['findings_start_date'].isna() | (df['findings_start_date']=="")), df['findings_start_date_4'], df['findings_start_date'])
 
     #df.to_csv(os.path.join(abs_path, (file_name+'test_df_4_report').replace(' ', '_') + '.csv'))
     
@@ -3807,7 +3855,7 @@ def Read_Violation_Data(TEST_CASES, url, out_file_report, trigger, bug_log_csv, 
     df_csv = read_from_url(url, TEST_CASES, trigger)
 
     df_csv['juris_or_proj_nm'] = out_file_report
-    df_csv = Setup_Regular_headers(df_csv, abs_path, file_name)
+    df_csv = Setup_Regular_headers(df_csv, abs_path, file_name, bug_log_csv)
 
     save_backup_to_folder(df_csv, out_file_report + '_backup', "csv_read_backup/") #greedy backukup even if already exists
 
@@ -4469,7 +4517,7 @@ def Methods_Block(textFile):
     textFile.write(
         "<li>where interest balance due is missing, then infer an interest balance based on a calaculated compounded interest of the backwages owed</li>")
     textFile.write(
-        "<li>df['interest_owed'] = np.where(df['interest_owed'].notna(), df['Interest_Accrued'], df['interest_owed']</li>")
+        "<li>df['interest_owed'] = np.where((df['interest_owed'].isna() | (df['interest_owed']=="")), df['Interest_Accrued'], df['interest_owed']</li>")
     textFile.write(
         "<li>df['Interest_Accrued'] = (df['wages_owed'] * (((1 + ((r/100.0)/n)) ** (n*df['Years_Unpaid']))) ) - df['wages_owed']</li>")
     textFile.write("</ul>")
