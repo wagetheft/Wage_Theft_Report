@@ -84,10 +84,10 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 
 def main():
     # settings****************************************************
-    PARAM_1_TARGET_STATE = "" #"California"
-    PARAM_1_TARGET_COUNTY = "Santa_Clara_County" #"Santa_Clara_County"
+    PARAM_1_TARGET_STATE = "California" #"California"
+    PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
     PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode"
-    PARAM_2_TARGET_INDUSTRY = "WTC NAICS" #'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS'
+    PARAM_2_TARGET_INDUSTRY = "All NAICS" #'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS' or 'All NAICS'
     PARAM_3_TARGET_ORGANIZATION = "" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
     
     PARAM_YEAR_START = "" # default is 'today' - years=4 #or "2016/05/01"
@@ -358,19 +358,20 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         for n in url_list:
             if ((n[2] == 'DOL_WHD') or (n[2] == 'DIR_DLSE') ): 
                 trigger = True #toggle between (true) encoding="ISO-8859-1" and (false) encoding='utf8'
-            url = n[0]
-            out_file_report = n[2]
-            df_url = pd.DataFrame()
-            df_url = Read_Violation_Data(TEST_CASES, url, out_file_report, trigger, bug_log_csv, abs_path, file_name) #save raw copy to csv_read_backup
-            df_url = df_url.replace('\s', ' ', regex=True)  # remove line returns
-            df_url = clean_function(RunFast, df_url, FLAG_DUPLICATE, bug_log, LOGBUG, log_number, bug_log_csv)
-            df_url = inference_function(df_url, cityDict, TEMP_TARGET_INDUSTRY, 
-                prevailing_wage_terms, prevailing_wage_labor_code, prevailing_wage_politicals, 
-                bug_log, LOGBUG, log_number)
-            save_backup_to_folder(df_url, url_backup_file+str(count), url_backup_path) #save copy to url_backup -- cleaned file
-            count += 1
+            else:
+                url = n[0]
+                out_file_report = n[2]
+                df_url = pd.DataFrame()
+                df_url = Read_Violation_Data(TEST_CASES, url, out_file_report, trigger, bug_log_csv, abs_path, file_name) #save raw copy to csv_read_backup
+                df_url = df_url.replace('\s', ' ', regex=True)  # remove line returns
+                df_url = clean_function(RunFast, df_url, FLAG_DUPLICATE, bug_log, LOGBUG, log_number, bug_log_csv)
+                df_url = inference_function(df_url, cityDict, TEMP_TARGET_INDUSTRY, 
+                    prevailing_wage_terms, prevailing_wage_labor_code, prevailing_wage_politicals, 
+                    bug_log, LOGBUG, log_number)
+                save_backup_to_folder(df_url, url_backup_file+str(count), url_backup_path) #save copy to url_backup -- cleaned file
+                count += 1
 
-            DF_OG = pd.concat([df_url, DF_OG], ignore_index=True)
+                DF_OG = pd.concat([df_url, DF_OG], ignore_index=True)
             trigger = False
             
     time_2 = time.time()
@@ -538,6 +539,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     # Format for summary
     time_1 = time.time()
     
+    DF_OG = Filter_for_Zipcode(DF_OG, "", "", "California") #hack to just california records
     DF_OG_ALL = DF_OG.copy()
     DF_OG_ALL = DropDuplicateRecords(DF_OG_ALL, FLAG_DUPLICATE, bug_log_csv)
 
@@ -661,7 +663,17 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     
     return temp_file_name  # the temp json returned from API
 
+def add_CA_cheap_hack(df):
 
+    df['st_cd'] = np.where(
+        (
+            (((df['juris_or_proj_nm'] == 'DLSE') | (df['juris_or_proj_nm'] == 'DIR_DLSE') | (df['juris_or_proj_nm'] ==  'DLSE_WageClaim') 
+            | (df['juris_or_proj_nm'] == 'DLSE_J-23') | (df['juris_or_proj_nm'] == 'DLSE_J-5413')) & 
+            ( df['st_cd'].isnull() | (df['st_cd'] == "") ) ),
+            'CA', df['st_cd'] )
+    )
+    
+    return df
 
 
 def search_Dict_tree(target_state, target_county, target_city, stateDict, countyDict, cityDict):
@@ -1550,15 +1562,15 @@ def Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS):
 
 
 def Filter_for_Zipcode(df, TARGET_ZIPCODES, infer_zip, target_state):
-    if TARGET_ZIPCODES[1] != '00000': # faster run for "All_Zipcode" condition
-        TARGET_ZIPCODES_HERE = TARGET_ZIPCODES #make local copy
-        if not infer_zip:
-            for zipcode in TARGET_ZIPCODES_HERE:
-                if 'X' in zipcode: TARGET_ZIPCODES_HERE.remove(zipcode) #remove the dummy codes
-        # Filter on region by zip code
-        if target_state == "California":
-            df = df.loc[df['st_cd']== "CA"] #hacketty time at 1:30 pm and somewhere to go Jan 11, 2024 by F Peterson
-        else:
+    if target_state == "California":
+        df = df.loc[df['st_cd']== "CA"] #hacketty time at 1:30 pm and somewhere to go Jan 11, 2024 by F Peterson
+    else:
+        if TARGET_ZIPCODES[1] != '00000': # faster run for "All_Zipcode" condition
+            TARGET_ZIPCODES_HERE = TARGET_ZIPCODES #make local copy
+            if not infer_zip:
+                for zipcode in TARGET_ZIPCODES_HERE:
+                    if 'X' in zipcode: TARGET_ZIPCODES_HERE.remove(zipcode) #remove the dummy codes
+            # Filter on region by zip code
             df = df.loc[df['zip_cd'].isin(TARGET_ZIPCODES_HERE)] #<-- DLSE bug here is not finding zipcodes
     return df
 
@@ -3622,6 +3634,17 @@ def Setup_Regular_headers(df, abs_path, file_name, bug_log_csv):  # DSLE, WHD, e
     if "naics_desc." not in df.columns:
         df["naics_desc."] = ""
 
+    if ('st_cd' in df.columns) and ('juris_or_proj_nm' in df.columns):   #hack by F.Peterson 4/20/2024
+
+        df['st_cd'] = np.where(
+            (
+                ((df['juris_or_proj_nm'] == 'DLSE_J-23') | (df['juris_or_proj_nm'] == 'DLSE_J-5413') 
+                 | (df['juris_or_proj_nm'] ==  'DLSE_WageClaim') | (df['juris_or_proj_nm'] == 'DIR_DLSE') 
+                 | (df['juris_or_proj_nm'] == 'DLSE')  ) & 
+                (df['st_cd'].isnull() | (df['st_cd'] == "") ) 
+            ),
+            'CA', df['st_cd'] )
+    
     if 'findings_end_date_1' in df.columns:
         df['findings_end_date'] = np.where((df['findings_end_date'].isna() | (df['findings_end_date']=="")), df['findings_end_date_1'], df['findings_end_date'])
     if 'findings_end_date_2' in df.columns:
@@ -3908,6 +3931,7 @@ def read_from_url(url, TEST_CASES, trigger):
 
 def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY, prevailing_wage_report, federal_data, \
                 includeStateCases, includeStateJudgements, target_organization, open_cases_only, textFile):
+    
     scale = ""
     if open_cases_only:
         scale = "Unpaid"
@@ -4002,10 +4026,17 @@ def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
 
     textFile.write(".")
 
+    from datetime import datetime
     textFile.write(" This is approximately a ")
+    DF_MIN_ALL = min(pd.to_datetime(
+        DF_OG_ALL['findings_start_date'].dropna(), errors='coerce'))
+    DF_MAX_ALL = max(pd.to_datetime(
+        DF_OG_ALL['findings_start_date'].dropna(), errors='coerce'))
+    DF_MAX_ALL_YEARS = (DF_MAX_ALL - DF_MIN_ALL).days / 365
+
     textFile.write(str.format(
-        '{0:,.0f}', (DF_OG_VLN['bw_amt'].sum()/22000000000)*100))
-    textFile.write("-percent sample of an estimated actual $22B annually in wage theft that occurs nationally (see blog.tsheets.com/2018/news/cost-of-wage-theft).</p>")
+        '{0:,.0f}', ((DF_OG_ALL['bw_amt'].sum()/DF_MAX_ALL_YEARS)/22000000000)*100))
+    textFile.write("-percent sample of an estimated actual $2B annually in wage theft that occurs Statewide. Note: the State purged old closed cases and thus an imperfect ratio (see courts.ca.gov/opinions/links/S241812-LINK1.PDF#page=11).</p>")
 
     textFile.write("\n")
 
@@ -4015,8 +4046,10 @@ def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
         state_range = ""
         if (federal_data == 1):
             fed_range = "total Federal WHD dataset goes back to 2000"
+
         if (includeStateCases == 1) or (includeStateJudgements == 1):
             state_range = "total State DLSE dataset goes back to 2000"
+            
         tense = ""
         if (federal_data == 1) and ((includeStateCases == 1) or (includeStateJudgements == 1)):
             tense = ", and "
@@ -4304,19 +4337,15 @@ def Industry_Summary_Block(out_counts, df, total_ee_violtd, total_bw_atp, total_
     textFile.write("<h2>Summary for Reported Industry</h2> \n")
 
     if not df.empty:
-        #textFile.write(f"<p>Date range: {YEAR_START} to {YEAR_END}</p>")
 
-        # commented out due to out of bounds date that need an error check to fix debug 10/26/2020 Fixed 2/5/2022
         DF_MIN = min(pd.to_datetime(
             df['findings_start_date'].dropna(), errors='coerce'))
         DF_MAX = max(pd.to_datetime(
             df['findings_start_date'].dropna(), errors='coerce'))
 
         textFile.write(f"<p>Actual date range: ")
-        #textFile.write( DF_MIN.strftime("%m/%d/%Y") )
         textFile.write(DF_MIN.strftime("%m/%Y"))
         textFile.write(" to ")
-        #textFile.write( DF_MAX.strftime("%m/%d/%Y") )
         textFile.write(DF_MAX.strftime("%m/%Y"))
         textFile.write("</p> \n")
     else:
