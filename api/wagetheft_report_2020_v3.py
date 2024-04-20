@@ -4374,7 +4374,12 @@ def Industry_Summary_Block(out_counts, df, total_ee_violtd, total_bw_atp, total_
                 textFile.write(" <i>(gaps estimated as $")
                 textFile.write(str.format(
                     '{0:,.0f}', total_bw_atp//total_ee_violtd))
-                textFile.write(" in backwages per employee violated)</i> \n")
+                textFile.write(" in backwage ")
+                textFile.write(" and $")
+                textFile.write(str.format(
+                    '{0:,.0f}', ((total_bw_atp//total_ee_violtd) * .125) ) )
+                textFile.write(" monetary penalty per employee violated ) ")
+                textFile.write("</i> \n")
         textFile.write("</p>")
 
     if 'backwage_owed' not in out_counts.columns: #<-- probably a problem point
@@ -4520,6 +4525,16 @@ def Methods_Block(textFile):
         "<li>the sum of wages owed, monetary penalty, and interest</li>")
     textFile.write(
         "<li>df['backwage_owed'] = df['wages_owed'] + df['cmp_assd_cnt'] + df['interest_owed']</li>")
+    textFile.write("</ul>")
+
+    textFile.write("<p>")
+    textFile.write("estimate when missing:")
+    textFile.write("</p>")
+    textFile.write("<ul>")
+    textFile.write(
+        "<li>estimated backwage per employee = (df['bw_amt'].sum() / df['ee_violtd_cnt'].sum() ) </li>")
+    textFile.write(
+        "<li>estimated monetary penalty per employee = (bw_amt * 12.5%) </li>")
     textFile.write("</ul>")
 
     textFile.write("<p>")
