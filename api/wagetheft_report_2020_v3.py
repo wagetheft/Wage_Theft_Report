@@ -4049,7 +4049,7 @@ def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
 
         if (includeStateCases == 1) or (includeStateJudgements == 1):
             state_range = "total State DLSE dataset goes back to 2000"
-            
+
         tense = ""
         if (federal_data == 1) and ((includeStateCases == 1) or (includeStateJudgements == 1)):
             tense = ", and "
@@ -4460,9 +4460,11 @@ def Proportion_Summary_Block(out_counts, total_ee_violtd, total_bw_atp, total_ca
         cutoff_size = 1
         for n in case_disposition_series:
             test_spot = case_disposition_series.index[count] #len(test_spot)
+            if test_spot == "":
+                test_spot = '<Not Defined>'
             if n > cutoff_size:
                 textFile.write(f"<li>{n} are {test_spot} \
-                    ({str.format('{0:,.0%}', float(n)/float(total_number_of_cases.replace(',','')))}).</li>")
+                    ({str.format('{0:,.0%}', float(n)/float(total_number_of_cases.replace(',','')))})</li>")
                 textFile.write("\n")
             count = (count +1)
             
