@@ -23,13 +23,11 @@
 # 2/3/2022 by F. Peterson added organization filter -- add State filter, added new WHD file and debugged, fix date bug, industry label adjusted (3,195 lines)
 # 2/14/2022 by F. Peterson add WHD prevailing wage inference
 # 3/3/2022 by F. Peterson added exclusion terms to construction industry
-# 3/4/2022 by F. Peterson fixed a bug with trade/industry header mixup
-# 3/4/2022 by F. Peterson fixed a bug with double output
+# 3/4/2022 by F. Peterson fixed a bug with trade/industry header mixup and a bug with double output
 # 3/7/2022 by F. Peterson added county of San Diego
 # 6/28/2022 by F. Peterson started adding API (does not run)
 # 6/29/2022 by I. Kolli added parameters to API code
-# 7/2/2022 by F. Peterson added several more parameters to API code and create output folder if missing: tested and works
-# 7/2/2022 by F. Peterson added url pulls for WHD and DOL violations
+# 7/2/2022 by F. Peterson added several more parameters to API code and create output folder if missing: tested and works + added url pulls for WHD and DOL violations
 # 7/14/2022 by F. Peterson update DOL WHD url to updated url 7/13/2022
 # 8/10/2022 by F. Peterson resolve several bugs-- incomplete but runs without crash
 # 8/13/2022 see Git log for update record
@@ -90,7 +88,7 @@ def main():
     PARAM_2_TARGET_INDUSTRY = "All NAICS" #'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS' or 'All NAICS'
     PARAM_3_TARGET_ORGANIZATION = "" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
     
-    PARAM_YEAR_START = "" # default is 'today' - years=4 #or "2016/05/01"
+    PARAM_YEAR_START = "2012/05/01" # default is 'today' - years=4 #or "2016/05/01"
     PARAM_YEAR_END = "" #default is 'today'
     
     OPEN_CASES = 0 # 1 for open cases only (or nearly paid off), 0 for all cases
@@ -358,22 +356,22 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         for n in url_list:
             if ((n[2] == 'DOL_WHD') or (n[2] == 'DIR_DLSE') ): 
                 trigger = True #toggle between (true) encoding="ISO-8859-1" and (false) encoding='utf8'
-            else:
-                url = n[0]
-                out_file_report = n[2]
-                df_url = pd.DataFrame()
-                df_url = Read_Violation_Data(TEST_CASES, url, out_file_report, trigger, bug_log_csv, abs_path, file_name) #save raw copy to csv_read_backup
-                df_url = df_url.replace('\s', ' ', regex=True)  # remove line returns
-                df_url = clean_function(RunFast, df_url, FLAG_DUPLICATE, bug_log, LOGBUG, log_number, bug_log_csv)
-                df_url = inference_function(df_url, cityDict, TEMP_TARGET_INDUSTRY, 
-                    prevailing_wage_terms, prevailing_wage_labor_code, prevailing_wage_politicals, 
-                    bug_log, LOGBUG, log_number)
-                save_backup_to_folder(df_url, url_backup_file+str(count), url_backup_path) #save copy to url_backup -- cleaned file
-                count += 1
+            url = n[0]
+            out_file_report = n[2]
+            df_url = pd.DataFrame()
+            df_url = Read_Violation_Data(TEST_CASES, url, out_file_report, trigger, bug_log_csv, abs_path, file_name) #save raw copy to csv_read_backup
+            df_url = df_url.replace('\s', ' ', regex=True)  # remove line returns
+            df_url = clean_function(RunFast, df_url, FLAG_DUPLICATE, bug_log, LOGBUG, log_number, bug_log_csv)
+            df_url = inference_function(df_url, cityDict, TEMP_TARGET_INDUSTRY, 
+                prevailing_wage_terms, prevailing_wage_labor_code, prevailing_wage_politicals, 
+                bug_log, LOGBUG, log_number)
+            save_backup_to_folder(df_url, url_backup_file+str(count), url_backup_path) #save copy to url_backup -- cleaned file
+            count += 1
 
-                DF_OG = pd.concat([df_url, DF_OG], ignore_index=True)
+            DF_OG = pd.concat([df_url, DF_OG], ignore_index=True)
+
             trigger = False
-            
+
     time_2 = time.time()
     append_log(bug_log, LOGBUG, f"Time to read csv(s) " + "%.5f" % (time_2 - time_1) + "\n")
     
@@ -388,10 +386,9 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     out_target = filter_function(out_target, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only, 
         infer_zip, infer_by_naics, TARGET_ORGANIZATIONS, YEAR_START, YEAR_END, target_state, 
-        bug_log, LOGBUG, log_number, abs_path, file_name)
+        bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv)
     
     if signatories_report:
-        # infer signatories
         time_1 = time.time()
         out_target = infer_signatory_cases(out_target, SIGNATORY_INDUSTRY)
         time_2 = time.time()
@@ -407,8 +404,9 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         out_target = wages_owed(out_target)
         out_target = calculate_interest_owed(out_target)
         out_target = backwages_owed(out_target)
-        # out_target.to_csv(bug_log_csv) #debug outfile
     
+    #out_target.to_csv(bug_log_csv)
+
     if open_cases_only == 1: 
         out_target = RemoveCompletedCases(out_target)
     
@@ -491,7 +489,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     time_2 = time.time()
     log_number = "7 never used group by legal name + all agency thing"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
-
+    
     # group repeat offenders************************************
     time_1 = time.time()
     out_counts = out_target.copy()  # hold for case counts
@@ -663,17 +661,6 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     
     return temp_file_name  # the temp json returned from API
 
-def add_CA_cheap_hack(df):
-
-    df['st_cd'] = np.where(
-        (
-            (((df['juris_or_proj_nm'] == 'DLSE') | (df['juris_or_proj_nm'] == 'DIR_DLSE') | (df['juris_or_proj_nm'] ==  'DLSE_WageClaim') 
-            | (df['juris_or_proj_nm'] == 'DLSE_J-23') | (df['juris_or_proj_nm'] == 'DLSE_J-5413')) & 
-            ( df['st_cd'].isnull() | (df['st_cd'] == "") ) ),
-            'CA', df['st_cd'] )
-    )
-    
-    return df
 
 
 def search_Dict_tree(target_state, target_county, target_city, stateDict, countyDict, cityDict):
@@ -816,7 +803,6 @@ def inference_function(df, cityDict, TARGET_INDUSTRY,
     time_2 = time.time()
     log_number = "InferAgency"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
-    # use for debugging df.to_csv(bug_log_csv) #debug outfile
 
     # PREVAILING WAGE
     time_1 = time.time()
@@ -844,7 +830,7 @@ def inference_function(df, cityDict, TARGET_INDUSTRY,
 
 
 def filter_function(df, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only,
-    infer_zip, infer_by_naics, TARGET_ORGANIZATIONS, YEAR_START, YEAR_END, target_state, bug_log, LOGBUG, log_number, abs_path, file_name):
+    infer_zip, infer_by_naics, TARGET_ORGANIZATIONS, YEAR_START, YEAR_END, target_state, bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv):
 
     function_name = "filter_function"
 
@@ -1404,26 +1390,26 @@ def GroupByMultpleCases(df, COLUMN_NAME):
         df['records'] = df.groupby(COLUMN_NAME)[COLUMN_NAME].transform(
             'count')  # count duplicates
         if 'bw_amt' not in df.columns:
-            df['bw_amt'] = "0"
+            df['bw_amt'] = 0
         else:
             df['bw_amt'] = df.groupby(COLUMN_NAME)["bw_amt"].transform('sum')
         if 'backwage_owed' not in df.columns:
-            df['backwage_owed'] = "0"
+            df['backwage_owed'] = 0
         else:
             df['backwage_owed'] = df.groupby(
                 COLUMN_NAME)['backwage_owed'].transform('sum')
         if 'violtn_cnt' not in df.columns:
-            df['violtn_cnt'] = "0"
+            df['violtn_cnt'] = 0
         else:
             df['violtn_cnt'] = df.groupby(
                 COLUMN_NAME)["violtn_cnt"].transform('sum')
         if 'ee_violtd_cnt' not in df.columns:
-            df['ee_violtd_cnt'] = "0"
+            df['ee_violtd_cnt'] = 0
         else:
             df['ee_violtd_cnt'] = df.groupby(
                 COLUMN_NAME)["ee_violtd_cnt"].transform('sum')
         if 'ee_pmt_recv' not in df.columns:
-            df['ee_pmt_recv'] = "0"
+            df['ee_pmt_recv'] = 0
         else:
             df['ee_pmt_recv'] = df.groupby(
                 COLUMN_NAME)["ee_pmt_recv"].transform('sum')
@@ -3239,9 +3225,10 @@ def CleanNumberColumns(column):
     column = column.replace("−", "-", regex=True)
     column = column.replace('[)]', '', regex=True)
     column = column.replace('[(]', '-', regex=True)
-    column = column.fillna('0')
 
     column = pd.to_numeric(column, errors='coerce')
+
+    column = column.fillna(0)
 
     column = column.abs()
 
@@ -3657,12 +3644,16 @@ def Setup_Regular_headers(df, abs_path, file_name, bug_log_csv):  # DSLE, WHD, e
     if 'Case Status 3' in df.columns:
         df['Case Status'] = np.where((df['Case Status'].isna() | (df['Case Status']=="")), df['Case Status 3'], df['Case Status'])
 
+    df['bw_amt'] = CleanNumberColumns(df['bw_amt'])
     if 'bw_amt_1' in df.columns:
-        df['bw_amt'] = np.where((df['bw_amt'].isna() | (df['bw_amt']=="")), df['bw_amt_1'], df['bw_amt'])
+        df['bw_amt_1'] = CleanNumberColumns(df['bw_amt_1'])
+        df['bw_amt'] = np.where((df['bw_amt'].isna() | (df['bw_amt']=="") | (df['bw_amt'] < df['bw_amt_1'])), df['bw_amt_1'], df['bw_amt'])
     if 'bw_amt_2' in df.columns:
-        df['bw_amt'] = np.where((df['bw_amt'].isna() | (df['bw_amt']=="")), df['bw_amt_2'], df['bw_amt'])
+        df['bw_amt_2'] = CleanNumberColumns(df['bw_amt_2'])
+        df['bw_amt'] = np.where((df['bw_amt'].isna() | (df['bw_amt']=="") | (df['bw_amt'] < df['bw_amt_2'])), df['bw_amt_2'], df['bw_amt'])
     if 'bw_amt_3' in df.columns:
-        df['bw_amt'] = np.where((df['bw_amt'].isna() | (df['bw_amt']=="")), df['bw_amt_3'], df['bw_amt'])
+        df['bw_amt_3'] = CleanNumberColumns(df['bw_amt_3'])
+        df['bw_amt'] = np.where((df['bw_amt'].isna() | (df['bw_amt']=="") | (df['bw_amt'] < df['bw_amt_3'])), df['bw_amt_3'], df['bw_amt'])
 
     if 'case_id' in df.columns:
         df['case_id_1'] = np.where((df['case_id_1'].isna() |(df['case_id_1']=="")), df['case_id'], df['case_id_1'])
@@ -3706,14 +3697,20 @@ def Setup_Regular_headers(df, abs_path, file_name, bug_log_csv):  # DSLE, WHD, e
     if 'naics_desc._4' in df.columns:      
         df['naics_desc.'] = np.where((df['naics_desc.'].isna() | (df['naics_desc.']=="")), df['naics_desc._4'], df['naics_desc.'])
 
+    df['ee_pmt_recv'] = CleanNumberColumns(df['ee_pmt_recv'])
+    #(df['ee_pmt_recv'] < df['ee_pmt_recv_1']) # removed
     if 'ee_pmt_recv_1' in df.columns:
-        df['ee_pmt_recv'] = np.where((df['ee_pmt_recv'].isna() | (df['ee_pmt_recv']=="")), df['ee_pmt_recv_1'], df['ee_pmt_recv'])
+        df['ee_pmt_recv_1'] = CleanNumberColumns(df['ee_pmt_recv_1'])
+        df['ee_pmt_recv'] = np.where((df['ee_pmt_recv'].isna() | (df['ee_pmt_recv']=="") | (df['ee_pmt_recv']==0) ), df['ee_pmt_recv_1'], df['ee_pmt_recv'])
     if 'ee_pmt_recv_2' in df.columns:
-        df['ee_pmt_recv'] = np.where((df['ee_pmt_recv'].isna() | (df['ee_pmt_recv']=="")), df['ee_pmt_recv_2'], df['ee_pmt_recv'])
+        df['ee_pmt_recv_2'] = CleanNumberColumns(df['ee_pmt_recv_2'])
+        df['ee_pmt_recv'] = np.where((df['ee_pmt_recv'].isna() | (df['ee_pmt_recv']=="") | (df['ee_pmt_recv']==0)  ), df['ee_pmt_recv_2'], df['ee_pmt_recv'])
     if 'ee_pmt_recv_3' in df.columns:
-        df['ee_pmt_recv'] = np.where((df['ee_pmt_recv'].isna() | (df['ee_pmt_recv']=="")), df['ee_pmt_recv_3'], df['ee_pmt_recv'])
+        df['ee_pmt_recv_3'] = CleanNumberColumns(df['ee_pmt_recv_3'])
+        df['ee_pmt_recv'] = np.where((df['ee_pmt_recv'].isna() | (df['ee_pmt_recv']=="") | (df['ee_pmt_recv']==0) ), df['ee_pmt_recv_3'], df['ee_pmt_recv'])
     if 'ee_pmt_recv_4' in df.columns:
-        df['ee_pmt_recv'] = np.where((df['ee_pmt_recv'].isna() | (df['ee_pmt_recv']=="")), df['ee_pmt_recv_4'], df['ee_pmt_recv'])
+        df['ee_pmt_recv_4'] = CleanNumberColumns(df['ee_pmt_recv_4'])
+        df['ee_pmt_recv'] = np.where((df['ee_pmt_recv'].isna() | (df['ee_pmt_recv']=="") | (df['ee_pmt_recv']==0)  ), df['ee_pmt_recv_4'], df['ee_pmt_recv'])
 
     if 'findings_start_date_1' in df.columns:
         df['findings_start_date'] = np.where((df['findings_start_date'].isna() | (df['findings_start_date']=="")), df['findings_start_date_1'], df['findings_start_date'])
@@ -4035,8 +4032,8 @@ def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
     DF_MAX_ALL_YEARS = (DF_MAX_ALL - DF_MIN_ALL).days / 365
 
     textFile.write(str.format(
-        '{0:,.0f}', ((DF_OG_ALL['bw_amt'].sum()/DF_MAX_ALL_YEARS)/22000000000)*100))
-    textFile.write("-percent sample of an estimated actual $2B annually in wage theft that occurs Statewide. Note: the State purged old closed cases and thus an imperfect ratio (see courts.ca.gov/opinions/links/S241812-LINK1.PDF#page=11).</p>")
+        '{0:,.2f}', ((DF_OG_ALL['bw_amt'].sum()/DF_MAX_ALL_YEARS)/22000000000)*100))
+    textFile.write("-percent sample of an estimated actual $2B annually in wage theft that occurs Statewide (see courts.ca.gov/opinions/links/S241812-LINK1.PDF#page=11).</p>")
 
     textFile.write("\n")
 
@@ -4048,7 +4045,7 @@ def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
             fed_range = "total Federal WHD dataset goes back to 2000"
 
         if (includeStateCases == 1) or (includeStateJudgements == 1):
-            state_range = "total State DLSE dataset goes back to 2000"
+            state_range = "total State DLSE dataset goes back to 2000 (Note: The State purged old closed cases and thus the above is an imperfect ratio)"
 
         tense = ""
         if (federal_data == 1) and ((includeStateCases == 1) or (includeStateJudgements == 1)):
@@ -4443,8 +4440,6 @@ def Proportion_Summary_Block(out_counts, total_ee_violtd, total_bw_atp, total_ca
     
         #variables
         total_number_of_cases = str.format('{0:,.0f}', len(case_disposition_series ) )
-
-        case_disposition_series.to_csv(bug_log_csv)
         
         report_type = "cases"
         if OPEN_CASES:
@@ -4465,7 +4460,7 @@ def Proportion_Summary_Block(out_counts, total_ee_violtd, total_bw_atp, total_ca
         cutoff_size = 1
         for n in case_disposition_series:
             test_spot = case_disposition_series.index[count] #len(test_spot)
-            if test_spot == "":
+            if (len(test_spot) < 3):
                 test_spot = '<Not Defined>'
             if n > cutoff_size:
                 textFile.write(f"<li>{n} are {test_spot} \
@@ -4534,7 +4529,15 @@ def Methods_Block(textFile):
     textFile.write(
         "<li>estimated backwage per employee = (df['bw_amt'].sum() / df['ee_violtd_cnt'].sum() ) </li>")
     textFile.write(
-        "<li>estimated monetary penalty per employee = (bw_amt * 12.5%) </li>")
+        "<li>estimated monetary penalty (CMP) assessed per employee = (est_bw_amt * 12.5%) </li>")
+    textFile.write(
+        "<li>where interest balance due is missing, then infer an interest balance based on a calaculated compounded interest of the backwages owed</li>")
+    textFile.write("<ul>")
+    textFile.write(
+        "<li>df['interest_owed'] = np.where((df['interest_owed'].isna() | (df['interest_owed'] == '')), df['Interest_Accrued'], df['interest_owed'])</li>")
+    textFile.write(
+        "<li>df['Interest_Accrued'] = (df['wages_owed'] * (((1 + ((r/100.0)/n)) ** (n*df['Years_Unpaid']))) ) - df['wages_owed']</li>")
+    textFile.write("</ul>")
     textFile.write("</ul>")
 
     textFile.write("<p>")
@@ -4554,18 +4557,6 @@ def Methods_Block(textFile):
     textFile.write("<li>interestd due less interest payments recieved</li>")
     textFile.write(
         "<li>df['interest_owed'] = df['Interest_Accrued'] - df['Interest_Payments_Recd])</li>")
-    textFile.write("</ul>")
-
-    textFile.write("<p>")
-    textFile.write("interest_owed: ")
-    textFile.write("</p>")
-    textFile.write("<ul>")
-    textFile.write(
-        "<li>where interest balance due is missing, then infer an interest balance based on a calaculated compounded interest of the backwages owed</li>")
-    textFile.write(
-        "<li>df['interest_owed'] = np.where((df['interest_owed'].isna() | (df['interest_owed']=="")), df['Interest_Accrued'], df['interest_owed']</li>")
-    textFile.write(
-        "<li>df['Interest_Accrued'] = (df['wages_owed'] * (((1 + ((r/100.0)/n)) ** (n*df['Years_Unpaid']))) ) - df['wages_owed']</li>")
     textFile.write("</ul>")
 
     # textFile.write("bw_amt: ")
@@ -4673,7 +4664,6 @@ def Footer_Block(TEST, textFile):
                    have not been audited and, therefore, are only intended as an indication of wage theft.</p> \n")
 
 #write_to_html_file(new_df_3, header_HTML_EMP3, "", file_path('py_output/A4W_Summary_by_Emp_for_all2.html') )
-
 
 # https://stackoverflow.com/questions/47704441/applying-styling-to-pandas-dataframe-saved-to-html-file
 def write_to_html_file(df, header_HTML, title, filename, rows = 99):
