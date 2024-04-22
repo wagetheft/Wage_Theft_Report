@@ -227,7 +227,7 @@ ALL_NAICS_INDUSTRIES = [['All NAICS'], agriculture_terms, mining_terms, utilitie
                         management_terms, administrative_terms_rollup, educational_terms, healthcare_terms_rollup, entertainment_terms_rollup,
                         accommodation_terms_rollup, service_terms_rollup, public_administration_terms, other_terms]
 
-WTC_NAICS_INDUSTRIES = [['WTC NAICS'], agriculture_terms, mining_terms, utilities_terms, construction_terms, manufacturing_terms,
+WTC_NAICS_INDUSTRIES = [['WTC NAICS'], agriculture_terms, gig_terms, mining_terms, utilities_terms, construction_terms, manufacturing_terms,
                         trade_terms, retail_terms, transportation_terms, information_terms, finance_terms, real_estate_terms, professional_terms,
                         management_terms, administrative_terms, waste_terms, janitorial_terms, educational_terms, healthcare_terms,
                         residential_carehome_terms, carehome_terms, entertainment_terms, fitness_terms, accommodation_terms, restaurant_terms,
@@ -271,14 +271,18 @@ industriesDict = {
     "All NAICS": [['All NAICS'], agriculture_terms, mining_terms, utilities_terms, construction_terms, manufacturing_terms,
                   trade_terms, retail_terms, transportation_terms, information_terms, finance_terms, real_estate_terms, professional_terms,
                   management_terms, administrative_terms_rollup, educational_terms, healthcare_terms_rollup, entertainment_terms_rollup,
-                  accommodation_terms_rollup, service_terms_rollup, public_administration_terms, other_terms],
-    "WTC NAICS": [['WTC NAICS'], agriculture_terms, mining_terms, utilities_terms, construction_terms, manufacturing_terms,
+                  accommodation_terms_rollup, service_terms_rollup, public_administration_terms, other_terms]
+    
+}
+
+#requires rerunning cached data to apply WTC industry classifications
+"""
+"WTC NAICS": [['WTC NAICS'], agriculture_terms, gig_terms, mining_terms, utilities_terms, construction_terms, manufacturing_terms,
                   trade_terms, retail_terms, transportation_terms, information_terms, finance_terms, real_estate_terms, professional_terms,
                   management_terms, administrative_terms, waste_terms, janitorial_terms, educational_terms, healthcare_terms,
                   residential_carehome_terms, carehome_terms, entertainment_terms, fitness_terms, accommodation_terms, restaurant_terms,
                   fast_food_terms, service_terms, automotive_terms, personal_care_terms, religion_terms, public_administration_terms, other_terms]
-}
-
+"""
 
 def getIndustryNames() -> list:
     return list(industriesDict.keys())
