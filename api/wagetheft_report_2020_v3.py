@@ -82,13 +82,13 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 
 def main():
     # settings****************************************************
-    PARAM_1_TARGET_STATE = "California" #"California"
-    PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
+    PARAM_1_TARGET_STATE = "" #"California"
+    PARAM_1_TARGET_COUNTY = "Santa_Clara_County" #"Santa_Clara_County"
     PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode"
-    PARAM_2_TARGET_INDUSTRY = "All NAICS" #'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS' or 'All NAICS'
+    PARAM_2_TARGET_INDUSTRY = "WTC NAICS" #'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS' or 'All NAICS'
     PARAM_3_TARGET_ORGANIZATION = "" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
     
-    PARAM_YEAR_START = "2012/05/01" # default is 'today' - years=4 #or "2016/05/01"
+    PARAM_YEAR_START = "2000/01/01" # default is 'today' - years=4 #or "2016/05/01"
     PARAM_YEAR_END = "" #default is 'today'
     
     OPEN_CASES = 0 # 1 for open cases only (or nearly paid off), 0 for all cases
@@ -145,7 +145,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         YEAR_START = pd.to_datetime('today') - pd.DateOffset(years=4)
     else:
         YEAR_START = pd.to_datetime(YEAR_START_TEXT)
-
+    
     if YEAR_END_TEXT == "":
         YEAR_END = pd.to_datetime('today')
     else: 
@@ -165,8 +165,8 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     # 2 for small dataset (first 100 of each file)
     RunFast = False  # True skip slow formating; False run normal
     New_Data_On_Run_Test = False #to generate a new labeled dataset on run
-    LOGBUG = True #True to log, False to not
-    FLAG_DUPLICATE = 0  # 1 FLAG_DUPLICATE duplicate, #0 drop duplicates
+    LOGBUG = False #True to log, False to not
+    FLAG_DUPLICATE = 4  # 1 FLAG_DUPLICATE duplicate, #0 drop duplicates
     # Settings Internal - end
 
     # Settings Internal that will Move to UI Options - start
@@ -318,7 +318,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     else: #read new files from url source
         
-        TEMP_TARGET_INDUSTRY = industriesDict['WTC NAICS']
+        TEMP_TARGET_INDUSTRY = industriesDict['All NAICS']
 
         #Test file
         url0 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv" #<-- open and edit this file with test data
@@ -338,7 +338,6 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         TEST1 = "https://stanford.edu/~granite/WageClaimDataExport_State_Construction_Jan_8_2024.csv"
         TEST2 = "https://stanford.edu/~granite/ExportData_Judge_state_NAISC_23_Jan_8_2024.csv"
         TEST3 = "https://stanford.edu/~granite/ExportData_Judge_state_NAISC_5413_Jan_8_2024.csv"
-
 
         url_list = [
             [url0, includeTestData,'TEST'], 
@@ -3924,6 +3923,16 @@ def read_from_url(url, TEST_CASES, trigger):
                                  encoding='utf8', sep=',', nrows=TEST_CASES, on_bad_lines="skip")
         
     return df_csv
+
+def read_csv_from_url(url):
+    df = pd.DataFrame()
+
+    req = requests.get(url)
+    buf = io.BytesIO(req.content)
+
+    df = pd.read_csv(buf, low_memory=False, encoding='utf8', sep=',', on_bad_lines="skip")
+
+    return df
 
 
 def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY, prevailing_wage_report, federal_data, \
