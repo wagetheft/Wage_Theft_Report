@@ -56,7 +56,7 @@ def generateFile():
     if include_summaries == 1:
         include_tables = 1
     if parameters["target_industry"] == "":
-        target_industry = "WTC NAICS"
+        target_industry = "ALL NAICS"
     if parameters["target_city"] == "":
         target_county = "Santa_Clara_County"
     if parameters["includeStateJudgements"] == 1 or parameters["includeStateCases"] == 1:
