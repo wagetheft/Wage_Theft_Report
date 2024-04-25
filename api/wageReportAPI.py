@@ -30,18 +30,18 @@ def generateFile():
     includeStateJudgements = parameters["includeStateJudgements"] if "includeStateJudgements" in parameters else 0
     includeStateCases = parameters["includeStateCases"] if "includeStateCases" in parameters else 0
     
-    infer_zip = parameters["infer_zip"]
+    infer_zip = parameters["infer_zip"] if "infer_zip" in parameters else 0
     use_assumptions = True #parameters["use_assumptions"] if "use_assumptions" in parameters else "1"
-    infer_by_naics = parameters["infer_by_naics"]
+    infer_by_naics = parameters["infer_by_naics"] if "infer_by_naics" in parameters else 0
 
-    open_cases_only = parameters["open_cases_only"]
-    prevailing_wage_report = parameters["prevailing_wage_report"]
-    signatories_report = parameters["signatories_report"]
+    open_cases_only = parameters["open_cases_only"] if "open_cases_only" in parameters else 0
+    prevailing_wage_report = parameters["prevailing_wage_report"] if "prevailing_wage_report" in parameters else 0
+    signatories_report = parameters["signatories_report"] if "signatories_report" in parameters else 0
 
-    include_tables = parameters["include_tables"]
-    include_summaries = parameters["include_summaries"]
-    only_sig_summaries = parameters["only_sig_summaries"]
-    include_top_viol_tables = parameters["include_top_viol_tables"]
+    include_tables = parameters["include_tables"] if "include_tables" in parameters else 0
+    include_summaries = parameters["include_summaries"] if "include_summaries" in parameters else 0
+    only_sig_summaries = parameters["only_sig_summaries"] if "only_sig_summaries" in parameters else 0
+    include_top_viol_tables = parameters["include_top_viol_tables"] if "include_top_viol_tables" in parameters else 0
     
     YEAR_START_TEXT = parameters["YEAR_START"] if "YEAR_START" in parameters else ''
     YEAR_END_TEXT = parameters["YEAR_END"] if "YEAR_END" in parameters else 'today'
