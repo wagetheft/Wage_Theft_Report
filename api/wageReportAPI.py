@@ -21,7 +21,9 @@ def generateFile():
     target_state = parameters["target_state"] if "target_state" in parameters else ""
     target_county = parameters["target_county"] if "target_county" in parameters else ""
     target_city = parameters["target_city"] if "target_city" in parameters else ""
+
     target_industry = parameters["target_industry"]
+
     target_organization = parameters["target_organization"] if "target_organization" in parameters else ""
     
     includeFedData = parameters["includeFedData"]
@@ -31,10 +33,11 @@ def generateFile():
     infer_zip = parameters["infer_zip"]
     use_assumptions = True #parameters["use_assumptions"] if "use_assumptions" in parameters else "1"
     infer_by_naics = parameters["infer_by_naics"]
-    open_cases_only = parameters["open_cases_only"]
 
+    open_cases_only = parameters["open_cases_only"]
     prevailing_wage_report = parameters["prevailing_wage_report"]
     signatories_report = parameters["signatories_report"]
+
     include_tables = parameters["include_tables"]
     include_summaries = parameters["include_summaries"]
     only_sig_summaries = parameters["only_sig_summaries"]
@@ -57,8 +60,8 @@ def generateFile():
         include_tables = 1
     if parameters["target_industry"] == "":
         target_industry = "ALL NAICS"
-    if parameters["target_city"] == "":
-        target_county = "Santa_Clara_County"
+    if parameters["target_city"] == "" and parameters["target_county"] == "":
+        target_state = "California"
     if parameters["includeStateJudgements"] == 1 or parameters["includeStateCases"] == 1:
         infer_zip = 1
         infer_by_naics = 1
