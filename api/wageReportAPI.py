@@ -26,9 +26,9 @@ def generateFile():
 
     target_organization = parameters["target_organization"] if "target_organization" in parameters else ""
     
-    includeFedData = parameters["includeFedData"]
-    includeStateJudgements = parameters["includeStateJudgements"]
-    includeStateCases = parameters["includeStateCases"]
+    includeFedData = parameters["includeFedData"] if "includeFedData" in parameters else 0
+    includeStateJudgements = parameters["includeStateJudgements"] if "includeStateJudgements" in parameters else 0
+    includeStateCases = parameters["includeStateCases"] if "includeStateCases" in parameters else 0
     
     infer_zip = parameters["infer_zip"]
     use_assumptions = True #parameters["use_assumptions"] if "use_assumptions" in parameters else "1"
