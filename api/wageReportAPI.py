@@ -80,8 +80,9 @@ def generateFile():
         return "Server error", 500
 
 def checkValidInput(inputDict: dict) -> bool:
-    toCheck = ["target_city", "target_industry", "target_organization", "includeFedData", "includeStateJudgements", "includeStateCases",
-                "infer_zip", "prevailing_wage_report", "signatories_report", "open_cases_only", "include_tables", "include_summaries",
-                "only_sig_summaries",  "include_top_viol_tables",  "use_assumptions",  "infer_by_naics", "YEAR_START", "YEAR_END"]
+    toCheck = ["target_city", "target_industry", "target_organization", 
+               "includeFedData", "includeStateJudgements", "includeStateCases", "infer_zip", "prevailing_wage_report", "signatories_report", 
+               "open_cases_only", "include_tables", "include_summaries", "only_sig_summaries", 
+               "include_top_viol_tables",  "use_assumptions",  "infer_by_naics", "YEAR_START", "YEAR_END"]
     return all(key in inputDict for key in toCheck)
 

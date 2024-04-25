@@ -85,8 +85,8 @@ def main():
     PARAM_1_TARGET_STATE = "" #"California"
     PARAM_1_TARGET_COUNTY = "Santa_Clara_County" #"Santa_Clara_County"
     PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode"
-    PARAM_2_TARGET_INDUSTRY = "WTC NAICS" #'WTC NAICS' #"Janitorial" #"Construction" #for test use 'WTC NAICS' or 'All NAICS'
-    PARAM_3_TARGET_ORGANIZATION = "" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
+    PARAM_2_TARGET_INDUSTRY = "All NAICS" #"Janitorial" #"Construction" #for test use 'All NAICS'
+    PARAM_3_TARGET_ORGANIZATION = "Granite Construction" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
     
     PARAM_YEAR_START = "2000/01/01" # default is 'today' - years=4 #or "2016/05/01"
     PARAM_YEAR_END = "" #default is 'today'
@@ -125,10 +125,12 @@ def main():
                        OPEN_CASES, TABLES, SUMMARY, SUMMARY_SIG, 
                        TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS,PARAM_YEAR_START, PARAM_YEAR_END)
 
+
 # Functions*************************************************
 
 
-def generateWageReport(target_state, target_county, target_city, target_industry, target_organization,
+def generateWageReport(target_state, target_county, target_city, target_industry, 
+                        target_organization,
                         includeFedData, includeStateJudgements, includeStateCases, infer_zip, prevailing_wage_report, signatories_report,
                         open_cases_only, include_tables, include_summaries, only_sig_summaries, 
                         include_top_viol_tables, use_assumptions, infer_by_naics, YEAR_START_TEXT, YEAR_END_TEXT):
@@ -140,7 +142,8 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     use_assumptions = 1
     include_methods = True
     if target_industry == "": target_industry = "All NAICS"
-    if target_city == "": target_city = "All_Zipcode"
+    if (target_state == "") and (target_county == "") and (target_city == ""): target_state = "California"
+    
     if YEAR_START_TEXT == "":
         YEAR_START = pd.to_datetime('today') - pd.DateOffset(years=4)
     else:
