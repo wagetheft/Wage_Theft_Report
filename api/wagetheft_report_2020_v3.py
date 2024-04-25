@@ -169,7 +169,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     RunFast = False  # True skip slow formating; False run normal
     New_Data_On_Run_Test = False #to generate a new labeled dataset on run
     LOGBUG = False #True to log, False to not
-    FLAG_DUPLICATE = 4  # 1 FLAG_DUPLICATE duplicate, #0 drop duplicates
+    FLAG_DUPLICATE = 0  # 1 FLAG_DUPLICATE duplicate, #0 drop duplicates
     # Settings Internal - end
 
     # Settings Internal that will Move to UI Options - start
