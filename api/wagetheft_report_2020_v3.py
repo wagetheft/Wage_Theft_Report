@@ -141,7 +141,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     # Defaults start
     use_assumptions = 1
     include_methods = True
-    if target_industry == "": target_industry = "All NAICS"
+    #if target_industry == "": target_industry = "All NAICS"
     if (target_state == "") and (target_county == "") and (target_city == ""): target_state = "California"
     
     if YEAR_START_TEXT == "":
