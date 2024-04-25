@@ -60,14 +60,15 @@ def generateFile():
         include_tables = 1
     
     #if parameters["target_industry"] == "":
-    #    target_industry = "ALL NAICS"
     if target_industry == "":
         target_industry = "ALL NAICS"
 
-    if parameters["target_city"] == "" and parameters["target_county"] == "":
+    #if parameters["target_county"] == "" and parameters["target_city"] == "" :
+    if target_county == "" and target_city ==  "":
         target_state = "California"
     
-    if parameters["includeStateJudgements"] == 1 or parameters["includeStateCases"] == 1:
+    #if parameters["includeStateJudgements"] == 1 or parameters["includeStateCases"] == 1:
+    if includeStateJudgements == 1 or includeStateCases == 1:
         infer_zip = 1
         infer_by_naics = 1
 
