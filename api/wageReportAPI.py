@@ -31,7 +31,7 @@ def generateFile():
     includeStateCases = parameters["includeStateCases"] if "includeStateCases" in parameters else 0
     
     infer_zip = parameters["infer_zip"] if "infer_zip" in parameters else 0
-    use_assumptions = True #parameters["use_assumptions"] if "use_assumptions" in parameters else "1"
+    use_assumptions = 1 #parameters["use_assumptions"] if "use_assumptions" in parameters else "1"
     infer_by_naics = parameters["infer_by_naics"] if "infer_by_naics" in parameters else 0
 
     open_cases_only = parameters["open_cases_only"] if "open_cases_only" in parameters else 0
