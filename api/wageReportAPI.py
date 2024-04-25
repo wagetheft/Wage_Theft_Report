@@ -59,10 +59,14 @@ def generateFile():
     if include_summaries == 1 and include_tables == 0:
         include_tables = 1
     
-    if parameters["target_industry"] == "":
+    #if parameters["target_industry"] == "":
+    #    target_industry = "ALL NAICS"
+    if target_industry == "":
         target_industry = "ALL NAICS"
+
     if parameters["target_city"] == "" and parameters["target_county"] == "":
         target_state = "California"
+    
     if parameters["includeStateJudgements"] == 1 or parameters["includeStateCases"] == 1:
         infer_zip = 1
         infer_by_naics = 1
