@@ -56,8 +56,9 @@ def generateFile():
     if only_sig_summaries == 1:
         include_summaries = 1
         include_tables = 1
-    if include_summaries == 1:
+    if include_summaries == 1 and include_tables == 0:
         include_tables = 1
+    
     if parameters["target_industry"] == "":
         target_industry = "ALL NAICS"
     if parameters["target_city"] == "" and parameters["target_county"] == "":
@@ -68,8 +69,8 @@ def generateFile():
 
 
     #out it goes
-    report_file_name = generateWageReport(target_state, target_county, target_city, target_industry, target_organization, includeFedData, \
-                                          includeStateJudgements, includeStateCases, infer_zip, prevailing_wage_report, signatories_report, \
+    report_file_name = generateWageReport(target_state, target_county, target_city, target_industry, target_organization, \
+                                          includeFedData, includeStateJudgements, includeStateCases, infer_zip, prevailing_wage_report, signatories_report, \
                                             open_cases_only, include_tables, include_summaries, only_sig_summaries, \
                                             include_top_viol_tables, use_assumptions, infer_by_naics, YEAR_START_TEXT, YEAR_END_TEXT)
 
