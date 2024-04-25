@@ -22,7 +22,7 @@ def generateFile():
     target_county = parameters["target_county"] if "target_county" in parameters else ""
     target_city = parameters["target_city"] if "target_city" in parameters else ""
 
-    target_industry = parameters["target_industry"] if "target_industry" in parameters else ""
+    target_industry = parameters["target_industry"] if "target_industry" in parameters else "ALL NAICS"
 
     target_organization = parameters["target_organization"] if "target_organization" in parameters else ""
     
