@@ -60,8 +60,8 @@ def generateFile():
         include_tables = 1
     
     #if parameters["target_industry"] == "":
-    if target_industry == "":
-        target_industry = "ALL NAICS"
+    #if target_industry == "":
+    #    target_industry = "ALL NAICS"
 
     #if parameters["target_county"] == "" and parameters["target_city"] == "" :
     if target_county == "" and target_city ==  "":
