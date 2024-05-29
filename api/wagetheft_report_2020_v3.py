@@ -83,9 +83,9 @@ warnings.filterwarnings("ignore", 'This pattern has match groups')
 def main():
     # settings****************************************************
     PARAM_1_TARGET_STATE = "" #"California"
-    PARAM_1_TARGET_COUNTY = "Santa_Clara_County" #"Santa_Clara_County"
+    PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
     PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode"
-    PARAM_2_TARGET_INDUSTRY = "All NAICS" #"Janitorial" #"Construction" #for test use 'All NAICS'
+    PARAM_2_TARGET_INDUSTRY = "" #"Janitorial" #"Construction" #for test use 'All NAICS'
     PARAM_3_TARGET_ORGANIZATION = "Granite Construction" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
     
     PARAM_YEAR_START = "2000/01/01" # default is 'today' - years=4 #or "2016/05/01"
@@ -137,6 +137,9 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     warnings.filterwarnings("ignore", category=UserWarning)
     start_time = time.time()
+
+    #temp fix
+    include_top_viol_tables = 0 #5/29/2024 temp fix bug
 
     # Defaults start
     use_assumptions = 1
@@ -4388,8 +4391,8 @@ def Industry_Summary_Block(out_counts, df, total_ee_violtd, total_bw_atp, total_
                 textFile.write(str.format(
                     '{0:,.0f}', ((total_bw_atp//total_ee_violtd) * .125) ) )
                 textFile.write(" monetary penalty per employee violated ) ")
-                textFile.write("</i> \n")
-        textFile.write("</p>")
+                textFile.write("</i>")
+        textFile.write("</p> \n")
 
     if 'backwage_owed' not in out_counts.columns: #<-- probably a problem point
         out_counts['backwage_owed'] = 0
