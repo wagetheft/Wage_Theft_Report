@@ -86,7 +86,7 @@ def main():
     PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
     PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode"
     PARAM_2_TARGET_INDUSTRY = "" #"Janitorial" #"Construction" #for test use 'All NAICS'
-    PARAM_3_TARGET_ORGANIZATION = "Granite Construction" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
+    PARAM_3_TARGET_ORGANIZATION = "Made Up Name Test" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
     
     PARAM_YEAR_START = "2000/01/01" # default is 'today' - years=4 #or "2016/05/01"
     PARAM_YEAR_END = "" #default is 'today'
@@ -137,9 +137,6 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     warnings.filterwarnings("ignore", category=UserWarning)
     start_time = time.time()
-
-    #temp fix
-    include_top_viol_tables = 0 #5/29/2024 temp fix bug
 
     # Defaults start
     use_assumptions = 1
@@ -623,21 +620,27 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     # TABLES
     time_1 = time.time()
-    if include_tables == 1:
+    
+    if (include_tables == 1) and (len(unique_legalname.index) != 0):
         print_table_html_by_industry_and_city(temp_file_name, unique_legalname, header_two_way_table)
         print_table_html_by_industry_and_zipcode(temp_file_name, unique_legalname, header_two_way_table)
 
-    if include_summaries == 1: 
+    if (include_summaries == 1) and (len(unique_legalname.index) != 0): 
         print_table_html_Text_Summary(include_summaries, temp_file_name, unique_legalname, header_two_way, header_two_way_table,
             total_ee_violtd, total_case_violtn, only_sig_summaries, TARGET_INDUSTRY)
 
-    if include_top_viol_tables == 1:
+    if (include_top_viol_tables == 1)  and (len(unique_address.index) != 0):
         print_top_viol_tables_html(out_target, unique_address, unique_legalname2, 
             unique_tradename, unique_agency, unique_owner, agency_df, out_sort_ee_violtd, 
             out_sort_bw_amt, out_sort_repeat_violtd, temp_file_name, signatories_report,
             out_signatory_target, sig_file_name_csv, prevailing_header, header, multi_agency_header, 
             dup_agency_header, dup_header, dup_owner_header, prevailing_wage_report, out_prevailing_target, 
             prev_file_name_csv, TEST_)
+        
+    if (len(unique_legalname.index) == 0) and (len(unique_address.index) == 0):
+        textFile = open(temp_file_name, 'a')
+        textFile.write("<p> There were no records found to report.</p> \n")
+    
     time_2 = time.time()
 
     if include_methods:
