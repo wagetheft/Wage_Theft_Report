@@ -138,6 +138,9 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     warnings.filterwarnings("ignore", category=UserWarning)
     start_time = time.time()
 
+    #temp fix
+    include_top_viol_tables = 0 #5/29/2024 temp fix bug
+
     # Defaults start
     use_assumptions = 1
     include_methods = True
@@ -1328,6 +1331,13 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             </html>
             '''
 
+        with open(temp_file_name, 'a', encoding='utf-8') as f:  # append to report main file
+                f.write(result)
+    else:
+        result += '''
+            </body>
+            </html>
+            '''
         with open(temp_file_name, 'a', encoding='utf-8') as f:  # append to report main file
                 f.write(result)
 
