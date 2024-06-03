@@ -139,7 +139,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     start_time = time.time()
 
     #temp fix
-    include_top_viol_tables = 0 #5/29/2024 temp fix bug
+    #include_top_viol_tables = 0 #5/29/2024 temp fix bug
 
     # Defaults start
     use_assumptions = 1
