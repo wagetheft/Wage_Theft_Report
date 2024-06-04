@@ -1087,30 +1087,33 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
     out_signatory_target, sig_file_name_csv, prevailing_header, header, multi_agency_header, dup_agency_header, dup_header, 
     dup_owner_header, prevailing_wage_report, out_prevailing_target, prev_file_name_csv, TEST):
 
-    if not df.empty:
+    if not df.empty and (len(unique_address) != 0):
         import matplotlib
 
-        # format
-        #unique_address = Clean_Repeat_Violator_HTML_Row(unique_address, 'street_addr') #removed 4/18/2024 -- F.Peterson, I have no idea what this did: looks like added 'no records' to some rows
-        unique_address = FormatNumbersHTMLRow(unique_address)
+        
+        TEST = True
+        if TEST == False:
+            # format
+            #unique_address = Clean_Repeat_Violator_HTML_Row(unique_address, 'street_addr') #removed 4/18/2024 -- F.Peterson, I have no idea what this did: looks like added 'no records' to some rows
+            unique_address = FormatNumbersHTMLRow(unique_address)
 
-        #unique_legalname2 = Clean_Repeat_Violator_HTML_Row(unique_legalname2, 'legal_nm')
-        unique_legalname2 = FormatNumbersHTMLRow(unique_legalname2)
+            #unique_legalname2 = Clean_Repeat_Violator_HTML_Row(unique_legalname2, 'legal_nm')
+            unique_legalname2 = FormatNumbersHTMLRow(unique_legalname2)
 
-        #unique_tradename = Clean_Repeat_Violator_HTML_Row(unique_tradename, 'trade_nm')
-        unique_tradename = FormatNumbersHTMLRow(unique_tradename)
+            #unique_tradename = Clean_Repeat_Violator_HTML_Row(unique_tradename, 'trade_nm')
+            unique_tradename = FormatNumbersHTMLRow(unique_tradename)
 
-        #unique_agency = Clean_Repeat_Violator_HTML_Row(unique_agency, 'juris_or_proj_nm')
-        unique_agency = FormatNumbersHTMLRow(unique_agency)
+            #unique_agency = Clean_Repeat_Violator_HTML_Row(unique_agency, 'juris_or_proj_nm')
+            unique_agency = FormatNumbersHTMLRow(unique_agency)
 
-        #unique_owner = Clean_Repeat_Violator_HTML_Row(unique_owner, 'Jurisdiction_region_or_General_Contractor')
-        unique_owner = FormatNumbersHTMLRow(unique_owner)
+            #unique_owner = Clean_Repeat_Violator_HTML_Row(unique_owner, 'Jurisdiction_region_or_General_Contractor')
+            unique_owner = FormatNumbersHTMLRow(unique_owner)
 
-        agency_df = FormatNumbersHTMLRow(agency_df)
+            agency_df = FormatNumbersHTMLRow(agency_df)
 
-        out_sort_ee_violtd = FormatNumbersHTMLRow(out_sort_ee_violtd)
-        out_sort_bw_amt = FormatNumbersHTMLRow(out_sort_bw_amt)
-        out_sort_repeat_violtd = FormatNumbersHTMLRow(out_sort_repeat_violtd)
+            out_sort_ee_violtd = FormatNumbersHTMLRow(out_sort_ee_violtd)
+            out_sort_bw_amt = FormatNumbersHTMLRow(out_sort_bw_amt)
+            out_sort_repeat_violtd = FormatNumbersHTMLRow(out_sort_repeat_violtd)
 
         df.plot()  # table setup
 
