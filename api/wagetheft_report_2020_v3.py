@@ -86,7 +86,7 @@ def main():
     PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
     PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode"
     PARAM_2_TARGET_INDUSTRY = "" #"Janitorial" #"Construction" #for test use 'All NAICS'
-    PARAM_3_TARGET_ORGANIZATION = "Made Up Name Test" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
+    PARAM_3_TARGET_ORGANIZATION = "" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
     
     PARAM_YEAR_START = "2000/01/01" # default is 'today' - years=4 #or "2016/05/01"
     PARAM_YEAR_END = "" #default is 'today'
@@ -137,9 +137,6 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     warnings.filterwarnings("ignore", category=UserWarning)
     start_time = time.time()
-
-    #temp fix
-    #include_top_viol_tables = 0 #5/29/2024 temp fix bug
 
     # Defaults start
     use_assumptions = 1
@@ -1149,8 +1146,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             <body>
             '''
 
-    TEST = False
-    if not df.empty and (len(unique_address) != 0) and (TEST == False):
+    if not df.empty and (len(unique_address) != 0):
         import matplotlib
 
         # format
