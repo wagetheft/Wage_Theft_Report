@@ -1347,12 +1347,16 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             # f.write(str.format('{0:,.0f}',out_sort_prevailing_wage['violtn_cnt'].sum() ) )
             # f.write("</p> \n")
 
-            f.write("\n")
             # 12/25/2021 added "float_format=lambda x: '%10.2f' % x" per https://stackoverflow.com/questions/14899818/format-output-data-in-pandas-to-html
             out_sort_prevailing_wage.to_html(
                 f, max_rows=3000, columns=prevailing_header, index=False, float_format=lambda x: '%10.2f' % x)
 
-            f.write("\n")
+            result += ("\n") + out_sort_prevailing_wage + ("\n")
+
+
+        else:
+            result += "<p> There are no prevailing wage cases to report.</p> \n"
+            
         
     result += '''
         </body>
