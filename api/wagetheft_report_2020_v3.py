@@ -1334,14 +1334,14 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             </html>
             '''
 
-        with open(temp_file_name, 'a', encoding='utf-8') as f:  # append to report main file
+        with open(temp_file_name, mode='a', encoding='utf-8') as f:  # append to report main file
                 f.write(result)
     else:
         result += '''
             </body>
             </html>
             '''
-        with open(temp_file_name, 'a', encoding='utf-8') as f:  # append to report main file
+        with open(temp_file_name, mode='a', encoding='utf-8') as f:  # append to report main file
                 f.write(result)
 
 
