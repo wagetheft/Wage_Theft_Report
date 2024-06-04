@@ -86,7 +86,7 @@ def main():
     PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
     PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode"
     PARAM_2_TARGET_INDUSTRY = "" #"Janitorial" #"Construction" #for test use 'All NAICS'
-    PARAM_3_TARGET_ORGANIZATION = "" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
+    PARAM_3_TARGET_ORGANIZATION = "Granite Construction" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
     
     PARAM_YEAR_START = "2000/01/01" # default is 'today' - years=4 #or "2016/05/01"
     PARAM_YEAR_END = "" #default is 'today'
@@ -468,6 +468,18 @@ def generateWageReport(target_state, target_county, target_city, target_industry
             if 'DIR_Case_Name' in out_target.columns:
                 out_target['DIR_Case_Name'] = np.where(
                     out_target['Signatory'] == 1, "masked", out_target['DIR_Case_Name'])
+                
+            out_target_organization['legal_nm'] = np.where(
+                out_target_organization['Signatory'] == 1, "masked", out_target_organization['legal_nm'])
+            out_target_organization['trade_nm'] = np.where(
+                out_target_organization['Signatory'] == 1, "masked", out_target_organization['trade_nm'])
+            out_target_organization['street_addr'] = np.where(
+                out_target_organization['Signatory'] == 1, "masked", out_target_organization['street_addr'])
+            out_target_organization['case_id_1'] = np.where(
+                out_target_organization['Signatory'] == 1, "masked", out_target_organization['case_id_1'])
+            if 'DIR_Case_Name' in out_target_organization.columns:
+                out_target_organization['DIR_Case_Name'] = np.where(
+                    out_target_organization['Signatory'] == 1, "masked", out_target_organization['DIR_Case_Name'])
             time_2 = time.time()
             log_number = "optional signatory report"
             append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -642,7 +654,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     if (include_summaries == 1) and (len(unique_legalname.index) != 0): 
         print_table_html_Text_Summary(include_summaries, temp_file_name, unique_legalname, header_two_way, header_two_way_table,
             total_ee_violtd, total_case_violtn, only_sig_summaries, TARGET_INDUSTRY)
-
+    
     if (include_top_viol_tables == 1): #and (len(unique_address.index) != 0)
         print_top_viol_tables_html(out_target_all, unique_address, unique_legalname2, 
             unique_tradename, unique_agency, unique_owner, agency_df, out_sort_ee_violtd, 
@@ -1315,26 +1327,26 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             out_sort_prevailing_wage['ee_pmt_recv'] = out_sort_prevailing_wage.apply(
                 lambda x: "{0:,.0f}".format(x['ee_pmt_recv']), axis=1)
 
-            f.write("<P style='page-break-before: always'>")
+            result += "<P style='page-break-before: always'>"
             out_sort_prevailing_wage.to_csv(prev_file_name_csv)
 
-            f.write("<h3>All prevailing wage violators</h3> \n")
+            result += "<h3>All prevailing wage violators</h3> \n"
 
-            f.write("<p>Prevailing wage theft cases: ")
-            f.write(str.format('{0:,.0f}', len(
-                out_sort_prevailing_wage.index)))
+            result += "<p>Prevailing wage theft cases: "
+            result += str.format('{0:,.0f}', len(
+                out_sort_prevailing_wage.index))
             #f.write(str.format('{0:,.0f}',len(out_sort_prevailing_wage['records'].sum() ) ) )
-            f.write("</p> \n")
+            result += "</p> \n"
 
-            f.write("<p>Total prevailing wage theft: $")
-            f.write(str.format(
-                '{0:,.0f}', out_sort_prevailing_wage['bw_amt'].sum()))
-            f.write("</p> \n")
+            result += "<p>Total prevailing wage theft: $"
+            result += str.format(
+                '{0:,.0f}', out_sort_prevailing_wage['bw_amt'].sum())
+            result +="</p> \n"
 
-            f.write("<p>Total prevailing wage theft: $")
-            f.write(str.format(
-                '{0:,.0f}', out_sort_prevailing_wage['bw_amt'].sum()))
-            f.write("</p> \n")
+            result += "<p>Total prevailing wage theft: $"
+            result += str.format(
+                '{0:,.0f}', out_sort_prevailing_wage['bw_amt'].sum())
+            result += "</p> \n"
 
             # buggy 6/14/2021
             # f.write("<p>Prevailing wage employees violated: ")
@@ -1348,10 +1360,10 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             # f.write("</p> \n")
 
             # 12/25/2021 added "float_format=lambda x: '%10.2f' % x" per https://stackoverflow.com/questions/14899818/format-output-data-in-pandas-to-html
-            out_sort_prevailing_wage.to_html(
-                f, max_rows=3000, columns=prevailing_header, index=False, float_format=lambda x: '%10.2f' % x)
+            html_text_table = out_sort_prevailing_wage.to_html(
+                max_rows=24, columns=prevailing_header, index=False, float_format=lambda x: '%10.2f' % x)
 
-            result += ("\n") + out_sort_prevailing_wage + ("\n")
+            result += "\n" + html_text_table + "\n"
 
 
         else:
