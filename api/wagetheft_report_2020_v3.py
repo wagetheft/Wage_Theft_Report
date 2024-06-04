@@ -104,9 +104,9 @@ def main():
     # report output block settings****************************************************
     TABLES = 1  # 1 for tables and 0 for just text description
     SUMMARY = 1  # 1 for summaries and 0 for none
-    SUMMARY_SIG = 0 # 1 for summaries only of regions with significant wage theft (more than $10,000), 0 for all
+    SUMMARY_SIG = 1 # 1 for summaries only of regions with significant wage theft (more than $10,000), 0 for all
     TOP_VIOLATORS = 1  # 1 for tables of top violators and 0 for none
-    prevailing_wage_report = 0 # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
+    prevailing_wage_report = 1 # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
     signatories_report = 0 # 1 to include signatories (typically, this report is only for union compliance officers) 0 to exclude signatories
 
     #!!!manually add to report***********************************************************
@@ -1660,6 +1660,7 @@ def RemoveCompletedCases(df):
 
             (df["Case Status"] != 'Closed-Claimant Judgment') &
             (df["Case Status"] != 'Closed - Satisfied') &
+            (df["Case Status"] != 'Closed') &
             #(df["Case Status"] != 'Open - Partial Payment/Satisfaction') &
 
             (df["Case Status"] != 'Dismissed   Claimant Withdrew') &
@@ -1864,26 +1865,30 @@ def InferAgencyFromCaseIDAndLabel(df, LABEL_COLUMN):
 
 def InferSignatoriesFromNameAndFlag(df, SIGNATORY_INDUSTRY):
 
-    if 'legal_nm' and 'trade_nm' in df.columns:
-        if "Signatory" not in df.columns:
-            df["Signatory"] = 0
+    if 'legal_nm' not in df.columns:
+        df['legal_nm'] = 0
 
+    if 'trade_nm' not in df.columns:
+        df['trade_nm'] = 0
+    
+    if "Signatory" not in df.columns:
+        df["Signatory"] = 0
+
+    for x in range(1, len(SIGNATORY_INDUSTRY)):
+        PATTERN_EXCLUDE = EXCLUSION_LIST_GENERATOR(
+            SIGNATORY_INDUSTRY[x][1])
         
+        PATTERN_IND = '|'.join(SIGNATORY_INDUSTRY[x][1])
 
-        for x in range(1, len(SIGNATORY_INDUSTRY)):
-            PATTERN_EXCLUDE = EXCLUSION_LIST_GENERATOR(
-                SIGNATORY_INDUSTRY[x][1])
-            PATTERN_IND = '|'.join(SIGNATORY_INDUSTRY[x][1])
-
-            foundIt_sig = (
-                (
-                    df['legal_nm'].str.contains(PATTERN_IND, na=False, flags=re.IGNORECASE, regex=True) &
-                    ~df['legal_nm'].str.contains(PATTERN_EXCLUDE, na=False, flags=re.IGNORECASE, regex=True)) |
-                (
-                    df['trade_nm'].str.contains(PATTERN_IND, na=False, flags=re.IGNORECASE, regex=True) &
-                    ~df['trade_nm'].str.contains(PATTERN_EXCLUDE, na=False, flags=re.IGNORECASE, regex=True))
-            )
-            df.loc[foundIt_sig, "Signatory"] = 1
+        foundIt_sig = (
+            (
+                df['legal_nm'].str.contains(PATTERN_IND, case = False) &
+                ~df['legal_nm'].str.contains(PATTERN_EXCLUDE, case = False)) |
+            (
+                df['trade_nm'].str.contains(PATTERN_IND, case = False) &
+                ~df['trade_nm'].str.contains(PATTERN_EXCLUDE, case = False))
+        )
+        df.loc[foundIt_sig, "Signatory"] = 1
 
     return df
 
