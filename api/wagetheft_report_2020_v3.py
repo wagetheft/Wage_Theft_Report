@@ -139,7 +139,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     start_time = time.time()
 
     #temp fix
-    include_top_viol_tables = 0 #5/29/2024 temp fix bug
+    #include_top_viol_tables = 0 #5/29/2024 temp fix bug
 
     # Defaults start
     use_assumptions = 1
@@ -393,10 +393,6 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         infer_zip, infer_by_naics, TARGET_ORGANIZATIONS, YEAR_START, YEAR_END, target_state, 
         bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv)
     
-    out_target = filter_function(out_target, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only, 
-        infer_zip, infer_by_naics, TARGET_ORGANIZATIONS, YEAR_START, YEAR_END, target_state, 
-        bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv)
-    
     if signatories_report:
         time_1 = time.time()
         out_target = infer_signatory_cases(out_target, SIGNATORY_INDUSTRY)
@@ -426,10 +422,12 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     #*****EXTRACT VALUES FOR REPORT
     time_1 = time.time()
     case_disposition_series = out_target['Case Status'].copy()
+
+    out_target_organization = filter_function_organization(out_target, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv)
     
-    total_ee_violtd = out_target['ee_violtd_cnt'].sum()
-    total_bw_atp = out_target['bw_amt'].sum()
-    total_case_violtn = out_target['violtn_cnt'].sum()
+    total_ee_violtd = out_target_organization['ee_violtd_cnt'].sum()
+    total_bw_atp = out_target_organization['bw_amt'].sum()
+    total_case_violtn = out_target_organization['violtn_cnt'].sum()
 
     time_2 = time.time()
     log_number = "3 copy column and sum columns"
@@ -480,8 +478,10 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     
     time_1 = time.time()
     # added to prevent bug that outputs 2x
+    out_target_organization = out_target_organization.drop_duplicates(keep='last')
     out_target = out_target.drop_duplicates(keep='last')
-    out_target.to_csv(temp_file_name_csv, encoding="utf-8-sig")
+
+    out_target_organization.to_csv(temp_file_name_csv, encoding="utf-8-sig")
     time_2 = time.time()
     log_number = "6 drop_duplicates + print backup"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -501,11 +501,11 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     
     # group repeat offenders************************************
     time_1 = time.time()
-    out_counts = out_target.copy()  # hold for case counts
-
-    out_target_organization = filter_function_organization(out_target, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv)
+    
+    out_counts = out_target_organization.copy()  # hold for case counts
 
     unique_legalname = GroupByX(out_target_organization, 'legal_nm')
+    unique_legalname_all = GroupByX(out_target, 'legal_nm')
 
     unique_address = GroupByMultpleCases(out_target, 'street_addr')
     unique_legalname2 = GroupByMultpleCases(out_target, 'legal_nm')
@@ -514,8 +514,9 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     unique_owner = GroupByMultpleCases(
         out_target, 'Jurisdiction_region_or_General_Contractor')
     agency_df = GroupByMultpleAgency(out_target)
+    agency_df_organization = GroupByMultpleAgency(out_target_organization)
 
-    out_target = unique_legalname.copy()
+    out_target_all = unique_legalname_all.copy()
     time_2 = time.time()
     log_number = "8 group by eight criteria"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -524,10 +525,10 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     # sort for table
     time_1 = time.time()
-    out_sort_ee_violtd = out_target.sort_values(
+    out_sort_ee_violtd = out_target_all.sort_values(
         by=['ee_violtd_cnt'], ascending=False)
-    out_sort_bw_amt = out_target.sort_values(by=['bw_amt'], ascending=False)
-    out_sort_repeat_violtd = out_target.sort_values(
+    out_sort_bw_amt = out_target_all.sort_values(by=['bw_amt'], ascending=False)
+    out_sort_repeat_violtd = out_target_all.sort_values(
         by=['records'], ascending=False)
         
 
@@ -542,6 +543,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     unique_agency = unique_agency.sort_values(by=['records'], ascending=False)
     unique_owner = unique_owner.sort_values(by=['records'], ascending=False)
     agency_df = agency_df.sort_values(by=['records'], ascending=False)
+    agency_df_organization = agency_df_organization.sort_values(by=['records'], ascending=False)
     time_2 = time.time()
     log_number = "9 sort a series of different"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -608,10 +610,14 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     #    do_nothing = "<p>Purposful Omission of Industry Summary Block</p>"
     #else:
     Industry_Summary_Block(out_counts, out_counts, total_ee_violtd, total_bw_atp,
-        total_case_violtn, unique_legalname, agency_df, open_cases_only, textFile)
+        total_case_violtn, unique_legalname, agency_df_organization, open_cases_only, textFile)
     Proportion_Summary_Block(out_counts, total_ee_violtd, total_bw_atp,
-        total_case_violtn, unique_legalname, agency_df, YEAR_START, YEAR_END, open_cases_only, 
+        total_case_violtn, unique_legalname, agency_df_organization, YEAR_START, YEAR_END, open_cases_only, 
         target_jurisdition, TARGET_INDUSTRY, case_disposition_series, textFile, bug_log_csv)
+
+    if (len(unique_legalname.index) == 0):
+        textFile = open(temp_file_name, 'a')
+        textFile.write("<p> There were no records found to report.</p> \n")
 
     textFile.write("<HR> </HR>")  # horizontal line
 
@@ -639,17 +645,13 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         print_table_html_Text_Summary(include_summaries, temp_file_name, unique_legalname, header_two_way, header_two_way_table,
             total_ee_violtd, total_case_violtn, only_sig_summaries, TARGET_INDUSTRY)
 
-    if (include_top_viol_tables == 1) and (len(unique_address.index) != 0):
-        print_top_viol_tables_html(out_target, unique_address, unique_legalname2, 
+    if (include_top_viol_tables == 1): #and (len(unique_address.index) != 0)
+        print_top_viol_tables_html(out_target_all, unique_address, unique_legalname2, 
             unique_tradename, unique_agency, unique_owner, agency_df, out_sort_ee_violtd, 
             out_sort_bw_amt, out_sort_repeat_violtd, temp_file_name, signatories_report,
             out_signatory_target, sig_file_name_csv, prevailing_header, header, multi_agency_header, 
             dup_agency_header, dup_header, dup_owner_header, prevailing_wage_report, out_prevailing_target, 
             prev_file_name_csv, TEST_)
-        
-    if (len(unique_legalname.index) == 0):
-        textFile = open(temp_file_name, 'a')
-        textFile.write("<p> There were no records found to report.</p> \n")
     
     time_2 = time.time()
 
@@ -1147,7 +1149,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             <body>
             '''
 
-    TEST = True
+    TEST = False
     if not df.empty and (len(unique_address) != 0) and (TEST == False):
         import matplotlib
 
@@ -1182,20 +1184,22 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
         #write_to_html_file(out_sort_repeat_violtd, header, "TEST: Top violators by number of repeat violations (by legal name)", file_path(temp_file_name), 6)
         
         #with open(temp_file_name, 'a', encoding='utf-8') as f:  # append to report main file
+        result += "<h2>Top Violators for Selected Region and Industry</h2> \n"
+
         if not out_sort_bw_amt.empty:
             # by backwages
-            result += "<h2>Top violators by amount of backwages stolen (by legal name)</h2> \n"
+            result += "<h3>Top violators by amount of backwages stolen (by legal name)</h3> \n"
             result += out_sort_bw_amt.head(6).to_html(columns=header, index=False)
 
         if not out_sort_ee_violtd.empty:
             # by employees
-            result += "<h2>Top violators by number of employees violated (by legal name)</h2> \n"
+            result += "<h3>Top violators by number of employees violated (by legal name)</h3> \n"
             result += out_sort_ee_violtd.head(6).to_html(
                 columns=header, index=False)
 
         if not out_sort_repeat_violtd.empty:
             # by repeated
-            result += "<h2>Top violators by number of repeat violations (by legal name)</h2> \n"
+            result += "<h3>Top violators by number of repeat violations (by legal name)</h3> \n"
             result += out_sort_repeat_violtd.head(6).to_html(
                 columns=header, index=False)
 
@@ -1203,7 +1207,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
         row_head = 24
         if not unique_address.empty:
             # by unique_address
-            result += "<h2>Group by address and sort by records</h2> \n"
+            result += "<h3>Group by address and sort by records</h3> \n"
             result += unique_address.head(row_head).to_html(
                 columns=dup_header, index=False)
         else:
@@ -1211,7 +1215,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
 
         if not unique_legalname2.empty:
             # by 'legal_name'
-            result += "<h2>Group by legal name and sort by records</h2> \n"
+            result += "<h3>Group by legal name and sort by records</h3> \n"
             result += unique_legalname2.head(row_head).to_html(
                 columns=dup_header, index=False)
         else:
@@ -1219,7 +1223,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
 
         if not unique_tradename.empty and not (unique_tradename['trade_nm'].isna().all() | (unique_tradename['trade_nm']=="").all()) and TEST != 3:
             # by unique_trade_nm
-            result += "<h2>Group by trade name and sort by records</h2> \n"
+            result += "<h3>Group by trade name and sort by records</h3> \n"
             result += unique_tradename.head(row_head).to_html(
                 columns=dup_header, index=False)
         else:
@@ -1227,7 +1231,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
 
         if not agency_df.empty:
             # report for cases from multiple agencies
-            result += "<h2>Group by company and sort by number of agencies involved</h2> \n"
+            result += "<h3>Group by company and sort by number of agencies involved</h3> \n"
             result += agency_df.head(row_head).to_html(
                 columns=multi_agency_header, index=False)
         else:
@@ -1236,7 +1240,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
         if not unique_agency.empty:
             # report agency counts
             # by unique_agency
-            result += "<h2>Cases by agency or owner</h2> \n"
+            result += "<h3>Cases by agency or owner</h3> \n"
             result += unique_agency.head(row_head).to_html(
                 columns=dup_agency_header, index=False)
         else:
@@ -1244,7 +1248,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
 
         if not unique_owner.empty:
             # by 'unique_owner'
-            result += "<h2>Cases by jurisdiction (includes private jurisdictions)</h2> \n"
+            result += "<h3>Cases by jurisdiction (includes private jurisdictions)</h3> \n"
             result += unique_owner.head(row_head).to_html(
                 columns=dup_owner_header, index=False)
         else:
@@ -1265,7 +1269,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             f.write("<P style='page-break-before: always'>")
             out_sort_signatory.to_csv(sig_file_name_csv)
 
-            f.write("<h2>All signatory wage violators</h2> \n")
+            f.write("<h3>All signatory wage violators</h3> \n")
 
             if not len(out_sort_signatory.index) == 0:
                 f.write("<p>Signatory wage theft cases: ")
@@ -1315,7 +1319,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             f.write("<P style='page-break-before: always'>")
             out_sort_prevailing_wage.to_csv(prev_file_name_csv)
 
-            f.write("<h2>All prevailing wage violators</h2> \n")
+            f.write("<h3>All prevailing wage violators</h3> \n")
 
             f.write("<p>Prevailing wage theft cases: ")
             f.write(str.format('{0:,.0f}', len(
@@ -4378,7 +4382,7 @@ def City_Summary_Block(city_cases, df, total_ee_violtd, total_bw_atp, total_case
 
 def Industry_Summary_Block(out_counts, df, total_ee_violtd, total_bw_atp, total_case_violtn, unique_legalname, agency_df, OPEN_CASES, textFile):
     
-    textFile.write("<h2>Summary for Reported Industry</h2> \n")
+    textFile.write("<h2>Summary for Reported Industry and Organizations</h2> \n")
 
     if not df.empty:
 
