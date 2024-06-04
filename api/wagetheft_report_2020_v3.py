@@ -1159,176 +1159,176 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             '''
         
         #with open(temp_file_name, 'a', encoding='utf-8') as f:  # append to report main file
+        if TEST == False:
+            if not out_sort_bw_amt.empty:
+                # by backwages
+                result += "<h2>Top violators by amount of backwages stolen (by legal name)</h2> \n"
+                result += out_sort_bw_amt.head(6).to_html(columns=header, index=False)
 
-        if not out_sort_bw_amt.empty:
-            # by backwages
-            result += "<h2>Top violators by amount of backwages stolen (by legal name)</h2> \n"
-            result += out_sort_bw_amt.head(6).to_html(columns=header, index=False)
+            if not out_sort_ee_violtd.empty:
+                # by employees
+                result += "<h2>Top violators by number of employees violated (by legal name)</h2> \n"
+                result += out_sort_ee_violtd.head(6).to_html(
+                    columns=header, index=False)
 
-        if not out_sort_ee_violtd.empty:
-            # by employees
-            result += "<h2>Top violators by number of employees violated (by legal name)</h2> \n"
-            result += out_sort_ee_violtd.head(6).to_html(
-                columns=header, index=False)
+            if not out_sort_repeat_violtd.empty:
+                # by repeated
+                result += "<h2>Top violators by number of repeat violations (by legal name)</h2> \n"
+                result += out_sort_repeat_violtd.head(6).to_html(
+                    columns=header, index=False)
 
-        if not out_sort_repeat_violtd.empty:
-            # by repeated
-            result += "<h2>Top violators by number of repeat violations (by legal name)</h2> \n"
-            result += out_sort_repeat_violtd.head(6).to_html(
-                columns=header, index=False)
+            # by repeat violators******************
+            row_head = 24
+            if not unique_address.empty:
+                # by unique_address
+                result += "<h2>Group by address and sort by records</h2> \n"
+                result += unique_address.head(row_head).to_html(
+                    columns=dup_header, index=False)
+            else:
+                result += "<p> There are no groups by address to report</p> \n"
 
-        # by repeat violators******************
-        row_head = 24
-        if not unique_address.empty:
-            # by unique_address
-            result += "<h2>Group by address and sort by records</h2> \n"
-            result += unique_address.head(row_head).to_html(
-                columns=dup_header, index=False)
-        else:
-            result += "<p> There are no groups by address to report</p> \n"
+            if not unique_legalname2.empty:
+                # by 'legal_name'
+                result += "<h2>Group by legal name and sort by records</h2> \n"
+                result += unique_legalname2.head(row_head).to_html(
+                    columns=dup_header, index=False)
+            else:
+                result += "<p> There are no groups by legal name to report</p> \n"
 
-        if not unique_legalname2.empty:
-            # by 'legal_name'
-            result += "<h2>Group by legal name and sort by records</h2> \n"
-            result += unique_legalname2.head(row_head).to_html(
-                columns=dup_header, index=False)
-        else:
-            result += "<p> There are no groups by legal name to report</p> \n"
+            if not unique_tradename.empty and not (unique_tradename['trade_nm'].isna().all() | (unique_tradename['trade_nm']=="").all()) and TEST != 3:
+                # by unique_trade_nm
+                result += "<h2>Group by trade name and sort by records</h2> \n"
+                result += unique_tradename.head(row_head).to_html(
+                    columns=dup_header, index=False)
+            else:
+                result += "<p> There are no groups by trade name to report</p> \n"
 
-        if not unique_tradename.empty and not (unique_tradename['trade_nm'].isna().all() | (unique_tradename['trade_nm']=="").all()) and TEST != 3:
-            # by unique_trade_nm
-            result += "<h2>Group by trade name and sort by records</h2> \n"
-            result += unique_tradename.head(row_head).to_html(
-                columns=dup_header, index=False)
-        else:
-            result += "<p> There are no groups by trade name to report</p> \n"
+            if not agency_df.empty:
+                # report for cases from multiple agencies
+                result += "<h2>Group by company and sort by number of agencies involved</h2> \n"
+                result += agency_df.head(row_head).to_html(
+                    columns=multi_agency_header, index=False)
+            else:
+                result += "<p> There are no groups by companies with violations by multiple agencies to report</p> \n"
 
-        if not agency_df.empty:
-            # report for cases from multiple agencies
-            result += "<h2>Group by company and sort by number of agencies involved</h2> \n"
-            result += agency_df.head(row_head).to_html(
-                columns=multi_agency_header, index=False)
-        else:
-            result += "<p> There are no groups by companies with violations by multiple agencies to report</p> \n"
+            if not unique_agency.empty:
+                # report agency counts
+                # by unique_agency
+                result += "<h2>Cases by agency or owner</h2> \n"
+                result += unique_agency.head(row_head).to_html(
+                    columns=dup_agency_header, index=False)
+            else:
+                result += "<p> There are no case groups by agency or owner to report</p> \n"
 
-        if not unique_agency.empty:
-            # report agency counts
-            # by unique_agency
-            result += "<h2>Cases by agency or owner</h2> \n"
-            result += unique_agency.head(row_head).to_html(
-                columns=dup_agency_header, index=False)
-        else:
-            result += "<p> There are no case groups by agency or owner to report</p> \n"
+            if not unique_owner.empty:
+                # by 'unique_owner'
+                result += "<h2>Cases by jurisdiction (includes private jurisdictions)</h2> \n"
+                result += unique_owner.head(row_head).to_html(
+                    columns=dup_owner_header, index=False)
+            else:
+                result += "<p> There are no case groups by jurisdiction to report</p> \n"
 
-        if not unique_owner.empty:
-            # by 'unique_owner'
-            result += "<h2>Cases by jurisdiction (includes private jurisdictions)</h2> \n"
-            result += unique_owner.head(row_head).to_html(
-                columns=dup_owner_header, index=False)
-        else:
-            result += "<p> There are no case groups by jurisdiction to report</p> \n"
+            # signatory
+            if signatories_report == 1 and not out_signatory_target.empty:
 
-        # signatory
-        if signatories_report == 1 and not out_signatory_target.empty:
+                out_sort_signatory = pd.DataFrame()
+                out_sort_signatory = out_signatory_target.sort_values(
+                    'legal_nm', ascending=True)
 
-            out_sort_signatory = pd.DataFrame()
-            out_sort_signatory = out_signatory_target.sort_values(
-                'legal_nm', ascending=True)
+                out_sort_signatory['violtn_cnt'] = out_sort_signatory.apply(
+                    lambda x: "{0:,.0f}".format(x['violtn_cnt']), axis=1)
+                out_sort_signatory['ee_pmt_recv'] = out_sort_signatory.apply(
+                    lambda x: "{0:,.0f}".format(x['ee_pmt_recv']), axis=1)
 
-            out_sort_signatory['violtn_cnt'] = out_sort_signatory.apply(
-                lambda x: "{0:,.0f}".format(x['violtn_cnt']), axis=1)
-            out_sort_signatory['ee_pmt_recv'] = out_sort_signatory.apply(
-                lambda x: "{0:,.0f}".format(x['ee_pmt_recv']), axis=1)
+                f.write("<P style='page-break-before: always'>")
+                out_sort_signatory.to_csv(sig_file_name_csv)
 
-            f.write("<P style='page-break-before: always'>")
-            out_sort_signatory.to_csv(sig_file_name_csv)
+                f.write("<h2>All signatory wage violators</h2> \n")
 
-            f.write("<h2>All signatory wage violators</h2> \n")
+                if not len(out_sort_signatory.index) == 0:
+                    f.write("<p>Signatory wage theft cases: ")
+                    f.write(str.format('{0:,.0f}', len(
+                        out_sort_signatory.index)))
+                    f.write("</p> \n")
 
-            if not len(out_sort_signatory.index) == 0:
-                f.write("<p>Signatory wage theft cases: ")
+                if not out_sort_signatory['bw_amt'].sum() == 0:
+                    f.write("<p>Total signatory wage theft: $")
+                    f.write(str.format(
+                        '{0:,.0f}', out_sort_signatory['bw_amt'].sum()))
+                    f.write("</p> \n")
+                '''
+                if not out_sort_signatory['ee_violtd_cnt'].sum()==0:
+                    f.write("<p>Signatory wage employees violated: ")
+                    out_sort_signatory['ee_violtd_cnt'] = pd.to_numeric(out_sort_signatory['ee_violtd_cnt'] )
+                    f.write(str.format('{0:,.0f}',out_sort_signatory['ee_violtd_cnt'].sum() ) )
+                    f.write("</p> \n")
+
+                if not out_sort_signatory['violtn_cnt'].sum()==0:
+                    f.write("<p>Signatory wage violations: ")
+                    out_sort_signatory['violtn_cnt'] = pd.to_numeric(out_sort_signatory['violtn_cnt'] )
+                    f.write(str.format('{0:,.0f}',out_sort_signatory['violtn_cnt'].sum() ) )
+                    f.write("</p> \n")
+                '''
+
+                f.write("\n")
+
+                out_sort_signatory.to_html(
+                    f, max_rows=3000, columns=prevailing_header, index=False)
+
+                f.write("\n")
+
+
+            # prevailing wage
+            if prevailing_wage_report == 1 and not out_prevailing_target.empty:
+                out_sort_prevailing_wage = pd.DataFrame()
+                #out_sort_prevailing_wage = out_prevailing_target.sort_values('records', ascending=False)
+                out_sort_prevailing_wage = out_prevailing_target.sort_values(
+                    'legal_nm', ascending=True)
+
+                out_sort_prevailing_wage['violtn_cnt'] = out_sort_prevailing_wage.apply(
+                    lambda x: "{0:,.0f}".format(x['violtn_cnt']), axis=1)
+                out_sort_prevailing_wage['ee_pmt_recv'] = out_sort_prevailing_wage.apply(
+                    lambda x: "{0:,.0f}".format(x['ee_pmt_recv']), axis=1)
+
+                f.write("<P style='page-break-before: always'>")
+                out_sort_prevailing_wage.to_csv(prev_file_name_csv)
+
+                f.write("<h2>All prevailing wage violators</h2> \n")
+
+                f.write("<p>Prevailing wage theft cases: ")
                 f.write(str.format('{0:,.0f}', len(
-                    out_sort_signatory.index)))
+                    out_sort_prevailing_wage.index)))
+                #f.write(str.format('{0:,.0f}',len(out_sort_prevailing_wage['records'].sum() ) ) )
                 f.write("</p> \n")
 
-            if not out_sort_signatory['bw_amt'].sum() == 0:
-                f.write("<p>Total signatory wage theft: $")
+                f.write("<p>Total prevailing wage theft: $")
                 f.write(str.format(
-                    '{0:,.0f}', out_sort_signatory['bw_amt'].sum()))
-                f.write("</p> \n")
-            '''
-            if not out_sort_signatory['ee_violtd_cnt'].sum()==0:
-                f.write("<p>Signatory wage employees violated: ")
-                out_sort_signatory['ee_violtd_cnt'] = pd.to_numeric(out_sort_signatory['ee_violtd_cnt'] )
-                f.write(str.format('{0:,.0f}',out_sort_signatory['ee_violtd_cnt'].sum() ) )
+                    '{0:,.0f}', out_sort_prevailing_wage['bw_amt'].sum()))
                 f.write("</p> \n")
 
-            if not out_sort_signatory['violtn_cnt'].sum()==0:
-                f.write("<p>Signatory wage violations: ")
-                out_sort_signatory['violtn_cnt'] = pd.to_numeric(out_sort_signatory['violtn_cnt'] )
-                f.write(str.format('{0:,.0f}',out_sort_signatory['violtn_cnt'].sum() ) )
+                f.write("<p>Total prevailing wage theft: $")
+                f.write(str.format(
+                    '{0:,.0f}', out_sort_prevailing_wage['bw_amt'].sum()))
                 f.write("</p> \n")
-            '''
 
-            f.write("\n")
+                # buggy 6/14/2021
+                # f.write("<p>Prevailing wage employees violated: ")
+                # out_sort_prevailing_wage['ee_violtd_cnt'] = pd.to_numeric(out_sort_prevailing_wage['ee_violtd_cnt'] )
+                # f.write(str.format('{0:,.0f}',out_sort_prevailing_wage['ee_violtd_cnt'].sum() ) )
+                # f.write("</p> \n")
 
-            out_sort_signatory.to_html(
-                f, max_rows=3000, columns=prevailing_header, index=False)
+                # f.write("<p>Prevailing wage violations: ")
+                # out_sort_prevailing_wage['violtn_cnt'] = pd.to_numeric(out_sort_prevailing_wage['violtn_cnt'] )
+                # f.write(str.format('{0:,.0f}',out_sort_prevailing_wage['violtn_cnt'].sum() ) )
+                # f.write("</p> \n")
 
-            f.write("\n")
+                f.write("\n")
+                # 12/25/2021 added "float_format=lambda x: '%10.2f' % x" per https://stackoverflow.com/questions/14899818/format-output-data-in-pandas-to-html
+                out_sort_prevailing_wage.to_html(
+                    f, max_rows=3000, columns=prevailing_header, index=False, float_format=lambda x: '%10.2f' % x)
 
-
-        # prevailing wage
-        if prevailing_wage_report == 1 and not out_prevailing_target.empty:
-            out_sort_prevailing_wage = pd.DataFrame()
-            #out_sort_prevailing_wage = out_prevailing_target.sort_values('records', ascending=False)
-            out_sort_prevailing_wage = out_prevailing_target.sort_values(
-                'legal_nm', ascending=True)
-
-            out_sort_prevailing_wage['violtn_cnt'] = out_sort_prevailing_wage.apply(
-                lambda x: "{0:,.0f}".format(x['violtn_cnt']), axis=1)
-            out_sort_prevailing_wage['ee_pmt_recv'] = out_sort_prevailing_wage.apply(
-                lambda x: "{0:,.0f}".format(x['ee_pmt_recv']), axis=1)
-
-            f.write("<P style='page-break-before: always'>")
-            out_sort_prevailing_wage.to_csv(prev_file_name_csv)
-
-            f.write("<h2>All prevailing wage violators</h2> \n")
-
-            f.write("<p>Prevailing wage theft cases: ")
-            f.write(str.format('{0:,.0f}', len(
-                out_sort_prevailing_wage.index)))
-            #f.write(str.format('{0:,.0f}',len(out_sort_prevailing_wage['records'].sum() ) ) )
-            f.write("</p> \n")
-
-            f.write("<p>Total prevailing wage theft: $")
-            f.write(str.format(
-                '{0:,.0f}', out_sort_prevailing_wage['bw_amt'].sum()))
-            f.write("</p> \n")
-
-            f.write("<p>Total prevailing wage theft: $")
-            f.write(str.format(
-                '{0:,.0f}', out_sort_prevailing_wage['bw_amt'].sum()))
-            f.write("</p> \n")
-
-            # buggy 6/14/2021
-            # f.write("<p>Prevailing wage employees violated: ")
-            # out_sort_prevailing_wage['ee_violtd_cnt'] = pd.to_numeric(out_sort_prevailing_wage['ee_violtd_cnt'] )
-            # f.write(str.format('{0:,.0f}',out_sort_prevailing_wage['ee_violtd_cnt'].sum() ) )
-            # f.write("</p> \n")
-
-            # f.write("<p>Prevailing wage violations: ")
-            # out_sort_prevailing_wage['violtn_cnt'] = pd.to_numeric(out_sort_prevailing_wage['violtn_cnt'] )
-            # f.write(str.format('{0:,.0f}',out_sort_prevailing_wage['violtn_cnt'].sum() ) )
-            # f.write("</p> \n")
-
-            f.write("\n")
-            # 12/25/2021 added "float_format=lambda x: '%10.2f' % x" per https://stackoverflow.com/questions/14899818/format-output-data-in-pandas-to-html
-            out_sort_prevailing_wage.to_html(
-                f, max_rows=3000, columns=prevailing_header, index=False, float_format=lambda x: '%10.2f' % x)
-
-            f.write("\n")
-        
+                f.write("\n")
+            
         result += '''
             </body>
             </html>
