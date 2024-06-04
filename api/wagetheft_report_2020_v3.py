@@ -86,7 +86,7 @@ def main():
     PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
     PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode"
     PARAM_2_TARGET_INDUSTRY = "" #"Janitorial" #"Construction" #for test use 'All NAICS'
-    PARAM_3_TARGET_ORGANIZATION = "Granite Construction" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
+    PARAM_3_TARGET_ORGANIZATION = "" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
     
     PARAM_YEAR_START = "2000/01/01" # default is 'today' - years=4 #or "2016/05/01"
     PARAM_YEAR_END = "" #default is 'today'
@@ -390,7 +390,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         infer_zip, infer_by_naics, TARGET_ORGANIZATIONS, YEAR_START, YEAR_END, target_state, 
         bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv)
     
-    if signatories_report:
+    if signatories_report == 0:
         time_1 = time.time()
         out_target = infer_signatory_cases(out_target, SIGNATORY_INDUSTRY)
         time_2 = time.time()
@@ -454,35 +454,42 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         log_number = "5 optional prevailing and signatory process"
         append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
     
-    if signatories_report == 0 and 'Signatory' and 'legal_nm' and 'trade_nm' in out_target.columns:
-            time_1 = time.time()
-            # unused out_target = out_target.loc[out_target['Signatory']!=1] #filter
-            out_target['legal_nm'] = np.where(
-                out_target['Signatory'] == 1, "masked", out_target['legal_nm'])
-            out_target['trade_nm'] = np.where(
-                out_target['Signatory'] == 1, "masked", out_target['trade_nm'])
-            out_target['street_addr'] = np.where(
-                out_target['Signatory'] == 1, "masked", out_target['street_addr'])
-            out_target['case_id_1'] = np.where(
-                out_target['Signatory'] == 1, "masked", out_target['case_id_1'])
-            if 'DIR_Case_Name' in out_target.columns:
-                out_target['DIR_Case_Name'] = np.where(
-                    out_target['Signatory'] == 1, "masked", out_target['DIR_Case_Name'])
-                
-            out_target_organization['legal_nm'] = np.where(
-                out_target_organization['Signatory'] == 1, "masked", out_target_organization['legal_nm'])
-            out_target_organization['trade_nm'] = np.where(
-                out_target_organization['Signatory'] == 1, "masked", out_target_organization['trade_nm'])
-            out_target_organization['street_addr'] = np.where(
-                out_target_organization['Signatory'] == 1, "masked", out_target_organization['street_addr'])
-            out_target_organization['case_id_1'] = np.where(
-                out_target_organization['Signatory'] == 1, "masked", out_target_organization['case_id_1'])
-            if 'DIR_Case_Name' in out_target_organization.columns:
-                out_target_organization['DIR_Case_Name'] = np.where(
-                    out_target_organization['Signatory'] == 1, "masked", out_target_organization['DIR_Case_Name'])
-            time_2 = time.time()
-            log_number = "optional signatory report"
-            append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
+    if signatories_report == 0:
+        if 'Signatory' not in out_target.columns:
+            out_target['Signatory'] = 0
+        if 'legal_nm' not in out_target.columns:
+            out_target['legal_nm'] = ""
+        if 'trade_nm' not in out_target.columns:
+            out_target['trade_nm'] = ""
+
+        time_1 = time.time()
+        # unused out_target = out_target.loc[out_target['Signatory']!=1] #filter
+        out_target['legal_nm'] = np.where(
+            out_target['Signatory'] == 1, "masked", out_target['legal_nm'])
+        out_target['trade_nm'] = np.where(
+            out_target['Signatory'] == 1, "masked", out_target['trade_nm'])
+        out_target['street_addr'] = np.where(
+            out_target['Signatory'] == 1, "masked", out_target['street_addr'])
+        out_target['case_id_1'] = np.where(
+            out_target['Signatory'] == 1, "masked", out_target['case_id_1'])
+        if 'DIR_Case_Name' in out_target.columns:
+            out_target['DIR_Case_Name'] = np.where(
+                out_target['Signatory'] == 1, "masked", out_target['DIR_Case_Name'])
+            
+        out_target_organization['legal_nm'] = np.where(
+            out_target_organization['Signatory'] == 1, "masked", out_target_organization['legal_nm'])
+        out_target_organization['trade_nm'] = np.where(
+            out_target_organization['Signatory'] == 1, "masked", out_target_organization['trade_nm'])
+        out_target_organization['street_addr'] = np.where(
+            out_target_organization['Signatory'] == 1, "masked", out_target_organization['street_addr'])
+        out_target_organization['case_id_1'] = np.where(
+            out_target_organization['Signatory'] == 1, "masked", out_target_organization['case_id_1'])
+        if 'DIR_Case_Name' in out_target_organization.columns:
+            out_target_organization['DIR_Case_Name'] = np.where(
+                out_target_organization['Signatory'] == 1, "masked", out_target_organization['DIR_Case_Name'])
+        time_2 = time.time()
+        log_number = "optional signatory report"
+        append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
     
     # create csv output file**********************************
     
@@ -1866,13 +1873,16 @@ def InferAgencyFromCaseIDAndLabel(df, LABEL_COLUMN):
 def InferSignatoriesFromNameAndFlag(df, SIGNATORY_INDUSTRY):
 
     if 'legal_nm' not in df.columns:
-        df['legal_nm'] = 0
+        df['legal_nm'] = ""
 
     if 'trade_nm' not in df.columns:
-        df['trade_nm'] = 0
+        df['trade_nm'] = ""
     
     if "Signatory" not in df.columns:
         df["Signatory"] = 0
+
+    df['legal_nm'] = df['legal_nm'].astype(str)
+    df['trade_nm'] = df['trade_nm'].astype(str)
 
     for x in range(1, len(SIGNATORY_INDUSTRY)):
         PATTERN_EXCLUDE = EXCLUSION_LIST_GENERATOR(
@@ -1882,11 +1892,11 @@ def InferSignatoriesFromNameAndFlag(df, SIGNATORY_INDUSTRY):
 
         foundIt_sig = (
             (
-                df['legal_nm'].str.contains(PATTERN_IND, case = False) &
-                ~df['legal_nm'].str.contains(PATTERN_EXCLUDE, case = False)) |
+                df['legal_nm'].str.contains(PATTERN_IND, na=False, flags=re.IGNORECASE, regex=True) &
+                ~df['legal_nm'].str.contains(PATTERN_EXCLUDE, na=False, flags=re.IGNORECASE, regex=True)) |
             (
-                df['trade_nm'].str.contains(PATTERN_IND, case = False) &
-                ~df['trade_nm'].str.contains(PATTERN_EXCLUDE, case = False))
+                df['trade_nm'].str.contains(PATTERN_IND, na=False, flags=re.IGNORECASE, regex=True) &
+                ~df['trade_nm'].str.contains(PATTERN_EXCLUDE, na=False, flags=re.IGNORECASE, regex=True))
         )
         df.loc[foundIt_sig, "Signatory"] = 1
 
