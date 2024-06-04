@@ -1156,6 +1156,8 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             </style>
             </head>
             <body>
+            </body>
+            </html>
             '''
         
         #with open(temp_file_name, 'a', encoding='utf-8') as f:  # append to report main file
@@ -1334,15 +1336,10 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             </html>
             '''
 
-        with open(temp_file_name, mode='a', encoding='utf-8') as f:  # append to report main file
-                f.write(result)
+        #with open(temp_file_name, mode='a', encoding='utf-8') as f:  # append to report main file
+        #        f.write(result)
     else:
-        result += '''
-            </body>
-            </html>
-            '''
-        with open(temp_file_name, mode='a', encoding='utf-8') as f:  # append to report main file
-                f.write(result)
+        DUMMY = ""
 
 
 def Clean_Repeat_Violator_HTML_Row(df, COLUMN_NAME): #idk what this if for anymore -- F.PEterson 4/19/2024
