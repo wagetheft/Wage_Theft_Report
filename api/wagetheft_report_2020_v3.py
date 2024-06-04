@@ -930,7 +930,7 @@ def print_table_html_by_industry_and_city(temp_file_name, unique_legalname, head
 
     # report main file--'a' Append, the file is created if it does not exist: stream is positioned at the end of the file.
     textFile = open(temp_file_name, 'a')
-    textFile.write("<h2>Wage theft for Organizations by Industry and Region</h2> \n")
+    textFile.write("<h2>Wage theft for Selected Organizations by Industry and Region</h2> \n")
     textFile.write("<h3>Wage theft by industry and city region</h3> \n")
     textFile.close()
 
@@ -1055,7 +1055,7 @@ def print_table_html_Text_Summary(include_summaries, temp_file_name, unique_lega
             if RunHeaderOnce and (only_sig_summaries == 0 or city_cases > 10 or city_total_bw_atp > 10000):
                 RunHeaderOnce = False
                 textFile = open(temp_file_name, 'a')  # append to report main file
-                textFile.write("<h3>Wage theft by city and industry</h3> \n")
+                textFile.write("<h2>Wage Theft for Selected Organizations by Industry and City</h2> \n")
                 textFile.close()
 
             #PRINT SUMMARY BLOCK
