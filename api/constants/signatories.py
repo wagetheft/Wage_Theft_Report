@@ -8,7 +8,7 @@ hospital_signatories = [['Health_care'], ['El Camino Hospital', 'El Camino Hospi
 construction_signatories = [['Construction'], ["Granite Construction", "A Ruiz Construction", "Central Fence", r"\bQLM\b",
                                                "Otis Elevator ", "United Technologies", "Kiewit Pacific", "West Valley Construction", r"\bFerma\b", "TEICHERT CONSTRUCTION",
                                                "Alliance Roofing", "Northern Underground Construction", "Albanese", "Vance Brown", "William ONeill Lath and Plastering",
-                                               "El Camino Paving"]]
+                                               "El Camino Paving", "Largo Concrete"]]
 
 signatories_UCON = [['Construction'], ["Yerba Buena Engineering", "WoodruffSawyer", "WMA Landscape Construction", "William A Guthridge", "Whiteside Concrete Construction", "Westside Underground Pipe", "Westland Contractors",
                                        "Western Traffic Supply", "Western States Tool", "Western Stabilization", "West Valley Construction", "West Coast Sand and Gravel", "Wayne E Swisher Cement Contractor", "Walter C Smith", "Walsh Construction",
