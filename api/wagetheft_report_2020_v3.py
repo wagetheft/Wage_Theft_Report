@@ -393,6 +393,10 @@ def generateWageReport(target_state, target_county, target_city, target_industry
         infer_zip, infer_by_naics, TARGET_ORGANIZATIONS, YEAR_START, YEAR_END, target_state, 
         bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv)
     
+    out_target = filter_function(out_target, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only, 
+        infer_zip, infer_by_naics, TARGET_ORGANIZATIONS, YEAR_START, YEAR_END, target_state, 
+        bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv)
+    
     if signatories_report:
         time_1 = time.time()
         out_target = infer_signatory_cases(out_target, SIGNATORY_INDUSTRY)
@@ -499,7 +503,9 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     time_1 = time.time()
     out_counts = out_target.copy()  # hold for case counts
 
-    unique_legalname = GroupByX(out_target, 'legal_nm')
+    out_target_organization = filter_function_organization(out_target, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv)
+
+    unique_legalname = GroupByX(out_target_organization, 'legal_nm')
 
     unique_address = GroupByMultpleCases(out_target, 'street_addr')
     unique_legalname2 = GroupByMultpleCases(out_target, 'legal_nm')
@@ -523,6 +529,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     out_sort_bw_amt = out_target.sort_values(by=['bw_amt'], ascending=False)
     out_sort_repeat_violtd = out_target.sort_values(
         by=['records'], ascending=False)
+        
 
     unique_address = unique_address.sort_values(
         by=['records'], ascending=False)
@@ -624,15 +631,15 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     # TABLES
     time_1 = time.time()
     
-    if (include_tables == 1):
+    if (include_tables == 1) and (len(unique_legalname.index) != 0):
         print_table_html_by_industry_and_city(temp_file_name, unique_legalname, header_two_way_table)
         print_table_html_by_industry_and_zipcode(temp_file_name, unique_legalname, header_two_way_table)
 
-    if (include_summaries == 1): 
+    if (include_summaries == 1) and (len(unique_legalname.index) != 0): 
         print_table_html_Text_Summary(include_summaries, temp_file_name, unique_legalname, header_two_way, header_two_way_table,
             total_ee_violtd, total_case_violtn, only_sig_summaries, TARGET_INDUSTRY)
 
-    if (include_top_viol_tables == 1):
+    if (include_top_viol_tables == 1) and (len(unique_address.index) != 0):
         print_top_viol_tables_html(out_target, unique_address, unique_legalname2, 
             unique_tradename, unique_agency, unique_owner, agency_df, out_sort_ee_violtd, 
             out_sort_bw_amt, out_sort_repeat_violtd, temp_file_name, signatories_report,
@@ -640,7 +647,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
             dup_agency_header, dup_header, dup_owner_header, prevailing_wage_report, out_prevailing_target, 
             prev_file_name_csv, TEST_)
         
-    if (len(unique_legalname.index) == 0) and (len(unique_address.index) == 0):
+    if (len(unique_legalname.index) == 0):
         textFile = open(temp_file_name, 'a')
         textFile.write("<p> There were no records found to report.</p> \n")
     
@@ -860,6 +867,24 @@ def filter_function(df, TARGET_ZIPCODES, TARGET_INDUSTRY, open_cases_only,
     df = Filter_for_Target_Industry(df, TARGET_INDUSTRY, infer_by_naics) #<--- BUGGY HERE 1/12/2023 w/ 2x records -- hacky fix w/ dup removal
     
     #df.to_csv(os.path.join(abs_path, (file_name+'test_3_out_file_report').replace(' ', '_') + '.csv'))
+
+    #moved to seperate function
+    #if (TARGET_ORGANIZATIONS[1] != ""): 
+    #    df = Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS)  #<--- BUGGY HERE 1/12/2023 2x records -- hacky fix w/ dup removal
+    #time_2 = time.time()
+    #log_number = "Filter_for_Target_Industry and Organization"
+    #append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+
+    #df.to_csv(os.path.join(abs_path, (file_name+'test_4_out_file_report').replace(' ', '_') + '.csv'))
+
+    return df
+
+
+def filter_function_organization(df, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv):
+
+    time_1 = time.time()
+
+    function_name = "filter_function"
 
     if (TARGET_ORGANIZATIONS[1] != ""): 
         df = Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS)  #<--- BUGGY HERE 1/12/2023 2x records -- hacky fix w/ dup removal
@@ -4382,7 +4407,7 @@ def Industry_Summary_Block(out_counts, df, total_ee_violtd, total_bw_atp, total_
         textFile.write(str.format('{0:,.0f}', len(out_counts.index)))
         textFile.write(" <i>(Note: sum is of several types of 'open' disposition)</i></p> \n")
 
-    if not out_counts['bw_amt'].sum() == 0:
+    if not (out_counts['bw_amt'].sum() == 0) and not out_counts.empty:
         textFile.write("<p>Total wage theft:  $ ")
         textFile.write(str.format('{0:,.0f}', out_counts['bw_amt'].sum()))
         if not df.empty:
@@ -4401,10 +4426,10 @@ def Industry_Summary_Block(out_counts, df, total_ee_violtd, total_bw_atp, total_
                 textFile.write("</i>")
         textFile.write("</p> \n")
 
-    if 'backwage_owed' not in out_counts.columns: #<-- probably a problem point
+    if ('backwage_owed' not in out_counts.columns) and not out_counts.empty: #<-- probably a problem point
         out_counts['backwage_owed'] = 0
     
-    if not out_counts['backwage_owed'].sum() == 0:
+    if not (out_counts['backwage_owed'].sum() == 0) and not out_counts.empty:
         textFile.write(
             "<p>Including monetary penalties and accrued interest, the amount owed is:  $ ")
         textFile.write(str.format(
@@ -4414,13 +4439,13 @@ def Industry_Summary_Block(out_counts, df, total_ee_violtd, total_bw_atp, total_
         textFile.write(
             " <i> Note: Monetary penalties and accrued interest not calculated in this report</i></p> \n")
 
-    if not out_counts['ee_violtd_cnt'].sum() == 0:
+    if not (out_counts['ee_violtd_cnt'].sum() == 0) and not out_counts.empty:
         textFile.write("<p>Total employees: ")
         textFile.write(str.format(
             '{0:,.0f}', out_counts['ee_violtd_cnt'].sum()))
         textFile.write("</p> \n")
 
-    if not out_counts['violtn_cnt'].sum() == 0:
+    if not (out_counts['violtn_cnt'].sum() == 0):
         textFile.write("<p>Total violations: ")
         textFile.write(str.format('{0:,.0f}', out_counts['violtn_cnt'].sum()))
         if not df.empty:
