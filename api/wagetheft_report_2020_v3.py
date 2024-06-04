@@ -624,15 +624,15 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     # TABLES
     time_1 = time.time()
     
-    if (include_tables == 1) and (len(unique_legalname.index) != 0):
+    if (include_tables == 1):
         print_table_html_by_industry_and_city(temp_file_name, unique_legalname, header_two_way_table)
         print_table_html_by_industry_and_zipcode(temp_file_name, unique_legalname, header_two_way_table)
 
-    if (include_summaries == 1) and (len(unique_legalname.index) != 0): 
+    if (include_summaries == 1): 
         print_table_html_Text_Summary(include_summaries, temp_file_name, unique_legalname, header_two_way, header_two_way_table,
             total_ee_violtd, total_case_violtn, only_sig_summaries, TARGET_INDUSTRY)
 
-    if (include_top_viol_tables == 1)  and (len(unique_address.index) != 0):
+    if (include_top_viol_tables == 1):
         print_top_viol_tables_html(out_target, unique_address, unique_legalname2, 
             unique_tradename, unique_agency, unique_owner, agency_df, out_sort_ee_violtd, 
             out_sort_bw_amt, out_sort_repeat_violtd, temp_file_name, signatories_report,
