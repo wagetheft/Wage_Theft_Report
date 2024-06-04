@@ -418,10 +418,11 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     #*****EXTRACT VALUES FOR REPORT
     time_1 = time.time()
-    case_disposition_series = out_target['Case Status'].copy()
-
+    
     out_target_organization = filter_function_organization(out_target, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv)
     
+    case_disposition_series = out_target_organization['Case Status'].copy()
+
     total_ee_violtd = out_target_organization['ee_violtd_cnt'].sum()
     total_bw_atp = out_target_organization['bw_amt'].sum()
     total_case_violtn = out_target_organization['violtn_cnt'].sum()
@@ -929,7 +930,8 @@ def print_table_html_by_industry_and_city(temp_file_name, unique_legalname, head
 
     # report main file--'a' Append, the file is created if it does not exist: stream is positioned at the end of the file.
     textFile = open(temp_file_name, 'a')
-    textFile.write("<h2>Wage theft by industry and city region</h2> \n")
+    textFile.write("<h2>Wage theft for Organizations by Industry and Region</h2> \n")
+    textFile.write("<h3>Wage theft by industry and city region</h3> \n")
     textFile.close()
 
     df_all_industry = unique_legalname.groupby(['industry', pd.Grouper(key='cty_nm')]).agg({  # https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
@@ -971,7 +973,7 @@ def print_table_html_by_industry_and_zipcode(temp_file_name, unique_legalname, h
 
     textFile = open(temp_file_name, 'a')  # append to main report file
     textFile.write(
-        "<h2>Wage theft by zip code region and industry</h2> \n")
+        "<h3>Wage theft by zip code region and industry</h3> \n")
     textFile.close()
 
     df_all_industry_3 = unique_legalname.groupby(["zip_cd", pd.Grouper(key='industry')]).agg({  # https://towardsdatascience.com/pandas-groupby-aggregate-transform-filter-c95ba3444bbb
@@ -1053,7 +1055,7 @@ def print_table_html_Text_Summary(include_summaries, temp_file_name, unique_lega
             if RunHeaderOnce and (only_sig_summaries == 0 or city_cases > 10 or city_total_bw_atp > 10000):
                 RunHeaderOnce = False
                 textFile = open(temp_file_name, 'a')  # append to report main file
-                textFile.write("<h2>Wage theft by city and industry</h2> \n")
+                textFile.write("<h3>Wage theft by city and industry</h3> \n")
                 textFile.close()
 
             #PRINT SUMMARY BLOCK
@@ -1180,6 +1182,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
         #write_to_html_file(out_sort_repeat_violtd, header, "TEST: Top violators by number of repeat violations (by legal name)", file_path(temp_file_name), 6)
         
         #with open(temp_file_name, 'a', encoding='utf-8') as f:  # append to report main file
+        result += "<HR> </HR>"
         result += "<h2>Top Violators for Selected Region and Industry</h2> \n"
 
         if not out_sort_bw_amt.empty:
@@ -4723,7 +4726,7 @@ def write_to_html_file(df, header_HTML, title, filename, rows = 99):
 		<head>
 		<style>
 
-			h2 {
+			h3 {
 				text-align: center;
 				font-family: Helvetica, Arial, sans-serif;
 			}
@@ -4752,7 +4755,7 @@ def write_to_html_file(df, header_HTML, title, filename, rows = 99):
 		</head>
 		<body>
 		'''
-    result += '<h2> %s </h2>\n' % title
+    result += '<h3> %s </h3>\n' % title
     if type(df) == pd.io.formats.style.Styler:
         result += df.render()
     else:
