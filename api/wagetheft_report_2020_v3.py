@@ -144,6 +144,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     if target_industry == "": target_industry = "All NAICS"
     if (target_state == "") and (target_county == "") and (target_city == ""): target_state = "California"
     if (target_state != "") and ((target_county != "") or (target_city != "")): target_state = "" #temp fix
+    if (target_county != "") and (target_city != ""): target_county = "" #temp fix
     
     if YEAR_START_TEXT == "":
         YEAR_START = pd.to_datetime('today') - pd.DateOffset(years=4)
