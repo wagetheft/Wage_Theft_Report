@@ -951,7 +951,7 @@ def print_table_html_by_industry_and_city(temp_file_name, unique_legalname, head
 
     # report main file--'a' Append, the file is created if it does not exist: stream is positioned at the end of the file.
     textFile = open(temp_file_name, 'a')
-    textFile.write("<h2>Wage theft for Selected Organizations by Industry and Region</h2> \n")
+    textFile.write("<h2>Wage Theft for Selected Organizations by Industry and Region</h2> \n")
     textFile.write("<h3>Wage theft by industry and city region</h3> \n")
     textFile.close()
 
@@ -1227,7 +1227,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
         row_head = 24
         if not unique_address.empty:
             # by unique_address
-            result += "<h3>Group by address and sort by records</h3> \n"
+            result += "<h3>Top violators group by address and sort by records</h3> \n"
             result += unique_address.head(row_head).to_html(
                 columns=dup_header, index=False)
         else:
@@ -1235,7 +1235,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
 
         if not unique_legalname2.empty:
             # by 'legal_name'
-            result += "<h3>Group by legal name and sort by records</h3> \n"
+            result += "<h3>Top violators group by legal name and sort by records</h3> \n"
             result += unique_legalname2.head(row_head).to_html(
                 columns=dup_header, index=False)
         else:
@@ -1243,7 +1243,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
 
         if not unique_tradename.empty and not (unique_tradename['trade_nm'].isna().all() | (unique_tradename['trade_nm']=="").all()) and TEST != 3:
             # by unique_trade_nm
-            result += "<h3>Group by trade name and sort by records</h3> \n"
+            result += "<h3>Top violators group by trade name and sort by records</h3> \n"
             result += unique_tradename.head(row_head).to_html(
                 columns=dup_header, index=False)
         else:
@@ -1251,7 +1251,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
 
         if not agency_df.empty:
             # report for cases from multiple agencies
-            result += "<h3>Group by company and sort by number of agencies involved</h3> \n"
+            result += "<h3>Top violators group by company and sort by number of agencies involved</h3> \n"
             result += agency_df.head(row_head).to_html(
                 columns=multi_agency_header, index=False)
         else:
