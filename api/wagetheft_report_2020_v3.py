@@ -84,11 +84,11 @@ def main():
     # settings****************************************************
     PARAM_1_TARGET_STATE = "" #"California"
     PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
-    PARAM_1_TARGET_ZIPCODE = "" #"San_Jose_Zipcode"
-    PARAM_2_TARGET_INDUSTRY = "" #"Janitorial" #"Construction" #for test use 'All NAICS'
+    PARAM_1_TARGET_ZIPCODE = "San_Jose_Zipcode" #"San_Jose_Zipcode"
+    PARAM_2_TARGET_INDUSTRY = 'All NAICS' #"Janitorial" #"Construction" #for test use 'All NAICS'
     PARAM_3_TARGET_ORGANIZATION = "" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
     
-    PARAM_YEAR_START = "2000/01/01" # default is 'today' - years=4 #or "2016/05/01"
+    PARAM_YEAR_START = "" #"2000/01/01" # default is 'today' - years=4 #or "2016/05/01"
     PARAM_YEAR_END = "" #default is 'today'
     
     OPEN_CASES = 0 # 1 for open cases only (or nearly paid off), 0 for all cases
@@ -106,7 +106,7 @@ def main():
     SUMMARY = 1  # 1 for summaries and 0 for none
     SUMMARY_SIG = 1 # 1 for summaries only of regions with significant wage theft (more than $10,000), 0 for all
     TOP_VIOLATORS = 1  # 1 for tables of top violators and 0 for none
-    prevailing_wage_report = 1 # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
+    prevailing_wage_report = 0 # 1 to label prevailing wage violation records and list companies with prevailing wage violations, 0 not to
     signatories_report = 0 # 1 to include signatories (typically, this report is only for union compliance officers) 0 to exclude signatories
 
     #!!!manually add to report***********************************************************
@@ -212,6 +212,14 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     file_type = '.html'
     out_file_report = '_theft_summary_'
     temp_file_name = os.path.join(abs_path, (file_name+out_file_report+target_organization).replace(
+        ' ', '_') + file_type)  # <-- absolute dir and file name
+    
+    temp_file_name_HTML_to_PDF = os.path.join(abs_path, (file_name+"_temp_"+out_file_report+target_organization).replace(
+        ' ', '_') + file_type)  # <-- absolute dir and file name
+    
+    file_type = '.pdf'
+    out_file_report = '_theft_summary_'
+    temp_file_name_PDF = os.path.join(abs_path, (file_name+out_file_report+target_organization).replace(
         ' ', '_') + file_type)  # <-- absolute dir and file name
 
     file_type = '.csv'
@@ -613,13 +621,19 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     time_1 = time.time()
 
     # report main file--`w' create/zero text file for writing: the stream is positioned at the beginning of the file.
-    textFile = open(temp_file_name, 'w')
-    textFile.write("<!DOCTYPE html> \n")
-    textFile.write("<html><body> \n")
+    
+    write_style_html(temp_file_name)
+    textFile = open(temp_file_name, 'a')
+
+    write_style_html(temp_file_name_HTML_to_PDF)
+    textFile_temp_html_to_pdf = open(temp_file_name_HTML_to_PDF, 'a')
 
     Title_Block(TEST_, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
                 prevailing_wage_report, includeFedData, includeStateCases, includeStateJudgements, target_organization,
                 open_cases_only, textFile)
+    Title_Block(TEST_, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
+                prevailing_wage_report, includeFedData, includeStateCases, includeStateJudgements, target_organization,
+                open_cases_only, textFile_temp_html_to_pdf)
 
     if Nonsignatory_Ratio_Block == True:
         #Signatory_to_Nonsignatory_Block(DF_OG, DF_OG, textFile)
@@ -630,15 +644,23 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     #else:
     Industry_Summary_Block(out_counts, out_counts, total_ee_violtd, total_bw_atp,
         total_case_violtn, unique_legalname, agency_df_organization, open_cases_only, textFile)
+    Industry_Summary_Block(out_counts, out_counts, total_ee_violtd, total_bw_atp,
+        total_case_violtn, unique_legalname, agency_df_organization, open_cases_only, textFile_temp_html_to_pdf)
     Proportion_Summary_Block(out_counts, total_ee_violtd, total_bw_atp,
         total_case_violtn, unique_legalname, agency_df_organization, YEAR_START, YEAR_END, open_cases_only, 
         target_jurisdition, TARGET_INDUSTRY, case_disposition_series, textFile, bug_log_csv)
+    Proportion_Summary_Block(out_counts, total_ee_violtd, total_bw_atp,
+        total_case_violtn, unique_legalname, agency_df_organization, YEAR_START, YEAR_END, open_cases_only, 
+        target_jurisdition, TARGET_INDUSTRY, case_disposition_series, textFile_temp_html_to_pdf, bug_log_csv)
 
     if (len(unique_legalname.index) == 0):
         textFile = open(temp_file_name, 'a')
         textFile.write("<p> There were no records found to report.</p> \n")
+        textFile_temp_html_to_pdf = open(temp_file_name, 'a')
+        textFile_temp_html_to_pdf.write("<p> There were no records found to report.</p> \n")
 
-    textFile.write("<HR> </HR>")  # horizontal line
+    textFile.write("<HR> \n")  # horizontal line
+    textFile_temp_html_to_pdf.write("<HR> \n")  # horizontal line
 
     time_2 = time.time()
     log_number = 12
@@ -646,9 +668,16 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     # HTML closing
     time_1 = time.time()
-    textFile.write("<P style='page-break-before: always'>")
-    textFile.write("</html></body>")
+    #textFile.write("<P style='page-break-before: always'></p>")
+    textFile.write("<div style='break-before:page'></div> \n")
+    #textFile.write("</html></body>")
     textFile.close()
+
+    #textFile_temp_html_to_pdf.write("<P style='page-break-before: always'></p>")
+    textFile_temp_html_to_pdf.write("<div style='break-before:page'></div> \n")
+    #textFile_temp_html_to_pdf.write("</html></body>")
+    textFile_temp_html_to_pdf.close()
+
     time_2 = time.time()
     log_number = "13 HTML Closing"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -671,14 +700,23 @@ def generateWageReport(target_state, target_county, target_city, target_industry
             out_signatory_target, sig_file_name_csv, prevailing_header, header, multi_agency_header, 
             dup_agency_header, dup_header, dup_owner_header, prevailing_wage_report, out_prevailing_target, 
             prev_file_name_csv, TEST_)
+        print_top_viol_tables_html(out_target_all, unique_address, unique_legalname2, 
+            unique_tradename, unique_agency, unique_owner, agency_df, out_sort_ee_violtd, 
+            out_sort_bw_amt, out_sort_repeat_violtd, temp_file_name_HTML_to_PDF, signatories_report,
+            out_signatory_target, sig_file_name_csv, prevailing_header, header, multi_agency_header, 
+            dup_agency_header, dup_header, dup_owner_header, prevailing_wage_report, out_prevailing_target, 
+            prev_file_name_csv, TEST_)
     
     time_2 = time.time()
 
     if include_methods:
         textFile = open(temp_file_name, 'a')
-        textFile.write("<html><body> \n")
-        textFile.write("<HR> </HR>")  # horizontal line
-        textFile.write("<h1> Notes and methods summary</h1>")  # horizontal line
+        #textFile.write("<html><body> \n")
+        #textFile.write("<P style='page-break-before: always'></p>")
+        textFile.write("<div style='break-before:page'></div> \n")
+        textFile.write("\n")
+        #textFile.write("<HR> \n")  # horizontal line
+        textFile.write("<h1> Notes and methods summary</h1> \n")  # horizontal line
 
         Footer_Block(TEST_, textFile)
 
@@ -688,7 +726,28 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
         Sources_Block(textFile)
 
-        textFile.write("</html></body>")
+
+
+        textFile_temp_html_to_pdf = open(temp_file_name_HTML_to_PDF, 'a')
+        #textFile_temp_html_to_pdf.write("<P style='page-break-before: always'></p>")
+        textFile_temp_html_to_pdf.write("<div style='break-before:page'></div> \n")
+        textFile_temp_html_to_pdf.write("\n")
+        #textFile_temp_html_to_pdf.write("<html><body> \n")
+        #textFile_temp_html_to_pdf.write("<HR> \n")  # horizontal line
+        textFile_temp_html_to_pdf.write("<h1> Notes and methods summary</h1> \n")  # horizontal line
+
+        Footer_Block(TEST_, textFile_temp_html_to_pdf)
+
+        Notes_Block(textFile_temp_html_to_pdf)
+
+        Methods_Block(textFile_temp_html_to_pdf)
+
+        Sources_Block(textFile_temp_html_to_pdf)
+
+    #close HTML
+    textFile.write("</html></body>")
+    textFile_temp_html_to_pdf.write("</html></body>")
+
 
     # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
     log_number = 14
@@ -698,7 +757,55 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     append_log(bug_log, LOGBUG, "<h1>DONE</h1> \n" + "</html></body> \n") #CLOSE
     # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
     
-    return temp_file_name  # the temp json returned from API
+    succesfull_PDF = convert_html_to_pdf(temp_file_name_HTML_to_PDF, temp_file_name_PDF)
+    #temp_file_name_PDF = weasy_html_to_pdf(temp_file_name)
+    #Succesfull_PDF = pdfkit_html_to_pdf(temp_file_name, temp_file_name_PDF)
+    
+    return temp_file_name_PDF  # the temp json returned from API
+
+
+
+def convert_html_to_pdf(source_html, output_filename): #https://stackoverflow.com/questions/57363375/creating-pdfs-from-html-javascript-in-python-with-no-os-dependencies
+    from xhtml2pdf import pisa
+    with open(source_html, 'r') as html_file:
+        html_content = html_file.read()
+
+    with open(output_filename, 'wb') as pdf_file:
+        pisa_status = pisa.CreatePDF(html_content, dest=pdf_file)
+
+    if pisa_status.err:
+        return False
+    
+    return True
+
+
+"""
+def weasy_html_to_pdf(source_html): #https://dev.to/bowmanjd/python-pdf-generation-from-html-with-weasyprint-538h
+    from weasyprint import HTML
+    'Generate a PDF file from a string of HTML.'
+    htmldoc = HTML(string=source_html, base_url="")
+    return htmldoc.write_pdf()
+"""
+
+'''
+def pdfkit_html_to_pdf(source_html, temp_file_name_PDF):
+    import pdfkit
+    #from pypdf import PdfReader, PdfWriter
+    # Convert HTML to PDF
+    pdfkit.from_file(source_html, temp_file_name_PDF)
+    """
+    # Read the generated PDF and manipulate it
+    with open(temp_file_name_PDF, 'rb') as pdf_file: 
+        reader = PdfReader(pdf_file) 
+        writer = PdfWriter() 
+        for page in reader.pages: 
+            writer.add_page(page) 
+        with open(temp_file_name_PDF, 'wb') as output_pdf: 
+            writer.write(output_pdf)
+    """
+    return True
+'''
+
 
 
 
@@ -1134,41 +1241,6 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
     out_signatory_target, sig_file_name_csv, prevailing_header, header, multi_agency_header, dup_agency_header, dup_header, 
     dup_owner_header, prevailing_wage_report, out_prevailing_target, prev_file_name_csv, TEST):
 
-    result = '''
-            <html>
-            <head>
-            <style>
-
-                h2 {
-                    text-align: center;
-                    font-family: Helvetica, Arial, sans-serif;
-                }
-                table { 
-                    margin-left: auto;
-                    margin-right: auto;
-                }
-                table, th, td {
-                    border: 1px solid black;
-                    border-collapse: collapse;
-                }
-                th, td {
-                    padding: 5px;
-                    text-align: center;
-                    font-family: Helvetica, Arial, sans-serif;
-                    font-size: 90%;
-                }
-                table tbody tr:hover {
-                    background-color: #dddddd;
-                }
-                .wide {
-                    width: 90%; 
-                }
-
-            </style>
-            </head>
-            <body>
-            '''
-
     if not df.empty and (len(unique_address) != 0):
         import matplotlib
 
@@ -1203,25 +1275,28 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
         #write_to_html_file(out_sort_repeat_violtd, header, "TEST: Top violators by number of repeat violations (by legal name)", file_path(temp_file_name), 6)
         
         #with open(temp_file_name, 'a', encoding='utf-8') as f:  # append to report main file
-        result += "<HR> </HR>"
-        result += "<h2>Top Violators for Selected Region and Industry</h2> \n"
+        #result += "<HR> \n"
+        result = "<h2>Top Violators for Selected Region and Industry</h2> \n"
 
         if not out_sort_bw_amt.empty:
             # by backwages
             result += "<h3>Top violators by amount of backwages stolen (by legal name)</h3> \n"
             result += out_sort_bw_amt.head(6).to_html(columns=header, index=False)
+            result += "\n"
 
         if not out_sort_ee_violtd.empty:
             # by employees
             result += "<h3>Top violators by number of employees violated (by legal name)</h3> \n"
             result += out_sort_ee_violtd.head(6).to_html(
                 columns=header, index=False)
+            result += "\n"
 
         if not out_sort_repeat_violtd.empty:
             # by repeated
             result += "<h3>Top violators by number of repeat violations (by legal name)</h3> \n"
             result += out_sort_repeat_violtd.head(6).to_html(
                 columns=header, index=False)
+            result += "\n"
 
         # by repeat violators******************
         row_head = 24
@@ -1230,6 +1305,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             result += "<h3>Top violators group by address and sort by records</h3> \n"
             result += unique_address.head(row_head).to_html(
                 columns=dup_header, index=False)
+            result += "\n"
         else:
             result += "<p> There are no groups by address to report</p> \n"
 
@@ -1238,6 +1314,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             result += "<h3>Top violators group by legal name and sort by records</h3> \n"
             result += unique_legalname2.head(row_head).to_html(
                 columns=dup_header, index=False)
+            result += "\n"
         else:
             result += "<p> There are no groups by legal name to report</p> \n"
 
@@ -1246,6 +1323,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             result += "<h3>Top violators group by trade name and sort by records</h3> \n"
             result += unique_tradename.head(row_head).to_html(
                 columns=dup_header, index=False)
+            result += "\n"
         else:
             result += "<p> There are no groups by trade name to report</p> \n"
 
@@ -1254,6 +1332,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             result += "<h3>Top violators group by company and sort by number of agencies involved</h3> \n"
             result += agency_df.head(row_head).to_html(
                 columns=multi_agency_header, index=False)
+            result += "\n"
         else:
             result += "<p> There are no groups by companies with violations by multiple agencies to report</p> \n"
 
@@ -1263,6 +1342,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             result += "<h3>Cases by agency or owner</h3> \n"
             result += unique_agency.head(row_head).to_html(
                 columns=dup_agency_header, index=False)
+            result += "\n"
         else:
             result += "<p> There are no case groups by agency or owner to report</p> \n"
 
@@ -1271,6 +1351,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             result += "<h3>Cases by jurisdiction (includes private jurisdictions)</h3> \n"
             result += unique_owner.head(row_head).to_html(
                 columns=dup_owner_header, index=False)
+            result += "\n"
         else:
             result += "<p> There are no case groups by jurisdiction to report</p> \n"
 
@@ -1286,7 +1367,8 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             out_sort_signatory['ee_pmt_recv'] = out_sort_signatory.apply(
                 lambda x: "{0:,.0f}".format(x['ee_pmt_recv']), axis=1)
 
-            f.write("<P style='page-break-before: always'>")
+            #f.write("<P style='page-break-before: always'></p>")
+            f.write("<div style='break-before:page'></div> \n")
             out_sort_signatory.to_csv(sig_file_name_csv)
 
             f.write("<h3>All signatory wage violators</h3> \n")
@@ -1336,7 +1418,8 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             out_sort_prevailing_wage['ee_pmt_recv'] = out_sort_prevailing_wage.apply(
                 lambda x: "{0:,.0f}".format(x['ee_pmt_recv']), axis=1)
 
-            result += "<P style='page-break-before: always'>"
+            #result += "<P style='page-break-before: always'></p>"
+            result += "<div style='break-before:page'></div> \n"
             out_sort_prevailing_wage.to_csv(prev_file_name_csv)
 
             result += "<h3>All prevailing wage violators</h3> \n"
@@ -1376,17 +1459,56 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
 
 
         else:
+            result += "\n"
             result += "<p> There are no prevailing wage cases to report.</p> \n"
+            result += "\n"
             
-        
-    result += '''
-        </body>
-        </html>
-        '''
 
     with open(temp_file_name, mode='a', encoding='utf-8') as f:  # append to report main file
         f.write(result)
 
+def write_style_html(temp_file_name):
+
+    result = '''
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <title>Theft Violations</title>
+        <style>
+
+            h2, h3 {
+                text-align: center;
+                font-family: Helvetica, Arial, sans-serif;
+            }
+
+            table { 
+                margin-left: auto;
+                margin-right: auto;
+            }
+            table, th, td {
+                border: 1px solid black;
+                border-collapse: collapse;
+            }
+            th, td {
+                padding: 5px;
+                text-align: center;
+                font-family: Helvetica, Arial, sans-serif;
+                font-size: 90%;
+            }
+            table tbody tr:hover {
+                background-color: #dddddd;
+            }
+            .wide {
+                width: 90%; 
+            }
+
+        </style>
+        </head>
+        <body> \n
+        '''
+
+    with open(temp_file_name, mode='w', encoding='utf-8') as f:  # append to report main file
+        f.write(result)
 
 
 def Clean_Repeat_Violator_HTML_Row(df, COLUMN_NAME): #idk what this if for anymore -- F.PEterson 4/19/2024
@@ -3347,14 +3469,18 @@ def Clean_Summary_Values(DF_OG_VLN):
 
 def FormatNumbersHTMLRow(df):
     if not None:
-        df['bw_amt'] = df.apply(
-            lambda x: "{0:,.0f}".format(x['bw_amt']), axis=1)
-        df['ee_violtd_cnt'] = df.apply(
-            lambda x: "{0:,.0f}".format(x['ee_violtd_cnt']), axis=1)
-        df['ee_pmt_recv'] = df.apply(
-            lambda x: "{0:,.0f}".format(x['ee_pmt_recv']), axis=1)
-        df['violtn_cnt'] = df.apply(
-            lambda x: "{0:,.0f}".format(x['violtn_cnt']), axis=1)
+        if not is_string_series(df['bw_amt']):
+            df['bw_amt'] = df.apply(
+                lambda x: "{0:,.0f}".format(x['bw_amt']), axis=1)
+        if not is_string_series(df['ee_violtd_cnt']):
+            df['ee_violtd_cnt'] = df.apply(
+                lambda x: "{0:,.0f}".format(x['ee_violtd_cnt']), axis=1)
+        if not is_string_series(df['ee_pmt_recv']):    
+            df['ee_pmt_recv'] = df.apply(
+                lambda x: "{0:,.0f}".format(x['ee_pmt_recv']), axis=1)
+        if not is_string_series(df['violtn_cnt']):   
+            df['violtn_cnt'] = df.apply(
+                lambda x: "{0:,.0f}".format(x['violtn_cnt']), axis=1)
 
     return df
 
@@ -4146,20 +4272,7 @@ def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY,
 
 def City_Summary_Block_4_Zipcode_and_Industry(df, df_max_check, TARGET_INDUSTRY, SUMMARY_SIG, filename):
 
-    result = '''
-	<html>
-	<head>
-	<style>
-
-		h2 {
-			text-align: center;
-			font-family: Helvetica, Arial, sans-serif;
-		}
-		
-	</style>
-	</head>
-	<body>
-	'''
+    result = ""
 
     # zip code = loop through
     df = df.reset_index(level=0, drop=True)  # drop city category
@@ -4250,22 +4363,7 @@ def City_Summary_Block_4_Zipcode_and_Industry(df, df_max_check, TARGET_INDUSTRY,
 
 def City_Summary_Block(city_cases, df, total_ee_violtd, total_bw_atp, total_case_violtn, unique_legalname, agency_df, cty_nm, SUMMARY_SIG, filename):
 
-    result = '''
-		<html>
-		<head>
-		<style>
-
-			h2 {
-				text-align: center;
-				font-family: Helvetica, Arial, sans-serif;
-			}
-			
-		</style>
-		</head>
-		<body>
-		'''
-    result += '\n'
-    result += '<h2>'
+    result = '<h2>'
     result += cty_nm
     result += ' CITY SUMMARY</h2>\n'
 
@@ -4533,8 +4631,8 @@ def Proportion_Summary_Block(out_counts, total_ee_violtd, total_bw_atp, total_ca
         textFile.write(f" out of all {total_number_of_cases} wage theft {report_type} against \
                 {TARGET_INDUSTRY[0][0]} industry companies in {target_jurisdition} \
                 from {formated_start} to the present:")
-        textFile.write("</p>")
-        
+        textFile.write("</p> \n")
+
         textFile.write("<ul>")
 
         case_disposition_series = case_disposition_series.value_counts()
@@ -4554,7 +4652,8 @@ def Proportion_Summary_Block(out_counts, total_ee_violtd, total_bw_atp, total_ca
             #textFile.write(f"<li>{n} are on {case_disposition_series.index[count] } </li>")
 
         textFile.write(f"<li><i>*disposition types with less than {cutoff_size + 1} records are not listed</i></li>")
-        textFile.write("</ul>") 
+        
+        textFile.write("</ul>")
 
         
         
@@ -4578,7 +4677,7 @@ def Notes_Block(textFile, default_zipcode="####X"):
     textFile.write(
         "<p>Note that categorizations are based on both documented data and intelligent inferences, therefore, there are errors. ")
     textFile.write("For the fields used to prepare this report, please see <a href='https://docs.google.com/spreadsheets/d/19EPT9QlUgemOZBiGMrtwutbR8XyKwnrEhB5rZpZqM98/'>https://docs.google.com/spreadsheets/d/19EPT9QlUgemOZBiGMrtwutbR8XyKwnrEhB5rZpZqM98/</a> . ")
-    textFile.write("And for the industry categories, which are given shortened names here, please see <a href='https://www.naics.com/search/'>https://www.naics.com/search/</a>  . ")
+    textFile.write("And for the industry categories, which are given shortened names here, please see <a href='https://www.naics.com/search/'>https://www.naics.com/search/</a>  . </p>")
     #textFile.write("To see a visualization of the data by zip code and industry, please see (last updated Feb 2020) <a href='https://public.tableau.com/profile/forest.peterson#!/vizhome/Santa_Clara_County_Wage_Theft/SantaClaraCounty'></a> . </p>")
 
     textFile.write("\n")
@@ -4608,6 +4707,7 @@ def Methods_Block(textFile):
     textFile.write("<p>")
     textFile.write("estimate when missing:")
     textFile.write("</p>")
+    
     textFile.write("<ul>")
     textFile.write(
         "<li>estimated backwage per employee = (df['bw_amt'].sum() / df['ee_violtd_cnt'].sum() ) </li>")
@@ -4615,12 +4715,14 @@ def Methods_Block(textFile):
         "<li>estimated monetary penalty (CMP) assessed per employee = (est_bw_amt * 12.5%) </li>")
     textFile.write(
         "<li>where interest balance due is missing, then infer an interest balance based on a calaculated compounded interest of the backwages owed</li>")
+    
     textFile.write("<ul>")
     textFile.write(
         "<li>df['interest_owed'] = np.where((df['interest_owed'].isna() | (df['interest_owed'] == '')), df['Interest_Accrued'], df['interest_owed'])</li>")
     textFile.write(
         "<li>df['Interest_Accrued'] = (df['wages_owed'] * (((1 + ((r/100.0)/n)) ** (n*df['Years_Unpaid']))) ) - df['wages_owed']</li>")
     textFile.write("</ul>")
+
     textFile.write("</ul>")
 
     textFile.write("<p>")
@@ -4652,7 +4754,6 @@ def Methods_Block(textFile):
     # textFile.write("<li> </li>")
     # textFile.write("records: ")
     # textFile.write("<li> </li>")
-    textFile.write("</p>")
 
     textFile.write("\n")
     textFile.write("\n")
@@ -4660,7 +4761,7 @@ def Methods_Block(textFile):
 def Sources_Block(textFile):
     textFile.write("<p>")
     textFile.write("Data Sources: ")
-    textFile.write("</p>")
+    textFile.write("</p> \n")
 
     textFile.write("<p>")
 
@@ -4742,9 +4843,9 @@ def Footer_Block(TEST, textFile):
     textFile.write("</p> \n")
 
     textFile.write("<p>Palo Alto Data Group pulled a list from databases of all sector judgments and adjudications \
-                to generate this report using an open source software that was prepared by the Center for Integrated Facility Engineering (CIFE) \
-                   at Stanford University in collaboration with the Santa Clara County Wage Theft Coalition. These data \
-                   have not been audited and, therefore, are only intended as an indication of wage theft.</p> \n")
+        to generate this report using an open source software that was prepared by the Center for Integrated Facility Engineering (CIFE) \
+        at Stanford University in collaboration with the Santa Clara County Wage Theft Coalition. These data \
+        have not been audited and, therefore, are only intended as an indication of wage theft.</p> \n")
 
 #write_to_html_file(new_df_3, header_HTML_EMP3, "", file_path('py_output/A4W_Summary_by_Emp_for_all2.html') )
 
@@ -4753,50 +4854,13 @@ def write_to_html_file(df, header_HTML, title, filename, rows = 99):
     # added this line to avoid error 8/10/2022 f. peterson
     import pandas.io.formats.style
     import os  # added this line to avoid error 8/10/2022 f. peterso
-
-    result = '''
-		<html>
-		<head>
-		<style>
-
-			h3 {
-				text-align: center;
-				font-family: Helvetica, Arial, sans-serif;
-			}
-			table { 
-				margin-left: auto;
-				margin-right: auto;
-			}
-			table, th, td {
-				border: 1px solid black;
-				border-collapse: collapse;
-			}
-			th, td {
-				padding: 5px;
-				text-align: center;
-				font-family: Helvetica, Arial, sans-serif;
-				font-size: 90%;
-			}
-			table tbody tr:hover {
-				background-color: #dddddd;
-			}
-			.wide {
-				width: 90%; 
-			}
-
-		</style>
-		</head>
-		<body>
-		'''
-    result += '<h3> %s </h3>\n' % title
+    
+    result = '<h3> %s </h3>\n' % title
     if type(df) == pd.io.formats.style.Styler:
         result += df.render()
     else:
         result += df.to_html(max_rows = rows, classes='wide', columns=header_HTML, escape=False)
-    result += '''
-		</body>
-		</html>
-		'''
+
     # with open(filename, mode='a') as f:
     # added this line to avoid error 8/10/2022 f. peterson
     # create directory if it doesn't exist
