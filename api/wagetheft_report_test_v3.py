@@ -17,6 +17,6 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     page.annotations.append(annotation)
 
     with open("output.pdf", "wb") as output_pdf:
-        pdf_writer.write(output_pdf)
+        pdf_writer.write(annotation)
 
     return output_pdf
