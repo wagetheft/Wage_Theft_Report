@@ -11,7 +11,7 @@ def helloWorld():
     return "Hello World!"
 
 
-@app.route('/generateWageReport_test', methods=['POST'])
+@app.route('/generateWageReport-test', methods=['POST'])
 def generateFile():
     
     parameters = request.get_json()
