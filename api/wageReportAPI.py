@@ -31,10 +31,10 @@ def generateFile():
     
     report_file_name = generateWageReport(target_state, target_county, target_city, target_industry, target_organization )
 
-    try:
-        return send_file(report_file_name, as_attachment=True)
-    except Exception as e:
-        return "Server error", 500
+    #try:
+    return send_file(report_file_name, as_attachment=True)
+    #except Exception as e:
+    #    return "Server error", 500
 
 def checkValidInput(inputDict: dict) -> bool:
     toCheck = ["target_city", "target_industry", "target_organization" ]
