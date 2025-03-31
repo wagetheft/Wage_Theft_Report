@@ -11,9 +11,8 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     annotation = ("hello world: " + target_state + " " + target_county + " " + 
             target_city + " " + target_industry + " " + target_organization + " !" )
 
-
     with open("output.txt", "w") as file:
         file.write(annotation)
 
-    return file
+    return "output.txt"
 
