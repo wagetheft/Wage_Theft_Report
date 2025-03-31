@@ -21,7 +21,7 @@ def generateWageReport(target_state, target_county, target_city, target_industry
 
     temp_file_name_PDF = "test report.txt"
 
-    with open(temp_file_name_PDF, "w") as file:
+    with open(temp_file_name_PDF, "w+") as file:
         file.write(annotation)
 
     return temp_file_name_PDF
