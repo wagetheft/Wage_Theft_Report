@@ -1,6 +1,6 @@
 
-from pypdf import PdfWriter
 import warnings
+import os
 warnings.filterwarnings("ignore", 'This pattern has match groups')
 
 
@@ -11,8 +11,16 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     annotation = ("hello world: " + target_state + " " + target_county + " " + 
             target_city + " " + target_industry + " " + target_organization + " !" )
 
-    with open("output.txt", "w") as file:
+    rel_path = 'report_output_/'
+    script_dir = os.path.dirname(os.path.dirname(__file__))
+    abs_path = os.path.join(script_dir, rel_path)
+
+    file_type = ".txt"
+    temp_file_name_PDF = os.path.join(abs_path, ("test report").replace(
+        ' ', '_') + file_type)  # <-- absolute dir and file name
+
+    with open(temp_file_name_PDF, "w") as file:
         file.write(annotation)
 
-    return "output.txt"
+    return temp_file_name_PDF
 
