@@ -15,6 +15,8 @@ def generateWageReport(target_state, target_county, target_city, target_industry
     script_dir = os.path.dirname(os.path.dirname(__file__))
     abs_path = os.path.join(script_dir, rel_path)
 
+    os.makedirs(abs_path, exist_ok=True)
+
     file_type = ".txt"
     temp_file_name_PDF = os.path.join(abs_path, ("test report").replace(
         ' ', '_') + file_type)  # <-- absolute dir and file name
