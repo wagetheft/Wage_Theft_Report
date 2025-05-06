@@ -11,6 +11,15 @@ def helloWorld():
     return "Hello World!"
 
 
+@app.route("/cloud_b2_storage/create")
+def create_bucket():
+
+    
+
+
+    return
+
+
 @app.route('/generateWageReport', methods=['POST'])
 def generateFile():
     parameters = request.get_json()
