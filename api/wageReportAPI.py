@@ -1,7 +1,5 @@
-from requests import request as rq
 from flask import Flask, request, send_file
 from api.wagetheft_report_2020_v3 import generateWageReport
-import os
 
 app = Flask(__name__)
 
@@ -13,10 +11,7 @@ def helloWorld():
 
 @app.route("/cloud_b2_storage/create")
 def create_bucket():
-
-    
-
-
+    # This is a placeholder for the create bucket functionality
     return
 
 
