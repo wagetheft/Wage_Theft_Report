@@ -187,7 +187,11 @@ def Filter_for_Zipcode(df, TARGET_ZIPCODES, infer_zip, target_state):
 
 
 #CLEANUP
-def clean_function(RunFast, df, FLAG_DUPLICATE, bug_log, LOGBUG, log_number, bug_log_csv):
+def clean_function(
+        RunFast, 
+        df, 
+        FLAG_DUPLICATE,
+        bug_log, LOGBUG, log_number, bug_log_csv):
 
     function_name = "clean_function"
 

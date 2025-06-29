@@ -30,7 +30,7 @@ def Infer_Industry(df, TARGET_INDUSTRY):
             PATTERN_IND = '|'.join(TARGET_INDUSTRY[x])
             PATTERN_EXCLUDE = EXCLUSION_LIST_GENERATOR(TARGET_INDUSTRY[x])
 
-            if 'legal_nm' in df.column and 'trade_nm' in df.columns: #uses legal and trade names to infer industry
+            if 'legal_nm' in df.columns and 'trade_nm' in df.columns: #uses legal and trade names to infer industry
                 foundIt_ind1 = (
                     (
                         df['legal_nm'].astype(str).str.contains(

@@ -89,11 +89,11 @@ def compile_theft_report(
     agency_df = agency_df.sort_values(by=['records'], ascending=False)
     agency_df_organization = agency_df_organization.sort_values(by=['records'], ascending=False)
     
-    DF_OG = Filter_for_Zipcode(DF_OG, "", "", "California") #hack to just california records
-    DF_OG_ALL = DF_OG.copy()
+    print_dict['DF_OG'] = Filter_for_Zipcode(print_dict['DF_OG'], "", "", "California") #hack to just california records
+    DF_OG_ALL = print_dict['DF_OG'].copy()
     DF_OG_ALL = DropDuplicateRecords(DF_OG_ALL, FLAG_DUPLICATE, bug_log_csv)
 
-    DF_OG_VLN = DF_OG.copy()
+    DF_OG_VLN = print_dict['DF_OG'].copy()
     DF_OG_VLN = DropDuplicateRecords(DF_OG_VLN, FLAG_DUPLICATE, bug_log_csv)
     DF_OG_VLN = Clean_Summary_Values(DF_OG_VLN)
 
@@ -131,16 +131,19 @@ def compile_theft_report(
     write_style_html(print_dict['temp_file_name_HTML_to_PDF'])
     textFile_temp_html_to_pdf = open(print_dict['temp_file_name_HTML_to_PDF'], 'a')
 
-    Title_Block(print_dict['TEST_'], DF_OG_VLN, DF_OG_ALL, print_dict['target_jurisdition'], print_dict['TARGET_INDUSTRY'],
-                print_dict['prevailing_wage_report'], print_dict['includeFedData'], print_dict['includeStateCases'], print_dict['includeStateJudgements'], print_dict['target_organization'],
-                print_dict['open_cases_only'], textFile, print_dict['includeStateCases'], 
-                print_dict['includeStateJudgements'], print_dict['target_organization'],
-                print_dict['open_cases_only'], textFile)
-    Title_Block(print_dict['TEST_'], DF_OG_VLN, DF_OG_ALL, print_dict['target_jurisdition'], print_dict['TARGET_INDUSTRY'],
-                print_dict['prevailing_wage_report'], print_dict['includeFedDat'], print_dict['includeStateCases'], 
-                print_dict['includeStateJudgements'], print_dict['includeStateCases'], print_dict['includeStateJudgements'], 
-                print_dict['target_organization'],
-                print_dict['open_cases_only'], textFile_temp_html_to_pdf)
+    Title_Block(
+        print_dict['TEST_'], DF_OG_VLN, DF_OG_ALL,
+        print_dict['target_jurisdition'], print_dict['TARGET_INDUSTRY'],
+        print_dict['prevailing_wage_report'], 
+        print_dict['includeFedData'], print_dict['includeStateCases'], print_dict['includeStateJudgements'], 
+        print_dict['target_organization'], print_dict['open_cases_only'], textFile)
+    
+    Title_Block(
+        print_dict['TEST_'], DF_OG_VLN, DF_OG_ALL, 
+        print_dict['target_jurisdition'], print_dict['TARGET_INDUSTRY'],
+        print_dict['prevailing_wage_report'], 
+        print_dict['includeFedData'], print_dict['includeStateCases'], print_dict['includeStateJudgements'],  
+        print_dict['target_organization'], print_dict['open_cases_only'], textFile_temp_html_to_pdf)
 
     if print_dict['Nonsignatory_Ratio_Block'] == True:
         #Signatory_to_Nonsignatory_Block(DF_OG, DF_OG, textFile)
@@ -243,3 +246,5 @@ def compile_theft_report(
         Methods_Block(textFile_temp_html_to_pdf)
 
         Sources_Block(textFile_temp_html_to_pdf)
+
+        return

@@ -546,8 +546,12 @@ def FormatNumbersHTMLRow(df):
     return df
 
 
-def Title_Block(TEST, DF_OG_VLN, DF_OG_ALL, target_jurisdition, TARGET_INDUSTRY, prevailing_wage_report, federal_data, \
-                includeStateCases, includeStateJudgements, target_organization, open_cases_only, textFile):
+def Title_Block(
+        TEST, DF_OG_VLN, DF_OG_ALL, 
+        target_jurisdition, TARGET_INDUSTRY, 
+        prevailing_wage_report, 
+        federal_data, includeStateCases, includeStateJudgements, 
+        target_organization, open_cases_only, textFile):
     
     scale = ""
     if open_cases_only:

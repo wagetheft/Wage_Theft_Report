@@ -274,7 +274,7 @@ def Read_Violation_Data(TEST_CASES, url, out_file_report, trigger, bug_log_csv, 
     df_csv['juris_or_proj_nm'] = out_file_report
     df_csv = Setup_Regular_headers(df_csv, abs_path, file_name, bug_log_csv)
 
-    save_backup_to_folder(df_csv, out_file_report + '_backup', "csv_read_backup/") #greedy backukup even if already exists
+    save_backup_to_folder(df_csv, out_file_report + '_backup', "csv_read_backup/") #greedy backup even if already exists
 
     return df_csv
 

@@ -297,11 +297,14 @@ def generateWageReport(
 
         'url_backup_file':url_backup_file,
         'url_backup_path':url_backup_path,
+
+        'DF_OG':DF_OG,
     }
 
     out_target, DF_OG = read_df(
         industriesDict, 
         prep_dict, 
+        includeFedData, includeStateJudgements, includeStateCases,
         bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv,
         abs_path0,
         TEST_)
@@ -370,6 +373,7 @@ def generateWageReport(
         'out_signatory_target':out_signatory_target,
         'sig_file_name_csv':sig_file_name_csv,
         'prev_file_name_csv':prev_file_name_csv,
+        'DF_OG':DF_OG,
     }
 
     compile_theft_report(
