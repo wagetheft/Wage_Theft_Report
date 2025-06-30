@@ -15,7 +15,7 @@ def create_bucket():
     return
 
 #@app.route('/generateWageReport', methods=['POST'])
-@app.route('/wage-report/generate', methods=['POST'])
+@app.route('/generate', methods=['POST'])
 def generateFile():
     parameters = request.get_json()
     print(parameters)
