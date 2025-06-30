@@ -4,12 +4,7 @@ import requests
 import io
 import numpy as np
 
-
-from debug_utils import save_backup_to_folder
-
-from wagetheft_clean_value_utils import (
-    CleanNumberColumns,
-)
+from wagetheft_clean_value_utils import CleanNumberColumns
 
 
 def Setup_Regular_headers(df, abs_path, file_name, bug_log_csv):  # DSLE, WHD, etc headers
@@ -316,6 +311,32 @@ def read_csv_from_url(url):
     df = pd.read_csv(buf, low_memory=False, encoding='utf8', sep=',', on_bad_lines="skip")
 
     return df
+
+
+
+def save_backup_to_folder(df_csv, 
+                          out_file_report_name = 'backup_', 
+                          out_file_report_path = ""):
+    import os
+    #import pyarrow.parquet as pq #only activate in linux
+
+    if out_file_report_path == "": 
+        out_file_report_path = out_file_report_path + '_backup/' #defualt folder name
+    script_dir = os.path.dirname(os.path.dirname(__file__))
+    abs_path = os.path.join(script_dir, out_file_report_path)
+    if not os.path.exists(abs_path):  # create folder if necessary
+        os.makedirs(abs_path)
+    file_type0 = '.csv'
+    
+    file_name_backup0 = os.path.join(abs_path, (out_file_report_name).replace('/', '') + file_type0)  # <-- absolute dir and file name
+    df_csv.to_csv(file_name_backup0) #uncomment for testing
+
+    '''
+    file_type1 = '.parquet'
+    file_name_backup1 = os.path.join(abs_path, (out_file_report_name).replace('/', '') + file_type1)
+    df_csv.to_parquet(file_name_backup1, engine='pyarrow', index=False)
+    '''
+
 
 
 

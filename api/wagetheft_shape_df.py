@@ -26,7 +26,7 @@ from util_signatory_pattern import (
 def shape_df(
         out_target, option_dict,
         FLAG_DUPLICATE, 
-        bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv
+        bug_log_csv
         ):
 
     out_target = DropDuplicateRecords(out_target, FLAG_DUPLICATE, bug_log_csv) #look for duplicates across data sets
@@ -35,14 +35,11 @@ def shape_df(
         out_target, 
         option_dict['TARGET_ZIPCODES'], 
         option_dict['TARGET_INDUSTRY'], 
-        option_dict['open_cases_only'], 
         option_dict['infer_zip'], 
         option_dict['infer_by_naics'], 
-        option_dict['TARGET_ORGANIZATIONS'], 
         option_dict['YEAR_START'], 
         option_dict['YEAR_END'], 
-        option_dict['target_state'], 
-        bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv)
+        option_dict['target_state'])
     
     if option_dict['signatories_report'] == 0:
         out_target = infer_signatory_cases(out_target, option_dict['SIGNATORY_INDUSTRY'])

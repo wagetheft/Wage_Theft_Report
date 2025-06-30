@@ -5,21 +5,16 @@ import os
 import time
 import glob
 
+#import pyarrow.parquet as pq #only activate in Linux VM
+
+from wagetheft_inference_util import inference_function
+from wagetheft_clean_value_utils import clean_function
 from wagetheft_io_utils import (
     Read_Violation_Data,
-)
-
-from wagetheft_inference_util import (
-     inference_function,
-)
-
-from wagetheft_clean_value_utils import (
-    clean_function,
-)
-
-from debug_utils import (
     save_backup_to_folder,
 )
+from util_filter import filter_function
+from datetime import datetime, timedelta
 
 
 def read_df(
@@ -28,47 +23,49 @@ def read_df(
         includeFedData, includeStateJudgements, includeStateCases,
         bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv,
         abs_path0,
-        TEST_ = False):
+        TEST_STATUS = False):
     
     OLD_DATA = False
-        
-    PATH_EXISTS = os.path.exists(abs_path0) #url_backup folder
-    if PATH_EXISTS: 
-        dir = os.listdir(abs_path0)
-        csv_files = glob.glob(os.path.join(abs_path0, "*.csv"))
-        
-        #verify age of file
-        age_limit = (1 * 30 * 24 * 60 * 60) #seconds = 1 month x 30 days/mo x 24 hr/day x 60 min/hr x 60s/min
-        for f in csv_files:
-            born_on = os.path.getmtime(f)
-            age = (time.time() - born_on)
-            if age > age_limit: #if older than one month
-                OLD_DATA = True
-                os.remove(f) #remove and make new
-
-        if ( #read new files from url source
-            (OLD_DATA
-            or len(dir) < 2) #folder empty
-            or prep_dict['New_Data_On_Run_Test']):    
-            url_list = build_url_list(includeFedData, includeStateJudgements, includeStateCases, False, TEST_)
-            time.sleep(2) #pause to prevent whatever is causing crash
-            prep_dict['DF_OG'] = df_from_url(
-                industriesDict, 
-                prep_dict, 
-                url_list,
-                bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv)
-                
-        else: #files exists and newer than one month and not a test
-            for f in csv_files:
-                time.sleep(2) #pause to prevent whatever is causing crash
-                #df_backup = pd.read_csv(f, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=prep_dict['TEST_CASES'], dtype={'zip_cd': 'str'} )
-                df_backup = pd.read_csv(f, encoding = 'utf8', low_memory=False, thousands=',', nrows=prep_dict['TEST_CASES'], dtype={'zip_cd': 'str'} )
-                prep_dict['DF_OG'] = pd.concat([df_backup, prep_dict['DF_OG']], ignore_index=True)  
+    os.makedirs(abs_path0, exist_ok=True)
+    os.makedirs(abs_path0 + '_fast', exist_ok=True)
+    dir = os.listdir(abs_path0)
+    csv_files = glob.glob(os.path.join(abs_path0, "*.csv"))
     
+    #verify age of file
+    age_limit = (1 * 30 * 24 * 60 * 60) #seconds = 1 month x 30 days/mo x 24 hr/day x 60 min/hr x 60s/min
+    for f in csv_files:
+        born_on = os.path.getmtime(f)
+        age = (time.time() - born_on)
+        if age > age_limit: #if older than one month
+            OLD_DATA = True
+            os.remove(f) #remove and make new   
+
+    if ( #read new files from url source -- kae all new regardless
+        (OLD_DATA
+        or len(dir) < 2) #folder empty
+        or prep_dict['New_Data_On_Run_Test']):    
+        url_list = build_url_list(includeFedData, includeStateJudgements, includeStateCases, TEST_ = TEST_STATUS)
+        time.sleep(2) #pause to prevent whatever is causing crash
+        df_from_url(
+            industriesDict, 
+            prep_dict, 
+            url_list,
+            bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv)
+        True
+    
+    csv_files = glob.glob(os.path.join(abs_path0, "*.csv"))
+
+    for f in csv_files:
+        time.sleep(2) #pause to prevent whatever is causing crash
+        #df_backup = pd.read_csv(f, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=prep_dict['TEST_CASES'], dtype={'zip_cd': 'str'} )
+        df_backup = pd.read_csv(f, encoding = 'utf8', low_memory=False, thousands=',', nrows=prep_dict['TEST_CASES'], dtype={'zip_cd': 'str'} )
+        #df_backup_test = pq.read_parquet(f.split('.')[0] + '.parquet')
+        prep_dict['DF_OG'] = pd.concat([df_backup, prep_dict['DF_OG']], ignore_index=True)  
+
     out_target = prep_dict['DF_OG'].copy()  # new df -- hold df_csv as a backup and only df from this point on
 
     time.sleep(2) #pause to prevent whatever is causing crash
-    url_list = build_url_list(includeFedData, includeStateJudgements, includeStateCases, 'Fast')
+    url_list = build_url_list(includeFedData, includeStateJudgements, includeStateCases, Fast='Fast')
 
     for url in url_list: #filter dataset for this run -- example, remove fed and state
         time.sleep(2) #pause to prevent whatever is causing crash
@@ -94,14 +91,14 @@ def df_from_url(
         if ((url[2] == 'DOL_WHD') or (url[2] == 'DIR_DLSE') ): 
             trigger = True #toggle between (true) encoding="ISO-8859-1" and (false) encoding='utf8'
             
-        url = url[0]
+        url_cell = url[0]
         out_file_report = url[2]
 
         df_url = pd.DataFrame()
 
-        df_url = Read_Violation_Data(
+        df_url = Read_Violation_Data( #save raw downloads here
             prep_dict['TEST_CASES'], 
-            url, 
+            url_cell, 
             out_file_report, 
             trigger, 
             bug_log_csv, abs_path, 
@@ -123,10 +120,29 @@ def df_from_url(
                 prep_dict['prevailing_wage_politicals'], 
                 bug_log, LOGBUG, log_number)
         
-        save_backup_to_folder(
+        save_backup_to_folder( #save clean download here
             df_url, 
             prep_dict['url_backup_file']+str(count), 
             prep_dict['url_backup_path']
+            ) #save copy to url_backup -- cleaned file
+        
+        YEAR_END_THEN = pd.to_datetime('today')
+        YEAR_START_NOW = (YEAR_END_THEN - timedelta(days=8*365)).strftime('%Y-%m-%d')
+
+        df_url_short = filter_function(
+            df_url,
+            YEAR_START = YEAR_START_NOW, 
+            YEAR_END = YEAR_END_THEN, 
+            TARGET_ZIPCODES = '00000',
+            TARGET_INDUSTRY = 'Construction',
+            infer_zip = True, infer_by_naics = True, 
+            target_state = 'California', 
+            )
+
+        save_backup_to_folder( #save clean download here
+            df_url_short, 
+            prep_dict['url_backup_file']+("_ca_23_2018_")+str(count), 
+            prep_dict['url_backup_path'] + '_fast'
             ) #save copy to url_backup -- cleaned file
         
         count += 1
@@ -135,10 +151,9 @@ def df_from_url(
 
         trigger = False
     
-    return prep_dict['DF_OG']
 
 
-def build_url_list(includeFedData, includeStateJudgements, includeStateCases, Fast = False, TEST_ = False):
+def build_url_list(includeFedData, includeStateJudgements, includeStateCases, TEST_ = False, Fast = False, ):
 
     includeTestData = 0 #this is always 0
     if (TEST_ == 1): 
@@ -165,6 +180,7 @@ def build_url_list(includeFedData, includeStateJudgements, includeStateCases, Fa
         m = re.search(r'(https://enfxfr.dol.gov/\.\./data_catalog/WHD/whd_whisard_[0-9]{8}\.csv\.zip)', str(ret.content))   
         #url1 = "https://enfxfr.dol.gov/data_catalog/WHD/whd_whisard_20230710.csv.zip" #update link from here https://enforcedata.dol.gov/views/data_catalogs.php
         url1 = m.group(0)
+        time.sleep(2) #pause to prevent whatever is causing crash
 
         #pre-2019 DLSE data
         # url2 = "https://www.researchgate.net/profile/Forest-Peterson/publication/357767172_California_Dept_of_Labor_Standards_Enforcement_DLSE_PRA_Wage_Claim_Adjudications_WCA_for_all_DLSE_offices_from_January_2001_to_July_2019/data/61de6b974e4aff4a643603ae/HQ20009-HQ-2nd-Production-8132019.csv"
@@ -174,7 +190,7 @@ def build_url_list(includeFedData, includeStateJudgements, includeStateCases, Fa
         #NEED TO REVISE SO THIS IS A FRESH PULL LIKE WHD PULL
         url3 = "https://stanford.edu/~granite/WageClaimDataExport_State_Construction_Jan_8_2024.csv" #TEST
         url4 = "https://stanford.edu/~granite/ExportData_Judge_state_NAISC_23_Jan_8_2024.csv" #TEST
-        url4 = "https://stanford.edu/~granite/ExportData_Judge_state_NAISC_5413_Jan_8_2024.csv" #TEST
+        url5 = "https://stanford.edu/~granite/ExportData_Judge_state_NAISC_5413_Jan_8_2024.csv" #TEST
 
 
     url_list = [
@@ -183,9 +199,9 @@ def build_url_list(includeFedData, includeStateJudgements, includeStateCases, Fa
         [url2, includeStateCases,'DIR_DLSE'],
         [url3, includeStateCases,'DLSE_WageClaim'],
         [url4, includeStateJudgements,'DLSE_J-23'],
-        [url5, includeStateJudgements,'DLSE_J-5413']
+        [url5, includeStateJudgements,'DLSE_J-5413'],
         #includeLocalData = False -- unused
         #includeOfficeData = False -- unused
-        ]
+    ]
     
     return url_list

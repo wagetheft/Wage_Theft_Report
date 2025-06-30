@@ -91,7 +91,7 @@ def Infer_Industry(df, TARGET_INDUSTRY):
     return df
 
 
-def Filter_for_Target_Industry(df, TARGET_INDUSTRY, infer_by_naics):
+def Filter_for_Target_Industry(df, TARGET_INDUSTRY, infer_by_naics = True):
     
     if 'trade2' not in df.columns:
         df['trade2'] = ''

@@ -1,9 +1,6 @@
 import re
 import pandas as pd
 import numpy as np
-import time
-
-from debug_utils import append_log
 
 from util_group import GroupByX
 
@@ -244,7 +241,6 @@ def InferSignatoriesFromAddressAndFlag(df, signatory_address_list):
     return df
 
 
-
 def InferSignatoriesFromNameAndFlag(df, SIGNATORY_INDUSTRY):
 
     if 'legal_nm' not in df.columns:
@@ -277,6 +273,59 @@ def InferSignatoriesFromNameAndFlag(df, SIGNATORY_INDUSTRY):
 
     return df
 
+
+def infer_prevailing_wage_cases(df, prevailing_wage_terms, prevailing_wage_labor_code, prevailing_wage_politicals):
+    df = InferPrevailingWageAndColumnFlag(df, prevailing_wage_terms, prevailing_wage_labor_code, prevailing_wage_politicals)
+    return df
+
+
+def InferPrevailingWageAndColumnFlag(df, prevailing_wage_terms, prevailing_wage_labor_code, prevailing_wage_politicals):
+
+    if 'Prevailing' not in df.columns:
+        df['Prevailing'] = '0'
+    else:
+        df['Prevailing'] = df.Prevailing.fillna("0")
+    
+    if "Reason For Closing" not in df.columns:
+        df["Reason For Closing"] = ""
+    if 'Closure Disposition - Other Reason' not in df.columns:
+        df['Closure Disposition - Other Reason'] = ""
+    if 'violation_code' not in df.columns:
+        df['violation_code'] = ""
+    if 'violation' not in df.columns:
+        df['violation'] = ""
+    if 'Note' not in df.columns:
+        df['Note'] = ""
+    
+
+    prevailing_wage_pattern = '|'.join(prevailing_wage_terms)
+    found_prevailing_0 = (
+        ((df['Reason For Closing'].astype(str).str.contains(prevailing_wage_pattern, case = False))) |
+        ((df['Closure Disposition - Other Reason'].astype(str).str.contains(prevailing_wage_pattern, case = False)))
+    )
+
+    prevailing_wage_labor_code_pattern = '|'.join(prevailing_wage_labor_code)
+    found_prevailing_1 = (
+        ((df['violation_code'].astype(str).str.contains(prevailing_wage_labor_code_pattern, case = False))) |
+        ((df['violation'].astype(str).str.contains(prevailing_wage_labor_code_pattern, case = False))) |
+        ((df['Note'].astype(str).str.contains(prevailing_wage_labor_code_pattern, case = False))) 
+    )
+
+    prevailing_wage_political_pattern = '|'.join(prevailing_wage_politicals)
+    found_prevailing_2 = (
+        ((df['legal_nm'].astype(str).str.contains(prevailing_wage_political_pattern, case = False)))
+    )
+
+    df.loc[((found_prevailing_0 | found_prevailing_1 | found_prevailing_2) & 
+        ((df['industry'] == "Construction") | (df['industry'] == 'Utilities') )), 
+        'Prevailing'] = '1'
+
+    #specific to DOL WHD data
+    if "dbra_cl_violtn_cnt" in df.columns:
+        df.loc[df["dbra_cl_violtn_cnt"] > 0, "violation_code"] = "DBRA"
+        df.loc[df["dbra_cl_violtn_cnt"] > 0, "Prevailing"] = "1"
+
+    return df
 
 
 def InferSignatoryIndustryAndLabel(df, SIGNATORY_INDUSTRY):
@@ -315,19 +364,13 @@ def InferSignatoryIndustryAndLabel(df, SIGNATORY_INDUSTRY):
 
     return df
 
-def filter_function_organization(df, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv):
 
-    time_1 = time.time()
+def filter_function_organization(df, TARGET_ORGANIZATIONS):
 
-    function_name = "filter_function"
 
     if (TARGET_ORGANIZATIONS[1] != ""): 
         df = Filter_for_Target_Organization(df, TARGET_ORGANIZATIONS)  #<--- BUGGY HERE 1/12/2023 2x records -- hacky fix w/ dup removal
-    time_2 = time.time()
-    log_number = "Filter_for_Target_Industry and Organization"
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
 
-    #df.to_csv(os.path.join(abs_path, (file_name+'test_4_out_file_report').replace(' ', '_') + '.csv'))
 
     return df
 

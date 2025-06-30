@@ -152,7 +152,7 @@ def generateWageReport(
     # Settings External - end
 
     # Settings Internal - start
-    TEST_ = 0 # see Read_Violation_Data() -- 
+    TEST_ = 2 # see Read_Violation_Data() -- 
     # 0 for normal run w/ all records
     # 1 for custom test dataset (url0 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv" <-- open and edit this file with test data)
     # 2 for small dataset (first 100 of each file)
@@ -193,7 +193,7 @@ def generateWageReport(
     if TEST_ == 0 or TEST_ == 1:
         TEST_CASES = 1000000000  # read all records
     else:  # TEST_ == 2 #short set--use first 1000 for debugging
-        TEST_CASES = 100
+        TEST_CASES = 1000
 
     # SET OUTPUT FILE NAME AND PATH: ALL FILE NAMES AND PATHS DEFINED HERE **********************************
     # report main output file -- change to PDF option
@@ -316,7 +316,7 @@ def generateWageReport(
         out_target, 
         option_dict, 
         FLAG_DUPLICATE, 
-        bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv
+        bug_log_csv
         )
 
     time_2 = time.time()
@@ -327,7 +327,6 @@ def generateWageReport(
     out_target, out_target_organization = extract_values_for_report(
             out_target, 
             TARGET_ORGANIZATIONS, 
-            bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv,
             signatories_report,
             temp_file_name_csv)
     
@@ -509,12 +508,11 @@ def inference_function(df, cityDict, TARGET_INDUSTRY,
 def extract_values_for_report(
             out_target, 
             TARGET_ORGANIZATIONS, 
-            bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv,
             signatories_report,
             temp_file_name_csv
             ):
     
-    out_target_organization = filter_function_organization(out_target, TARGET_ORGANIZATIONS, bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv)
+    out_target_organization = filter_function_organization(out_target, TARGET_ORGANIZATIONS)
 
     # filter
     if signatories_report == 0:

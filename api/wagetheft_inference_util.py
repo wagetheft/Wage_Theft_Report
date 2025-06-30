@@ -10,6 +10,8 @@ from wagetheft_clean_value_utils import is_string_series
 from util_zipcode import InferZipcode
 from wagetheft_calc_utils import wages_owed
 from util_industry_pattern import Infer_Industry
+from util_signatory_pattern import infer_prevailing_wage_cases
+    
 
 
 def inference_function(df, cityDict, TARGET_INDUSTRY, 
@@ -21,7 +23,7 @@ def inference_function(df, cityDict, TARGET_INDUSTRY,
     # zip codes infer *********************************
     time_1 = time.time()
     #if infer_zip == 1: 
-    InferZipcode(df, cityDict)
+    InferZipcode(df, cityDict) #long runtime
     time_2 = time.time()
     log_number = "InferZipcode"
     append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
@@ -60,60 +62,6 @@ def inference_function(df, cityDict, TARGET_INDUSTRY,
     #time_2 = time.time()
     #log_number+=1
     #append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
-
-    return df
-
-
-def infer_prevailing_wage_cases(df, prevailing_wage_terms, prevailing_wage_labor_code, prevailing_wage_politicals):
-    df = InferPrevailingWageAndColumnFlag(df, prevailing_wage_terms, prevailing_wage_labor_code, prevailing_wage_politicals)
-    return df
-
-
-def InferPrevailingWageAndColumnFlag(df, prevailing_wage_terms, prevailing_wage_labor_code, prevailing_wage_politicals):
-
-    if 'Prevailing' not in df.columns:
-        df['Prevailing'] = '0'
-    else:
-        df['Prevailing'] = df.Prevailing.fillna("0")
-    
-    if "Reason For Closing" not in df.columns:
-        df["Reason For Closing"] = ""
-    if 'Closure Disposition - Other Reason' not in df.columns:
-        df['Closure Disposition - Other Reason'] = ""
-    if 'violation_code' not in df.columns:
-        df['violation_code'] = ""
-    if 'violation' not in df.columns:
-        df['violation'] = ""
-    if 'Note' not in df.columns:
-        df['Note'] = ""
-    
-
-    prevailing_wage_pattern = '|'.join(prevailing_wage_terms)
-    found_prevailing_0 = (
-        ((df['Reason For Closing'].astype(str).str.contains(prevailing_wage_pattern, case = False))) |
-        ((df['Closure Disposition - Other Reason'].astype(str).str.contains(prevailing_wage_pattern, case = False)))
-    )
-
-    prevailing_wage_labor_code_pattern = '|'.join(prevailing_wage_labor_code)
-    found_prevailing_1 = (
-        ((df['violation_code'].astype(str).str.contains(prevailing_wage_labor_code_pattern, case = False))) |
-        ((df['violation'].astype(str).str.contains(prevailing_wage_labor_code_pattern, case = False))) |
-        ((df['Note'].astype(str).str.contains(prevailing_wage_labor_code_pattern, case = False))) 
-    )
-
-    prevailing_wage_political_pattern = '|'.join(prevailing_wage_politicals)
-    found_prevailing_2 = (
-        ((df['legal_nm'].astype(str).str.contains(prevailing_wage_political_pattern, case = False)))
-    )
-
-    df.loc[((found_prevailing_0 | found_prevailing_1 | found_prevailing_2) & 
-        ((df['industry'] == "Construction") | (df['industry'] == 'Utilities') )), 
-        'Prevailing'] = '1'
-
-    #specific to DOL WHD data
-    if "dbra_cl_violtn_cnt" in df.columns:
-        df.loc[df["dbra_cl_violtn_cnt"] > 0, "violation_code"] = "DBRA"
-        df.loc[df["dbra_cl_violtn_cnt"] > 0, "Prevailing"] = "1"
 
     return df
 

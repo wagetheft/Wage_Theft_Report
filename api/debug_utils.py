@@ -22,21 +22,6 @@ def file_path(relative_path):
     return new_path
 
 
-def save_backup_to_folder(df_csv, out_file_report_name = 'backup_', out_file_report_path = ""):
-    from os.path import exists
-    import os
-
-    if out_file_report_path == "": out_file_report_path = out_file_report_path + '_backup/' #defualt folder name
-    script_dir = os.path.dirname(os.path.dirname(__file__))
-    abs_path = os.path.join(script_dir, out_file_report_path)
-    if not os.path.exists(abs_path):  # create folder if necessary
-        os.makedirs(abs_path)
-    file_type = '.csv'
-    
-    file_name_backup = os.path.join(abs_path, (out_file_report_name).replace('/', '') + file_type)  # <-- absolute dir and file name
-    df_csv.to_csv(file_name_backup) #uncomment for testing
-
-
 def append_log(bug_log, LOGBUG, text):
     if LOGBUG:
         bugFile = open(bug_log, 'a')
