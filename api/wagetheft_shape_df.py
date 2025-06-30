@@ -24,7 +24,8 @@ from util_signatory_pattern import (
 
 
 def shape_df(
-        out_target, option_dict,
+        out_target, 
+        option_dict,
         FLAG_DUPLICATE, 
         bug_log_csv
         ):
