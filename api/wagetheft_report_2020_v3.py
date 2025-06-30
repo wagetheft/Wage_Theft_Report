@@ -176,17 +176,18 @@ def generateWageReport(
     option_dict = {
         'TARGET_ZIPCODES':TARGET_ZIPCODES, 
         'TARGET_INDUSTRY':TARGET_INDUSTRY, 
-        'TARGET_ORGANIZATIONS':TARGET_ORGANIZATIONS, 
+        'SIGNATORY_INDUSTRY':signatories, #from signatories.py
 
-        'open_cases_only':open_cases_only, 
         'infer_zip':infer_zip, 
         'infer_by_naics':infer_by_naics, 
+        'use_assumptions':use_assumptions,
+
         'YEAR_START':YEAR_START, 
-        'YEAR_END':YEAR_END, 
+        'YEAR_END':YEAR_END,
+
         'target_state':target_state,
         'signatories_report':signatories_report, 
-        'SIGNATORY_INDUSTRY':signatories, #from signatories.py
-        'use_assumptions':use_assumptions,
+        'open_cases_only':open_cases_only, 
     }
     
     # TEST_ PARAMETERS

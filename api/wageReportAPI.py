@@ -1,5 +1,5 @@
 from flask import Flask, request, send_file
-from api.wagetheft_report_2020_v3 import generateWageReport
+from wagetheft_report_2020_v3 import generateWageReport
 
 app = Flask(__name__)
 
@@ -14,8 +14,8 @@ def create_bucket():
     # This is a placeholder for the create bucket functionality
     return
 
-
-@app.route('/generateWageReport', methods=['POST'])
+#@app.route('/generateWageReport', methods=['POST'])
+@app.route('/wage-report/generate', methods=['POST'])
 def generateFile():
     parameters = request.get_json()
     print(parameters)
@@ -84,11 +84,14 @@ def generateFile():
                 include_top_viol_tables, use_assumptions, infer_by_naics, YEAR_START_TEXT, YEAR_END_TEXT)
 
     #out it goes
-    report_file_name = generateWageReport(target_state, target_county, target_city, target_industry, \
-                                          target_organization, \
-                                          includeFedData, includeStateJudgements, includeStateCases, infer_zip, prevailing_wage_report, signatories_report, \
-                                            open_cases_only, include_tables, include_summaries, only_sig_summaries, \
-                                            include_top_viol_tables, use_assumptions, infer_by_naics, YEAR_START_TEXT, YEAR_END_TEXT)
+    report_file_name = generateWageReport(
+        target_state, target_county, target_city, target_industry, target_organization, 
+        includeFedData, includeStateJudgements, includeStateCases, 
+        infer_zip, 
+        prevailing_wage_report, signatories_report, open_cases_only, 
+        include_tables, include_summaries, only_sig_summaries, include_top_viol_tables, 
+        use_assumptions, infer_by_naics, 
+        YEAR_START_TEXT, YEAR_END_TEXT)
 
     try:
         return send_file(report_file_name, as_attachment=True)
@@ -96,12 +99,16 @@ def generateFile():
         return "Server error", 500
 
 def checkValidInput(inputDict: dict) -> bool:
-    toCheck = ["target_city", "target_industry", 
-               "target_organization", 
-               "includeFedData", "includeStateJudgements", "includeStateCases", "infer_zip", "prevailing_wage_report", "signatories_report", 
-               "open_cases_only", "include_tables", "include_summaries", "only_sig_summaries", 
-               "include_top_viol_tables",  "use_assumptions",  "infer_by_naics", "YEAR_START", "YEAR_END"]
+    toCheck = ["target_city", "target_industry", "target_organization", 
+               "includeFedData", "includeStateJudgements", "includeStateCases", 
+               "infer_zip", 
+               "prevailing_wage_report", "signatories_report","open_cases_only", 
+               "include_tables", "include_summaries", "only_sig_summaries", "include_top_viol_tables",  
+               "use_assumptions",  "infer_by_naics", 
+               "YEAR_START", "YEAR_END"]
+    
     return all(key in inputDict for key in toCheck)
+
 
 def logfile(target_state, target_county, target_city, target_industry, \
                 target_organization, \
