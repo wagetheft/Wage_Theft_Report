@@ -1,0 +1,14 @@
+[Unit]
+Description=Gunicorn instance to serve WageReportAPI
+After=network.target
+
+[Service]
+User=aoseguera
+Group=www-data
+WorkingDirectory=/home/aoseguera/Wage_Theft_Report
+Environment="PATH=/home/aoseguera/Wage_Theft_Report/.venv/bin"
+ExecStart=/home/aoseguera/Wage_Theft_Report/.venv/bin/gunicorn wsgi:app -w 6 -b 0.0.0.0:8000 --timeout 0
+#ExecStart=/home/aoseguera/Wage_Theft_Report/.venv/bin/gunicorn wsgi:app -w 6 -b 0.0.0.0:8000 --timeout 3600
+
+[Install]
+WantedBy=multi-user.target

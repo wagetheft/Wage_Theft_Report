@@ -1,5 +1,5 @@
 from flask import Flask, request, send_file
-from wagetheft_report_2020_v3 import generateWageReport
+from api.wagetheft_report_2020_v3 import generateWageReport
 
 app = Flask(__name__)
 
