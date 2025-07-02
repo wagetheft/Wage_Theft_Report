@@ -196,7 +196,7 @@ def generateWageReport(
         'target_state':target_state,
         'signatories_report':signatories_report, 
         'open_cases_only':open_cases_only, 
-        'short_run': short_run,
+        
     }
     
     # TEST_ PARAMETERS
@@ -305,6 +305,7 @@ def generateWageReport(
 
         'TEST_CASES':TEST_CASES,
         'RunFast':RunFast,
+        'short_run': short_run,
 
         'url_backup_file':url_backup_file,
         'url_backup_path':url_backup_path,
