@@ -8,6 +8,8 @@ import os
 import platform
 import warnings
 import time
+import datetime
+
 
 from api.wagetheft_read_df import read_df
 from api.wagetheft_shape_df import shape_df
@@ -133,7 +135,7 @@ def generateWageReport(
     use_assumptions = 1
     include_methods = True
     if target_industry == "": target_industry = "All NAICS"
-    if (target_state == "") and (target_county == "") and (target_city == ""): target_state = "California"
+    if (target_state == target_county == target_city == ""): target_state = "California"
     if (target_state != "") and ((target_county != "") or (target_city != "")): target_state = "" #temp fix
     if (target_county != "") and (target_city != ""): target_county = "" #temp fix
     
@@ -178,8 +180,9 @@ def generateWageReport(
 
     option_dict = {
         'TARGET_ZIPCODES':TARGET_ZIPCODES, 
-        'TARGET_INDUSTRY':TARGET_INDUSTRY, 
-        'SIGNATORY_INDUSTRY':signatories, #from signatories.py
+        'TARGET_INDUSTRY':TARGET_INDUSTRY,
+        
+        'SIGNATORY_INDUSTRY':signatories,
 
         'infer_zip':infer_zip, 
         'infer_by_naics':infer_by_naics, 
@@ -202,7 +205,8 @@ def generateWageReport(
     # SET OUTPUT FILE NAME AND PATH: ALL FILE NAMES AND PATHS DEFINED HERE **********************************
     # report main output file -- change to PDF option
     # relative path
-    rel_path = 'report_output_/'
+    current_week = get_current_week_string()
+    rel_path = 'report_output_/' + current_week + '/'
     # <-- dir the script is in (import os) plus up one
     script_dir = os.path.dirname(os.path.dirname(__file__))
     abs_path = os.path.join(script_dir, rel_path)
@@ -564,5 +568,11 @@ def extract_values_for_report(
     return out_target, out_target_organization
 
 
+def get_current_week_string():
+    current_date = datetime.datetime.now()
+    year, week_num, _ = current_date.isocalendar()  # Get year and week number using isocalendar
+    return f"Week{week_num}_{year}"
+
 if __name__ == '__main__':
+
     main()
