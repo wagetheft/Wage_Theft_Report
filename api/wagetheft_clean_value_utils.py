@@ -3,7 +3,7 @@ import re
 import pandas as pd
 import time
 
-from debug_utils import append_log
+from api.debug_utils import append_log
 
 
 

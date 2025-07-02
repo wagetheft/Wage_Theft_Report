@@ -9,32 +9,35 @@ import platform
 import warnings
 import time
 
-from wagetheft_read_df import read_df
-from wagetheft_shape_df import shape_df
-from wagetheft_calc_utils import wages_owed
-from wagetheft_clean_value_utils import is_string_series
-from wagetheft_gen_report import compile_theft_report
-from wagetheft_inference_util import (
+from api.wagetheft_read_df import read_df
+from api.wagetheft_shape_df import shape_df
+from api.wagetheft_calc_utils import wages_owed
+from api.wagetheft_clean_value_utils import is_string_series
+from api.wagetheft_gen_report import compile_theft_report
+from api.wagetheft_inference_util import (
     infer_prevailing_wage_cases,
     InferAgencyFromCaseIDAndLabel,
 )
 
-from debug_utils import (
+from api.debug_utils import (
     debug_fileSetup_def,
     append_log,
 )
-from util_zipcode import (
+from api.util_zipcode import (
     InferZipcode,
     generate_generic_zipcode_for_city,
 )
-from util_trade_pattern import lookupTrade
-from util_industry_pattern import Infer_Industry
-from util_signatory_pattern import (
+from api.util_trade_pattern import lookupTrade
+from api.util_industry_pattern import Infer_Industry
+from api.util_signatory_pattern import (
     prevailing_wage_blacklist,
     filter_function_organization,
 )
 
-
+# NOTE: Before you run this application locally, you need to move the above 
+# module files into the platform system check as the following files -- i.e., 
+# just copy/paste them below here and in each module copy and past the 
+# below block for platform system check -- sorry, just lazy 7/1/2025
 #moved down one directory
 if platform.system() == 'Windows' or platform.system() =='Darwin':
     #for desktop testing--"moved down one directory"
