@@ -396,7 +396,8 @@ def generateWageReport(
     append_log(bug_log, LOGBUG, "<h1>DONE</h1> \n" + "</html></body> \n") #CLOSE
     # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
     
-    return temp_file_name_PDF  # the temp json returned from API
+    #return temp_file_name_PDF  # the temp json returned from API
+    return temp_file_name  # the temp json returned from API
 
 
 

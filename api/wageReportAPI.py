@@ -96,7 +96,7 @@ def generateFile():
     try:
         return send_file(report_file_name, as_attachment=True)
     except Exception as e:
-        return "Server error", 500
+        return "Server Error -- send an email to information@paloaltodatagroup.com", 500
 
 def checkValidInput(inputDict: dict) -> bool:
     toCheck = ["target_city", "target_industry", "target_organization", 
