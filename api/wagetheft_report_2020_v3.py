@@ -196,7 +196,6 @@ def generateWageReport(
         'target_state':target_state,
         'signatories_report':signatories_report, 
         'open_cases_only':open_cases_only, 
-        
     }
     
     # TEST_ PARAMETERS
@@ -575,7 +574,7 @@ def extract_values_for_report(
 def get_current_week_string():
     current_date = datetime.datetime.now()
     year, week_num, _ = current_date.isocalendar()  # Get year and week number using isocalendar
-    return f"Week{week_num}_{year}"
+    return f"week{week_num}"
 
 if __name__ == '__main__':
 
