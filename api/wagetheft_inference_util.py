@@ -1,16 +1,26 @@
 
 import pandas as pd
-import numpy as np
 import time
 
-from api.debug_utils import append_log
+import platform
+if platform.system() == 'Windows' or platform.system() =='Darwin':
+    from debug_utils import append_log
 
-from api.wagetheft_clean_value_utils import is_string_series
+    from wagetheft_clean_value_utils import is_string_series
 
-from api.util_zipcode import InferZipcode
-from api.wagetheft_calc_utils import wages_owed
-from api.util_industry_pattern import Infer_Industry
-from api.util_signatory_pattern import infer_prevailing_wage_cases
+    from util_zipcode import InferZipcode
+    from wagetheft_calc_utils import wages_owed
+    from util_industry_pattern import Infer_Industry
+    from util_signatory_pattern import infer_prevailing_wage_cases
+else:
+    from api.debug_utils import append_log
+
+    from api.wagetheft_clean_value_utils import is_string_series
+
+    from api.util_zipcode import InferZipcode
+    from api.wagetheft_calc_utils import wages_owed
+    from api.util_industry_pattern import Infer_Industry
+    from api.util_signatory_pattern import infer_prevailing_wage_cases
     
 
 

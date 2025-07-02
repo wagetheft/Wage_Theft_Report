@@ -8,13 +8,23 @@ from datetime import datetime, timedelta
 
 #import pyarrow.parquet as pq #only activate in Linux VM
 
-from api.wagetheft_inference_util import inference_function
-from api.wagetheft_clean_value_utils import clean_function
-from api.wagetheft_io_utils import (
-    Read_Violation_Data,
-    save_backup_to_folder,
-)
-from api.util_filter import filter_function
+import platform
+if platform.system() == 'Windows' or platform.system() =='Darwin':
+    from wagetheft_inference_util import inference_function
+    from wagetheft_clean_value_utils import clean_function
+    from wagetheft_io_utils import (
+        Read_Violation_Data,
+        save_backup_to_folder,
+    )
+    from util_filter import filter_function
+else:
+    from api.wagetheft_inference_util import inference_function
+    from api.wagetheft_clean_value_utils import clean_function
+    from api.wagetheft_io_utils import (
+        Read_Violation_Data,
+        save_backup_to_folder,
+    )
+    from api.util_filter import filter_function
 
 
 def read_df(

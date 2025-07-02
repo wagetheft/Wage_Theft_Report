@@ -3,8 +3,11 @@ import re
 import pandas as pd
 import time
 
-from api.debug_utils import append_log
-
+import platform
+if platform.system() == 'Windows' or platform.system() =='Darwin':
+    from debug_utils import append_log
+else:
+    from api.debug_utils import append_log
 
 
 def is_string_series(s : pd.Series): #https://stackoverflow.com/questions/43049545/python-check-if-dataframe-column-contain-string-type

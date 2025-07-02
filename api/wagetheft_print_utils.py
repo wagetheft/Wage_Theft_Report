@@ -3,12 +3,19 @@ import pandas as pd
 import os
 import math
 
-from api.wagetheft_clean_value_utils import is_string_series
-
-from api.util_group import (
-    GroupByMultpleAgency,
-    GroupByX,
-    )
+import platform
+if platform.system() == 'Windows' or platform.system() =='Darwin':
+    from wagetheft_clean_value_utils import is_string_series
+    from util_group import (
+        GroupByMultpleAgency,
+        GroupByX,
+        )
+else:
+    from api.wagetheft_clean_value_utils import is_string_series
+    from api.util_group import (
+        GroupByMultpleAgency,
+        GroupByX,
+        )
 
 
 def convert_html_to_pdf(source_html, output_filename): #https://stackoverflow.com/questions/57363375/creating-pdfs-from-html-javascript-in-python-with-no-os-dependencies

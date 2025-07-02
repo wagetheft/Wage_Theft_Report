@@ -1,10 +1,15 @@
 
 import pandas as pd
 
-from api.debug_utils import append_log
 
-from api.util_industry_pattern import Filter_for_Target_Industry
-from api.util_zipcode import Filter_for_Zipcode
+import platform
+if platform.system() == 'Windows' or platform.system() =='Darwin':
+    from util_industry_pattern import Filter_for_Target_Industry
+    from util_zipcode import Filter_for_Zipcode
+
+else:
+    from api.util_industry_pattern import Filter_for_Target_Industry
+    from api.util_zipcode import Filter_for_Zipcode
 
 
 def filter_function(df, TARGET_ZIPCODES, TARGET_INDUSTRY,

@@ -2,20 +2,36 @@ import re
 import pandas as pd
 import numpy as np
 
-from api.util_group import GroupByX
+import platform
+if platform.system() == 'Windows' or platform.system() =='Darwin':
+    from util_group import GroupByX
+    from wagetheft_clean_value_utils import (
+        StripPunctuationFromNames,
+        RemoveDoubleSpacesFromCompanyName,
+        MoveCorportationBusinessTypeToBusinessTypeColumn,
+        MovePartnershipBusinessTypeToBusinessTypeColumn,
+        MoveLimitedLiabilityBusinessTypeToBusinessTypeColumn,
+        MoveBusinessTypeToBusinessTypeColumn,
+        MoveCompanyLiabilityTermsToLiabilityTypeColumn,
+        ReplaceAddressAbreviations,
+        RemoveDoubleSpacesFromAddresses,
+        RemovePunctuationFromAddresses,
+    )
 
-from api.wagetheft_clean_value_utils import (
-    StripPunctuationFromNames,
-    RemoveDoubleSpacesFromCompanyName,
-    MoveCorportationBusinessTypeToBusinessTypeColumn,
-    MovePartnershipBusinessTypeToBusinessTypeColumn,
-    MoveLimitedLiabilityBusinessTypeToBusinessTypeColumn,
-    MoveBusinessTypeToBusinessTypeColumn,
-    MoveCompanyLiabilityTermsToLiabilityTypeColumn,
-    ReplaceAddressAbreviations,
-    RemoveDoubleSpacesFromAddresses,
-    RemovePunctuationFromAddresses,
-)
+else:
+    from api.util_group import GroupByX
+    from api.wagetheft_clean_value_utils import (
+        StripPunctuationFromNames,
+        RemoveDoubleSpacesFromCompanyName,
+        MoveCorportationBusinessTypeToBusinessTypeColumn,
+        MovePartnershipBusinessTypeToBusinessTypeColumn,
+        MoveLimitedLiabilityBusinessTypeToBusinessTypeColumn,
+        MoveBusinessTypeToBusinessTypeColumn,
+        MoveCompanyLiabilityTermsToLiabilityTypeColumn,
+        ReplaceAddressAbreviations,
+        RemoveDoubleSpacesFromAddresses,
+        RemovePunctuationFromAddresses,
+    )
 
 
 def prevailing_wage_blacklist(out_target):

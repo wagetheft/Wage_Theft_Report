@@ -1,26 +1,51 @@
 
 
-from api.wagetheft_clean_value_utils import (
-    DropDuplicateRecords,
-    RemoveCompletedCases,
-)
 
-from api.wagetheft_calc_utils import (
-    infer_backwages,
-    infer_wage_penalty,
-    calc_violation_count,
-    wages_owed,
-    calculate_interest_owed,
-    backwages_owed,
-)
+import platform
+if platform.system() == 'Windows' or platform.system() =='Darwin':
+    from wagetheft_clean_value_utils import (
+        DropDuplicateRecords,
+        RemoveCompletedCases,
+    )
 
-from api.util_filter import (
-    filter_function,
-)
+    from wagetheft_calc_utils import (
+        infer_backwages,
+        infer_wage_penalty,
+        calc_violation_count,
+        wages_owed,
+        calculate_interest_owed,
+        backwages_owed,
+    )
 
-from api.util_signatory_pattern import (
-    infer_signatory_cases,
-)
+    from util_filter import (
+        filter_function,
+    )
+
+    from util_signatory_pattern import (
+        infer_signatory_cases,
+    )
+else:
+    from api.wagetheft_clean_value_utils import (
+        DropDuplicateRecords,
+        RemoveCompletedCases,
+    )
+
+    from api.wagetheft_calc_utils import (
+        infer_backwages,
+        infer_wage_penalty,
+        calc_violation_count,
+        wages_owed,
+        calculate_interest_owed,
+        backwages_owed,
+    )
+
+    from api.util_filter import (
+        filter_function,
+    )
+
+    from api.util_signatory_pattern import (
+        infer_signatory_cases,
+    )
 
 
 def shape_df(

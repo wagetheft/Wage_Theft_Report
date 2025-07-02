@@ -2,7 +2,13 @@
 import re
 import pandas as pd
 
-from api.constants.zipcodes import one_hundred_largest
+import platform
+if platform.system() == 'Windows' or platform.system() =='Darwin':
+    from constants.zipcodes import one_hundred_largest
+
+else:
+    from api.constants.zipcodes import one_hundred_largest
+
 
 fast_infer = True
 
