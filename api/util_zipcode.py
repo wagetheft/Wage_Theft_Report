@@ -1,7 +1,8 @@
 
 import re
 import pandas as pd
-from constants.zipcodes import one_hundred_largest
+
+from api.constants.zipcodes import one_hundred_largest
 
 fast_infer = True
 
