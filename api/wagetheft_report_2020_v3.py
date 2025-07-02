@@ -177,6 +177,8 @@ def generateWageReport(
     prevailing_wage_politicals = prevailingWagePoliticalList #from prevailingWageTerms.py
 
     #LIBRARIES - end
+    
+    short_run = True
 
     option_dict = {
         'TARGET_ZIPCODES':TARGET_ZIPCODES, 
@@ -194,6 +196,7 @@ def generateWageReport(
         'target_state':target_state,
         'signatories_report':signatories_report, 
         'open_cases_only':open_cases_only, 
+        'short_run': short_run,
     }
     
     # TEST_ PARAMETERS

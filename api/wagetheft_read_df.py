@@ -53,6 +53,8 @@ def read_df(
             bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv)
         True
     
+    if prep_dict['short_run']:
+        abs_path0 = abs_path0 + "/fast_"
     csv_files = glob.glob(os.path.join(abs_path0, "*.csv"))
 
     for f in csv_files:
