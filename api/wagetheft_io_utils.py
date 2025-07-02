@@ -4,7 +4,13 @@ import requests
 import io
 import numpy as np
 
-from api.wagetheft_clean_value_utils import CleanNumberColumns
+import platform
+if platform.system() == 'Windows' or platform.system() =='Darwin':
+    from wagetheft_clean_value_utils import CleanNumberColumns
+else:
+    from api.wagetheft_clean_value_utils import CleanNumberColumns
+
+
 
 
 def Setup_Regular_headers(df, abs_path, file_name, bug_log_csv):  # DSLE, WHD, etc headers

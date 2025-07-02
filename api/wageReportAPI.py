@@ -1,5 +1,10 @@
 from flask import Flask, request, send_file
-from api.wagetheft_report_2020_v3 import generateWageReport
+import platform
+if platform.system() == 'Windows' or platform.system() =='Darwin':
+    from wagetheft_report_2020_v3 import generateWageReport
+
+else:
+    from api.wagetheft_report_2020_v3 import generateWageReport
 
 app = Flask(__name__)
 

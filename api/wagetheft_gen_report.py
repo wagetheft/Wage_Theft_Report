@@ -1,35 +1,70 @@
 
-from api.wagetheft_print_utils import (
-    Footer_Block,
-    Notes_Block,
-    Methods_Block,
-    Sources_Block,
-    Title_Block,
-    Industry_Summary_Block,
-    Proportion_Summary_Block,
 
-    write_style_html,
-    
-    print_table_html_by_industry_and_city,
-    print_table_html_by_industry_and_zipcode,
-    print_table_html_Text_Summary,
-    print_top_viol_tables_html,
-)
+import platform
+if platform.system() == 'Windows' or platform.system() =='Darwin':
+    from wagetheft_print_utils import (
+        Footer_Block,
+        Notes_Block,
+        Methods_Block,
+        Sources_Block,
+        Title_Block,
+        Industry_Summary_Block,
+        Proportion_Summary_Block,
 
-from api.util_group import (
-    GroupByMultpleCases,
-    GroupByMultpleAgency,
-    GroupByX,
-)
+        write_style_html,
+        
+        print_table_html_by_industry_and_city,
+        print_table_html_by_industry_and_zipcode,
+        print_table_html_Text_Summary,
+        print_top_viol_tables_html,
+    )
 
-from api.wagetheft_clean_value_utils import (
-    Clean_Summary_Values,
-    DropDuplicateRecords,
-)
+    from util_group import (
+        GroupByMultpleCases,
+        GroupByMultpleAgency,
+        GroupByX,
+    )
 
-from api.util_zipcode import (
-    Filter_for_Zipcode,
-)
+    from wagetheft_clean_value_utils import (
+        Clean_Summary_Values,
+        DropDuplicateRecords,
+    )
+
+    from util_zipcode import (
+        Filter_for_Zipcode,
+    )
+else:
+    from api.wagetheft_print_utils import (
+        Footer_Block,
+        Notes_Block,
+        Methods_Block,
+        Sources_Block,
+        Title_Block,
+        Industry_Summary_Block,
+        Proportion_Summary_Block,
+
+        write_style_html,
+        
+        print_table_html_by_industry_and_city,
+        print_table_html_by_industry_and_zipcode,
+        print_table_html_Text_Summary,
+        print_top_viol_tables_html,
+    )
+
+    from api.util_group import (
+        GroupByMultpleCases,
+        GroupByMultpleAgency,
+        GroupByX,
+    )
+
+    from api.wagetheft_clean_value_utils import (
+        Clean_Summary_Values,
+        DropDuplicateRecords,
+    )
+
+    from api.util_zipcode import (
+        Filter_for_Zipcode,
+    )
 
 
 def compile_theft_report(
