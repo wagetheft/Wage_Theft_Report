@@ -150,6 +150,8 @@ def df_from_url(
         prep_dict['DF_OG']  = pd.concat([df_url, prep_dict['DF_OG'] ], ignore_index=True)
 
         trigger = False
+
+    return
     
 
 
