@@ -626,21 +626,24 @@ def Title_Block(
 
     textFile.write(
         "<p>The dataset in this report is pulled from a larger dataset that for all regions and sources contains ")
-    textFile.write(str.format('{0:,.0f}', DF_OG_ALL['case_id_1'].size))
+    if 'case_id_1' in DF_OG_ALL.columns:
+        textFile.write(str.format('{0:,.0f}', DF_OG_ALL['case_id_1'].size))
+    else: 
+        textFile.write(" unknown number of ")
     textFile.write(" cases")
 
-    if not DF_OG_VLN['violtn_cnt'].sum() == 0:
+    if 'violtn_cnt' in DF_OG_ALL.columns and not DF_OG_VLN['violtn_cnt'].sum() == 0:
         textFile.write(", ")
         textFile.write(str.format('{0:,.0f}', DF_OG_VLN['violtn_cnt'].sum()))
         textFile.write(" violations")
 
-    if not DF_OG_ALL['ee_violtd_cnt'].sum() == 0:
+    if 'ee_violtd_cnt' in DF_OG_ALL.columns and not DF_OG_ALL['ee_violtd_cnt'].sum() == 0:
         textFile.write(", ")
         textFile.write(str.format(
             '{0:,.0f}', DF_OG_ALL['ee_violtd_cnt'].sum()))
         textFile.write(" employees")
 
-    if not DF_OG_VLN['bw_amt'].sum() == 0:
+    if 'bw_amt' in DF_OG_ALL.columns and not DF_OG_VLN['bw_amt'].sum() == 0:
         textFile.write(", and  $ ")
         textFile.write(str.format('{0:,.0f}', DF_OG_VLN['bw_amt'].sum()))
         textFile.write(" in backwages")
@@ -656,17 +659,18 @@ def Title_Block(
 
     from datetime import datetime
     textFile.write(" This is approximately a ")
-    DF_MIN_ALL = min(pd.to_datetime(
-        DF_OG_ALL['findings_start_date'].dropna(), errors='coerce'))
-    DF_MAX_ALL = max(pd.to_datetime(
-        DF_OG_ALL['findings_start_date'].dropna(), errors='coerce'))
-    DF_MAX_ALL_YEARS = (DF_MAX_ALL - DF_MIN_ALL).days / 365
+    if 'findings_start_date' in DF_OG_ALL.columns:
+        DF_MIN_ALL = min(pd.to_datetime(
+            DF_OG_ALL['findings_start_date'].dropna(), errors='coerce'))
+        DF_MAX_ALL = max(pd.to_datetime(
+            DF_OG_ALL['findings_start_date'].dropna(), errors='coerce'))
+        DF_MAX_ALL_YEARS = (DF_MAX_ALL - DF_MIN_ALL).days / 365
 
-    textFile.write(str.format(
-        '{0:,.2f}', ((DF_OG_ALL['bw_amt'].sum()/DF_MAX_ALL_YEARS)/22000000000)*100))
-    textFile.write("-percent sample of an estimated actual $2B annually in wage theft that occurs Statewide (see courts.ca.gov/opinions/links/S241812-LINK1.PDF#page=11).</p>")
+        textFile.write(str.format(
+            '{0:,.2f}', ((DF_OG_ALL['bw_amt'].sum()/DF_MAX_ALL_YEARS)/22000000000)*100))
+        textFile.write("-percent sample of an estimated actual $2B annually in wage theft that occurs Statewide (see courts.ca.gov/opinions/links/S241812-LINK1.PDF#page=11).</p>")
 
-    textFile.write("\n")
+        textFile.write("\n")
 
     if TEST != 3:
 

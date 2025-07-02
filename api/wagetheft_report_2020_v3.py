@@ -10,8 +10,6 @@ import warnings
 import time
 import datetime
 
-
-
 #moved down one directory for working dir diff in VM
 if platform.system() == 'Windows' or platform.system() =='Darwin':
     #for desktop testing--"moved down one directory"
@@ -83,7 +81,7 @@ else:
 
 warnings.filterwarnings("ignore", 'This pattern has match groups')
 
-
+# Local/Debug main() ******************************************************************
 def main():
     # settings****************************************************
     PARAM_1_TARGET_STATE = "" #"California"
@@ -132,9 +130,7 @@ def main():
         )
 
 
-# Functions*************************************************
-
-
+# API function entry*******************************************************************
 def generateWageReport(
         target_state, target_county, target_city, 
         target_industry, 
@@ -147,287 +143,238 @@ def generateWageReport(
         YEAR_START_TEXT, YEAR_END_TEXT
         ):
 
-    warnings.filterwarnings("ignore", category=UserWarning)
-    start_time = time.time()
+    # ********************************************************************************
+    # APPLICATION SETTINGS************************************************************
+    # ********************************************************************************
 
+    warnings.filterwarnings("ignore", category=UserWarning)
 
     # Defaults start
-    use_assumptions = 1
-    include_methods = True
     if target_industry == "": target_industry = "All NAICS"
     if (target_state == target_county == target_city == ""): target_state = "California"
     if (target_state != "") and ((target_county != "") or (target_city != "")): target_state = "" #temp fix
     if (target_county != "") and (target_city != ""): target_county = "" #temp fix
     
-    if YEAR_START_TEXT == "":
-        YEAR_START = pd.to_datetime('today') - pd.DateOffset(years=4)
-    else:
-        YEAR_START = pd.to_datetime(YEAR_START_TEXT)
+    if YEAR_START_TEXT == "": YEAR_START = pd.to_datetime('today') - pd.DateOffset(years=4)
+    else: YEAR_START = pd.to_datetime(YEAR_START_TEXT)
     
-    if YEAR_END_TEXT == "":
-        YEAR_END = pd.to_datetime('today')
-    else: 
-        YEAR_END = pd.to_datetime(YEAR_END_TEXT)
+    if YEAR_END_TEXT == "": YEAR_END = pd.to_datetime('today')
+    else: YEAR_END = pd.to_datetime(YEAR_END_TEXT)
     # Defaults end
     
     # Settings External - start
-    TARGET_ZIPCODES = search_Dict_tree(target_state, target_county, target_city, stateDict, countyDict, cityDict)
-    TARGET_INDUSTRY = industriesDict[target_industry]
-    TARGET_ORGANIZATIONS = [['organizations'], [target_organization]]  # use uppercase
-    # Settings External - end
-
-    # Settings Internal - start
-    TEST_ = 2 # see Read_Violation_Data() -- 
-    # 0 for normal run w/ all records
-    # 1 for custom test dataset (url0 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv" <-- open and edit this file with test data)
-    # 2 for small dataset (first 100 of each file)
-    RunFast = False  # True skip slow formating; False run normal
-    New_Data_On_Run_Test = False #to generate a new labeled dataset on run
-    LOGBUG = False #True to log, False to not
-    FLAG_DUPLICATE = 0  # 1 FLAG_DUPLICATE duplicate, #0 drop duplicates
-    # Settings Internal - end
-
-    # Settings Internal that will Move to UI Options - start
-    Nonsignatory_Ratio_Block = False #<-- always true
-    # Settings Internal that will Move to UI Options - end
-
-    #LIBRARIES - start
-    prevailing_wage_terms = prevailingWageTermsList #from prevailingWageTerms.py
-    prevailing_wage_labor_code = prevailingWageLaborCodeList #from prevailingWageTerms.py
-    prevailing_wage_politicals = prevailingWagePoliticalList #from prevailingWageTerms.py
-
-    #LIBRARIES - end
-    
-    short_run = True
-
     option_dict = {
-        'TARGET_ZIPCODES':TARGET_ZIPCODES, 
-        'TARGET_INDUSTRY':TARGET_INDUSTRY,
+        'TARGET_ZIPCODES':search_Dict_tree(target_state, target_county, target_city, stateDict, countyDict, cityDict), 
+        'TARGET_INDUSTRY':industriesDict[target_industry],
+        'TARGET_ORGANIZATIONS':[['organizations'], [target_organization]],
+
+        'target_jurisdition':"", # will be set later'
         
         'SIGNATORY_INDUSTRY':signatories,
 
         'infer_zip':infer_zip, 
         'infer_by_naics':infer_by_naics, 
         'use_assumptions':use_assumptions,
-
+        
+        #DATA
         'YEAR_START':YEAR_START, 
         'YEAR_END':YEAR_END,
-
         'target_state':target_state,
-        'signatories_report':signatories_report, 
         'open_cases_only':open_cases_only, 
+        
+        #REPORTS
+        'signatories_report':signatories_report, 
+        'Nonsignatory_Ratio_Block':False,
+        'include_methods':True,
     }
-    
-    # TEST_ PARAMETERS
-    if TEST_ == 0 or TEST_ == 1:
-        TEST_CASES = 1000000000  # read all records
-    else:  # TEST_ == 2 #short set--use first 1000 for debugging
-        TEST_CASES = 1000
+    # region definition*******************************************************************
+    # <--revise to include other jurisdiction types such as County
+    if option_dict['TARGET_ZIPCODES'][0].find("County"): JURISDICTON_NAME = " "
+    else: JURISDICTON_NAME = "City of "
+    option_dict['target_jurisdition'] = JURISDICTON_NAME + option_dict['TARGET_ZIPCODES'][0].replace("_"," ")
+    # endregion definition****************************************************************
 
-    # SET OUTPUT FILE NAME AND PATH: ALL FILE NAMES AND PATHS DEFINED HERE **********************************
-    # report main output file -- change to PDF option
-    # relative path
+    prep_dict = {
+        # Settings External - cont.
+        'includeFedData':includeFedData,
+        'includeStateJudgements':includeStateJudgements,
+        'includeStateCases':includeStateCases,
+        # Settings External - end
+
+        #EXTERN LIBRARIES
+        'prevailing_wage_terms':prevailingWageTermsList, #from prevailingWageTerms.py,
+        'prevailing_wage_labor_code':prevailingWageLaborCodeList, #from prevailingWageTerms.py,
+        'prevailing_wage_politicals':prevailingWagePoliticalList, #from prevailingWageTerms.py,
+        'cityDict':cityDict,
+        #EXTERN  LIBRARIES - end
+
+        # Settings Internal - start
+        'url_backup_file':'url_backup',
+        'url_backup_path':'url_backup/',
+        'url_abs_path': "", # will be set later
+
+        'DF_OG': pd.DataFrame(),
+    }
+    script_dir0 = os.path.dirname(os.path.dirname(__file__))
+    prep_dict['url_abs_path'] = os.path.join(script_dir0, prep_dict['url_backup_path'])
+    
+    
+    # SET DEBUG SETTINGS AND LOG FILE NAME/PATH *********************************************************
+    debug = {
+        'file_name':option_dict['TARGET_ZIPCODES'][0] + "_" + target_industry,
+
+        'debug_log_path':"", # will be set later
+        'abs_path':"", # will be set later -- same as debug_log_path', legacy, refactor out
+        'bug_log': "", # will be set later
+        'bug_log_csv':"", # will be set later
+        'bugFile':"", # will be set later
+
+        'log_number':1,
+        'LOGBUG':False,
+
+        'TEST_CASES':1000000000, # read all records -- infinit large number
+
+        'RunFast':False, # True skip slow formating; False run normal
+        'short_run': True,
+        'FLAG_DUPLICATE':0, # 1 FLAG_DUPLICATE duplicate, #0 drop duplicates
+        'New_Data_On_Run_Test':False,
+
+        'TEST_':2,
+        # 0 for normal run w/ all records
+        # 1 for custom test dataset (url0 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv" <-- open and edit this file with test data)
+        # 2 for small dataset (first 100 of each file)
+    }
+    if debug['TEST_'] != 0 and debug['TEST_'] != 1:
+        debug['TEST_CASES'] = 1000 #2 #short set--use first 1000 for debugging
+
+    # LOGS
     current_week = get_current_week_string()
     rel_path = 'report_output_/' + current_week + '/'
-    # <-- dir the script is in (import os) plus up one
     script_dir = os.path.dirname(os.path.dirname(__file__))
-    abs_path = os.path.join(script_dir, rel_path)
+    debug['debug_log_path'] = os.path.join(script_dir, rel_path)
+    debug['abs_path'] = debug['debug_log_path']
     os.chdir(script_dir) #Change the current working directory per https://stackoverflow.com/questions/12201928/open-gives-filenotfounderror-ioerror-errno-2-no-such-file-or-directory
-    
-    if not os.path.exists(script_dir):  # create folder if necessary
-        os.makedirs(script_dir)
+    if not os.path.exists(script_dir): os.makedirs(script_dir)
+    if not os.path.exists(debug['debug_log_path']): os.makedirs(debug['debug_log_path'])
+    debug['bug_log'] = os.path.join(debug['debug_log_path'], ('log_'+'bug_').replace(' ', '_') + '.txt')
+    debug['bug_log_csv'] = os.path.join(debug['debug_log_path'], ('log_'+'bug_').replace(' ', '_') + '.csv')
+    if debug['LOGBUG']:
+        debug['bugFile'] = open(debug['bug_log'], 'w')
+        debug_fileSetup_def(debug['bugFile'])
+        debug['bugFile'].close()
 
-    if not os.path.exists(abs_path):  # create folder if necessary
-        os.makedirs(abs_path)
-
-    file_name = TARGET_ZIPCODES[0] + "_" + target_industry
-
-    file_type = '.html'
-    out_file_report = '_theft_summary_'
-    temp_file_name = os.path.join(abs_path, (file_name+out_file_report+target_organization).replace(
-        ' ', '_') + file_type)  # <-- absolute dir and file name
-    
-    temp_file_name_HTML_to_PDF = os.path.join(abs_path, (file_name+"_temp_"+out_file_report+target_organization).replace(
-        ' ', '_') + file_type)  # <-- absolute dir and file name
-    
-    file_type = '.pdf'
-    out_file_report = '_theft_summary_'
-    temp_file_name_PDF = os.path.join(abs_path, (file_name+out_file_report+target_organization).replace(
-        ' ', '_') + file_type)  # <-- absolute dir and file name
-
-    file_type = '.csv'
-    temp_file_name_csv = os.path.join(abs_path, (file_name+out_file_report).replace(
-        ' ', '_') + file_type)  # <-- absolute dir and file name
-
-    out_file_report = '_signatory_wage_theft_'
-    sig_file_name_csv = os.path.join(abs_path, (file_name+out_file_report).replace(
-        ' ', '_') + file_type)  # <-- absolute dir and file name
-
-    out_file_report = '_prevailing_wage_theft_'
-    prev_file_name_csv = os.path.join(abs_path, (file_name+out_file_report).replace(
-        ' ', '_') + file_type)  # <-- absolute dir and file name
-
-    file_name = 'log_'
-    out_file_report = '_bug_'
-    file_type = '.txt'
-    # <-- absolute dir and file name
-    bug_log = os.path.join(
-        abs_path, (file_name+out_file_report).replace(' ', '_') + file_type)
-    file_type = '.csv'
-    # <-- absolute dir and file name
-    bug_log_csv = os.path.join(
-        abs_path, (file_name+out_file_report).replace(' ', '_') + file_type)
-
-    bugFile = ""
-    log_number = 1
-    if LOGBUG: 
-        bugFile = open(bug_log, 'w')
-        debug_fileSetup_def(bugFile)
-        bugFile.close()
-
-    # region definition*******************************************************************
-    time_1 = time.time()
-    # <--revise to include other jurisdiction types such as County
-    JURISDICTON_NAME = " "
-    if TARGET_ZIPCODES[0].find("County"): "DO_NOTHING"
-    else: JURISDICTON_NAME = "City of "
-    
-    # target jurisdiction: Report Title block and file name "<h1>DRAFT REPORT: Wage Theft in the jurisdiction of... "
-    target_jurisdition = JURISDICTON_NAME + TARGET_ZIPCODES[0].replace("_"," ")
-    target_industry = TARGET_INDUSTRY[0][0]
-    time_2 = time.time()
-    log_number = 2
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n") 
-    # endregion definition*******************************************************************
-
-    # Read data***************************************************************************
-    time_0 = time.time()
-    time_1 = time.time()
-
-    DF_OG = pd.DataFrame()
-
-    url_backup_file = 'url_backup'
-    url_backup_path = url_backup_file + '/'
-    script_dir0 = os.path.dirname(os.path.dirname(__file__))
-    abs_path0 = os.path.join(script_dir0, url_backup_path)
-
-    # df.to_csv(bug_log_csv) #debug outfile
-
-    prep_dict  = {
-        'prevailing_wage_terms':prevailing_wage_terms,
-        'prevailing_wage_labor_code':prevailing_wage_labor_code,
-        'prevailing_wage_politicals':prevailing_wage_politicals,
-        'cityDict':cityDict,
-
-        'FLAG_DUPLICATE':FLAG_DUPLICATE,
-        'New_Data_On_Run_Test':New_Data_On_Run_Test,
-
-        'TEST_CASES':TEST_CASES,
-        'RunFast':RunFast,
-        'short_run': short_run,
-
-        'url_backup_file':url_backup_file,
-        'url_backup_path':url_backup_path,
-
-        'DF_OG':DF_OG,
+    f_dict = {
+        'temp_file_name':name_gen(debug['debug_log_path'], debug['file_name'], '_theft_summary_', target_organization, '.html'),
+        'temp_file_name_HTML_to_PDF':name_gen(debug['debug_log_path'], debug['file_name'], '_temp_theft_summary_', target_organization, '.html'),
+        'temp_file_name_PDF':name_gen(debug['debug_log_path'], debug['file_name'], '_theft_summary_', target_organization, '.pdf'),
+        'temp_file_name_csv':name_gen(debug['debug_log_path'], debug['file_name'], '_theft_summary_', target_organization, '.csv'),
+        'sig_file_name_csv':name_gen(debug['debug_log_path'], debug['file_name'], '_signatory_wage_theft_', target_organization, '.csv'),
+        'prev_file_name_csv':name_gen(debug['debug_log_path'], debug['file_name'], '_prevailing_wage_theft_', target_organization, '.csv'),
     }
 
-    out_target, DF_OG = read_df(
-        industriesDict, 
-        prep_dict, 
-        includeFedData, includeStateJudgements, includeStateCases,
-        bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv,
-        abs_path0,
-        TEST_)
-        
-    time_2 = time.time()
-    append_log(bug_log, LOGBUG, f"Time to read csv(s) " + "%.5f" % (time_2 - time_1) + "\n")
 
-    out_target = shape_df(
-        out_target, 
-        option_dict, 
-        FLAG_DUPLICATE, 
-        bug_log_csv
-        )
-
-    time_2 = time.time()
-    log_number = "optional assumptions, open cases"
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
-
-    time_1 = time.time()
-    out_target, out_target_organization = extract_values_for_report(
-            out_target, 
-            TARGET_ORGANIZATIONS, 
-            signatories_report,
-            temp_file_name_csv)
-    
-    out_prevailing_target, out_signatory_target = prevailing_wage_blacklist(out_target)
-
-    case_disposition_series = out_target_organization['Case Status'].copy()
-
-    #SUM COUNTS
-    total_ee_violtd = out_target_organization['ee_violtd_cnt'].sum()
-    total_bw_atp = out_target_organization['bw_amt'].sum()
-    total_case_violtn = out_target_organization['violtn_cnt'].sum()
-
-    time_2 = time.time()
-    log_number = "6 drop_duplicates + print backup"
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
-        
-    time_1 = time.time()
-
+    # print definition****************************************************************
     print_dict = {
-        'TEST_':TEST_,
-        'temp_file_name_HTML_to_PDF':temp_file_name_HTML_to_PDF,
-        'target_jurisdition':target_jurisdition,
-        'TARGET_INDUSTRY':TARGET_INDUSTRY,
-        'prevailing_wage_report':prevailing_wage_report,
-        'includeFedData':includeFedData,
-        'includeStateCases':includeStateCases,
-        'includeStateJudgements':includeStateJudgements,
-        'target_organization':target_organization,
-        'open_cases_only':open_cases_only,
-        'Nonsignatory_Ratio_Block':Nonsignatory_Ratio_Block,
-        'total_ee_violtd':total_ee_violtd,
-        'total_bw_atp':total_bw_atp,
-        'total_case_violtn':total_case_violtn,
-        'YEAR_START':YEAR_START,
-        'YEAR_END':YEAR_END,
-        'case_disposition_series':case_disposition_series,
         'include_tables':include_tables,
         'include_summaries':include_summaries,
         'only_sig_summaries':only_sig_summaries,
         'include_top_viol_tables':include_top_viol_tables,
-        'include_methods':include_methods,
-        'out_prevailing_target':out_prevailing_target,
-        'out_signatory_target':out_signatory_target,
-        'sig_file_name_csv':sig_file_name_csv,
-        'prev_file_name_csv':prev_file_name_csv,
-        'DF_OG':DF_OG,
+
+        'prevailing_wage_report':prevailing_wage_report,
+        'Nonsignatory_Ratio_Block':option_dict['Nonsignatory_Ratio_Block'],
+        'include_methods':option_dict['include_methods'],
+
+        'includeFedData':prep_dict['includeFedData'],
+        'includeStateCases':prep_dict['includeStateCases'],
+        'includeStateJudgements':prep_dict['includeStateJudgements'],
+
+        'target_organization':target_organization,
+        'target_jurisdition':option_dict['target_jurisdition'],
+        'TARGET_INDUSTRY':option_dict['TARGET_INDUSTRY'],
+        'YEAR_START':option_dict['YEAR_START'],
+        'YEAR_END':option_dict['YEAR_END'],
+
+        'open_cases_only':option_dict['open_cases_only'],
+
+        'sig_file_name_csv':f_dict['sig_file_name_csv'],
+        'prev_file_name_csv':f_dict['prev_file_name_csv'],
+        'temp_file_name_HTML_to_PDF':f_dict['temp_file_name_HTML_to_PDF'],
+        
+        'DF_OG':prep_dict['DF_OG'],
+
+        'TEST_':debug['TEST_'],
     }
 
+    # ********************************************************************************
+    # START APPLICATION***************************************************************
+    # ********************************************************************************
+
+    # Read data***********************************************************************
+    time_0 = time_1 = time.time()
+
+    # df.to_csv(debug['bug_log_csv']) #debug outfile -- use to debug
+
+    out_target, prep_dict['DF_OG'] = read_df(
+        industriesDict, 
+        prep_dict, 
+        debug,
+        )
+    
+    #TARGET LIST
+    out_target = shape_df(
+        out_target, 
+        option_dict, 
+        debug['FLAG_DUPLICATE'],
+        debug['bug_log_csv'],
+        )
+
+    out_target, out_target_organization = extract_values_for_report(
+        out_target, 
+        option_dict['TARGET_ORGANIZATIONS'], 
+        option_dict['signatories_report'],
+        f_dict['temp_file_name_csv'])
+    
+    out_prevailing_target, out_signatory_target = prevailing_wage_blacklist(out_target)
+
+    target_dict = {
+        'case_disposition_series':out_target_organization['Case Status'].copy(),
+        'out_prevailing_target':out_prevailing_target,
+        'out_signatory_target':out_signatory_target,
+    }
+
+    #SUM COUNTS
+    sum_dict = {
+        'total_ee_violtd': out_target_organization['ee_violtd_cnt'].sum(),
+        'total_bw_atp': out_target_organization['bw_amt'].sum(),
+        'total_case_violtn': out_target_organization['violtn_cnt'].sum(),
+    }
+
+    #PRINT
     compile_theft_report(
         out_target,
         out_target_organization,
-        FLAG_DUPLICATE, bug_log_csv,
-        signatories_report,
-        temp_file_name,
-        print_dict
+        target_dict,
+        print_dict,
+        sum_dict,
+        debug,
+        f_dict['temp_file_name'],
+        option_dict['signatories_report'],
     )
 
+    #CLOSE LOG FILE***************************************************************
     time_2 = time.time()
     log_number = 14
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
-
-    append_log(bug_log, LOGBUG, f"Time to finish report " + "%.5f" % (time_2 - time_0) + "\n")
-    append_log(bug_log, LOGBUG, "<h1>DONE</h1> \n" + "</html></body> \n") #CLOSE
+    append_log(debug['bug_log'], debug['LOGBUG'], f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
+    append_log(debug['bug_log'], debug['LOGBUG'], f"Time to finish report " + "%.5f" % (time_2 - time_0) + "\n")
+    append_log(debug['bug_log'], debug['LOGBUG'], "<h1>DONE</h1> \n" + "</html></body> \n") #CLOSE
     # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
     
-    #return temp_file_name_PDF  # the temp json returned from API
-    return temp_file_name  # the temp json returned from API
+    #RETURN REPORT
+    #return f_dict['temp_file_name_PDF']  # the temp json returned from API -- PDF crashes
+    return f_dict['temp_file_name']  # the temp json returned from API
 
 
-
+#MODULE FUNCTIONS***************************************************************
 def search_Dict_tree(target_state, target_county, target_city, stateDict, countyDict, cityDict):
 
     #check to verify that only lowest level has data
@@ -589,6 +536,14 @@ def extract_values_for_report(
     out_target_organization.to_csv(temp_file_name_csv, encoding="utf-8-sig")
 
     return out_target, out_target_organization
+
+
+#HELPER FUNCTIONS*************************************************
+def name_gen(path, name, report_type, organization, type):
+        return os.path.join(
+            path, 
+            (name + report_type + organization).replace(' ', '_') + type
+    )
 
 
 def get_current_week_string():

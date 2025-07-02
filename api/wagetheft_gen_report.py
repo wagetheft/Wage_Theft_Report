@@ -70,10 +70,13 @@ else:
 def compile_theft_report(
         out_target,
         out_target_organization,
-        FLAG_DUPLICATE, bug_log_csv,
-        signatories_report,
-        temp_file_name,
-        print_dict):
+        target_dict,
+        print_dict,
+        sum_dict,
+        debug,
+        temp_file_name = 'wagetheft_report.html',
+        signatories_report = False,
+        ):
     
     all_unique_legalname = GroupByMultpleCases(out_target, 'legal_nm')
     all_unique_legalname = all_unique_legalname.sort_values(
@@ -126,10 +129,10 @@ def compile_theft_report(
     
     print_dict['DF_OG'] = Filter_for_Zipcode(print_dict['DF_OG'], "", "", "California") #hack to just california records
     DF_OG_ALL = print_dict['DF_OG'].copy()
-    DF_OG_ALL = DropDuplicateRecords(DF_OG_ALL, FLAG_DUPLICATE, bug_log_csv)
+    DF_OG_ALL = DropDuplicateRecords(DF_OG_ALL, debug['FLAG_DUPLICATE'], debug['bug_log_csv'])
 
     DF_OG_VLN = print_dict['DF_OG'].copy()
-    DF_OG_VLN = DropDuplicateRecords(DF_OG_VLN, FLAG_DUPLICATE, bug_log_csv)
+    DF_OG_VLN = DropDuplicateRecords(DF_OG_VLN, debug['FLAG_DUPLICATE'], debug['bug_log_csv'])
     DF_OG_VLN = Clean_Summary_Values(DF_OG_VLN)
 
     # report headers***************************************************
@@ -187,22 +190,22 @@ def compile_theft_report(
     #if math.isclose(DF_OG['bw_amt'].sum(), out_counts['bw_amt'].sum(), rel_tol=0.03, abs_tol=0.0):
     #    do_nothing = "<p>Purposful Omission of Industry Summary Block</p>"
     #else:
-    Industry_Summary_Block(out_counts, out_counts, print_dict['total_ee_violtd'], print_dict['total_bw_atp'],
-        print_dict['total_case_violtn'], unique_legalname, agency_df_organization, print_dict['open_cases_only'], 
+    Industry_Summary_Block(out_counts, out_counts, sum_dict['total_ee_violtd'], sum_dict['total_bw_atp'],
+        sum_dict['total_case_violtn'], unique_legalname, agency_df_organization, print_dict['open_cases_only'], 
         textFile)
-    Industry_Summary_Block(out_counts, out_counts, print_dict['total_ee_violtd'], print_dict['total_bw_atp'],
-        print_dict['total_case_violtn'], unique_legalname, agency_df_organization, print_dict['open_cases_only'], 
+    Industry_Summary_Block(out_counts, out_counts, sum_dict['total_ee_violtd'], sum_dict['total_bw_atp'],
+        sum_dict['total_case_violtn'], unique_legalname, agency_df_organization, print_dict['open_cases_only'], 
         textFile_temp_html_to_pdf)
-    Proportion_Summary_Block(out_counts, print_dict['total_ee_violtd'], print_dict['total_bw_atp'],
-        print_dict['total_case_violtn'], unique_legalname, agency_df_organization, print_dict['YEAR_START'], 
+    Proportion_Summary_Block(out_counts, sum_dict['total_ee_violtd'], sum_dict['total_bw_atp'],
+        sum_dict['total_case_violtn'], unique_legalname, agency_df_organization, print_dict['YEAR_START'], 
         print_dict['YEAR_END'], print_dict['open_cases_only'], 
-        print_dict['target_jurisdition'], print_dict['TARGET_INDUSTRY'], print_dict['case_disposition_series'], 
-        textFile, bug_log_csv)
-    Proportion_Summary_Block(out_counts, print_dict['total_ee_violtd'], print_dict['total_bw_atp'],
-        print_dict['total_case_violtn'], unique_legalname, agency_df_organization, print_dict['YEAR_START'], 
+        print_dict['target_jurisdition'], print_dict['TARGET_INDUSTRY'], target_dict['case_disposition_series'], 
+        textFile, debug['bug_log_csv'])
+    Proportion_Summary_Block(out_counts, sum_dict['total_ee_violtd'], sum_dict['total_bw_atp'],
+        sum_dict['total_case_violtn'], unique_legalname, agency_df_organization, print_dict['YEAR_START'], 
         print_dict['YEAR_END'], print_dict['open_cases_only'], 
-        print_dict['target_jurisdition'], print_dict['TARGET_INDUSTRY'], print_dict['case_disposition_series'], 
-        textFile_temp_html_to_pdf, bug_log_csv)
+        print_dict['target_jurisdition'], print_dict['TARGET_INDUSTRY'], target_dict['case_disposition_series'], 
+        textFile_temp_html_to_pdf, debug['bug_log_csv'])
 
     if (len(unique_legalname.index) == 0):
         textFile = open(temp_file_name, 'a')
@@ -231,20 +234,20 @@ def compile_theft_report(
 
     if (print_dict['include_summaries'] == 1) and (len(unique_legalname.index) != 0): 
         print_table_html_Text_Summary(print_dict['include_summaries'], temp_file_name, unique_legalname, header_two_way, header_two_way_table,
-            print_dict['total_ee_violtd'], print_dict['total_case_violtn'], print_dict['only_sig_summaries'], print_dict['TARGET_INDUSTRY'])
+            sum_dict['total_ee_violtd'], sum_dict['total_case_violtn'], print_dict['only_sig_summaries'], print_dict['TARGET_INDUSTRY'])
     
     if (print_dict['include_top_viol_tables'] == 1): #and (len(unique_address.index) != 0)
         print_top_viol_tables_html(out_target_all, unique_address, unique_legalname2, 
             unique_tradename, unique_agency, unique_owner, agency_df, out_sort_ee_violtd, 
             out_sort_bw_amt, out_sort_repeat_violtd, temp_file_name, signatories_report,
-            print_dict['out_signatory_target'], print_dict['sig_file_name_csv'], prevailing_header, header, multi_agency_header, 
-            dup_agency_header, dup_header, dup_owner_header, print_dict['prevailing_wage_report'], print_dict['out_prevailing_target'], 
+            target_dict['out_signatory_target'], print_dict['sig_file_name_csv'], prevailing_header, header, multi_agency_header, 
+            dup_agency_header, dup_header, dup_owner_header, print_dict['prevailing_wage_report'], target_dict['out_prevailing_target'], 
             print_dict['prev_file_name_csv'], print_dict['TEST_'])
         print_top_viol_tables_html(out_target_all, unique_address, unique_legalname2, 
             unique_tradename, unique_agency, unique_owner, agency_df, out_sort_ee_violtd, 
             out_sort_bw_amt, out_sort_repeat_violtd, print_dict['temp_file_name_HTML_to_PDF'], signatories_report,
-            print_dict['out_signatory_target'], print_dict['sig_file_name_csv'], prevailing_header, header, multi_agency_header, 
-            dup_agency_header, dup_header, dup_owner_header, print_dict['prevailing_wage_report'], print_dict['out_prevailing_target'], 
+            target_dict['out_signatory_target'], print_dict['sig_file_name_csv'], prevailing_header, header, multi_agency_header, 
+            dup_agency_header, dup_header, dup_owner_header, print_dict['prevailing_wage_report'], target_dict['out_prevailing_target'], 
             print_dict['prev_file_name_csv'], print_dict['TEST_'])
 
     if print_dict['include_methods']:
