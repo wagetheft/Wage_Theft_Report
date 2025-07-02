@@ -54,7 +54,7 @@ def read_df(
         True
     
     if prep_dict['short_run']:
-        abs_path0 = prep_dict['url_backup_path'] + '/_fast'
+        abs_path0 = prep_dict['url_backup_path'] #+ '_fast'
     csv_files = glob.glob(os.path.join(abs_path0, "*.csv"))
 
     for f in csv_files:
