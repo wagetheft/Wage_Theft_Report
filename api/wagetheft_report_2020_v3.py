@@ -235,7 +235,7 @@ def generateWageReport(
         'TEST_CASES':1000000000, # read all records -- infinit large number
 
         'RunFast':False, # True skip slow formating; False run normal
-        'short_run': True, #typically True: california, construction, last eight years
+        'short_run':True, #typically True: california, construction, last eight years
         'FLAG_DUPLICATE':0, # 1 FLAG_DUPLICATE duplicate, #0 drop duplicates --typically 0
         'New_Data_On_Run_Test':False, #typically False
 
