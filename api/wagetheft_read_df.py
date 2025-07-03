@@ -4,7 +4,7 @@ import re
 import os
 import time
 import glob
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 #import pyarrow.parquet as pq #only activate in Linux VM
 
@@ -30,16 +30,14 @@ else:
 def read_df(
         industriesDict, 
         prep_dict, 
-        includeFedData, includeStateJudgements, includeStateCases,
-        bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv,
-        abs_path0,
-        TEST_STATUS = False):
+        debug,
+        ):
     
     OLD_DATA = False
-    os.makedirs(abs_path0, exist_ok=True)
-    os.makedirs(abs_path0 + '_fast', exist_ok=True)
-    dir = os.listdir(abs_path0)
-    csv_files = glob.glob(os.path.join(abs_path0, "*.csv"))
+    os.makedirs(prep_dict['url_abs_path'], exist_ok=True)
+    os.makedirs(prep_dict['url_abs_path'] + '_fast', exist_ok=True)
+    dir = os.listdir(prep_dict['url_abs_path'])
+    csv_files = glob.glob(os.path.join(prep_dict['url_abs_path'], "*.csv"))
     
     #verify age of file
     age_limit = (1 * 30 * 24 * 60 * 60) #seconds = 1 month x 30 days/mo x 24 hr/day x 60 min/hr x 60s/min
@@ -53,31 +51,31 @@ def read_df(
     if ( #read new files from url source -- kae all new regardless
         (OLD_DATA
         or len(dir) < 2) #folder empty
-        or prep_dict['New_Data_On_Run_Test']):    
-        url_list = build_url_list(includeFedData, includeStateJudgements, includeStateCases, TEST_ = TEST_STATUS)
+        or debug['New_Data_On_Run_Test']):    
+        url_list = build_url_list(prep_dict, TEST_ = debug['TEST_'])
         time.sleep(2) #pause to prevent whatever is causing crash
         df_from_url(
             industriesDict, 
             prep_dict, 
             url_list,
-            bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv)
+            debug)
         True
     
-    if prep_dict['short_run']:
-        abs_path0 = prep_dict['url_backup_path'] #+ '_fast'
-    csv_files = glob.glob(os.path.join(abs_path0, "*.csv"))
+    if debug['short_run']:
+        prep_dict['url_abs_path'] = prep_dict['url_abs_path'] + '_fast'
+    csv_files = glob.glob(os.path.join(prep_dict['url_abs_path'], "*.csv"))
 
     for f in csv_files:
         time.sleep(2) #pause to prevent whatever is causing crash
-        #df_backup = pd.read_csv(f, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=prep_dict['TEST_CASES'], dtype={'zip_cd': 'str'} )
-        df_backup = pd.read_csv(f, encoding = 'utf8', low_memory=False, thousands=',', nrows=prep_dict['TEST_CASES'], dtype={'zip_cd': 'str'} )
-        #df_backup_test = pq.read_parquet(f.split('.')[0] + '.parquet')
+        #df_backup = pd.read_csv(f, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=debug['TEST_CASES'], dtype={'zip_cd': 'str'} )
+        df_backup = pd.read_csv(f, encoding = 'utf8', low_memory=False, thousands=',', nrows=debug['TEST_CASES'], dtype={'zip_cd': 'str'} )
+        #df_backup = pq.read_parquet(f.split('.')[0] + '.parquet') #only activate on VM
         prep_dict['DF_OG'] = pd.concat([df_backup, prep_dict['DF_OG']], ignore_index=True)  
 
     out_target = prep_dict['DF_OG'].copy()  # new df -- hold df_csv as a backup and only df from this point on
 
     time.sleep(2) #pause to prevent whatever is causing crash
-    url_list = build_url_list(includeFedData, includeStateJudgements, includeStateCases, Fast='Fast')
+    url_list = build_url_list(prep_dict, Fast=debug['short_run'])
 
     for url in url_list: #filter dataset for this run -- example, remove fed and state
         time.sleep(2) #pause to prevent whatever is causing crash
@@ -92,7 +90,7 @@ def df_from_url(
         industriesDict, 
         prep_dict, 
         url_list,
-        bug_log, LOGBUG, log_number, abs_path, file_name, bug_log_csv
+        debug,
         ):
     
     TEMP_TARGET_INDUSTRY = industriesDict['All NAICS']
@@ -113,15 +111,15 @@ def df_from_url(
             url_cell, 
             out_file_report, 
             trigger, 
-            bug_log_csv, abs_path, 
-            file_name) #save raw copy to csv_read_backup
+            debug['bug_log_csv'], debug['abs_path'], 
+            debug['file_name']) #save raw copy to csv_read_backup
         
         df_url = df_url.replace('\s', ' ', regex=True)  # remove line returns
         df_url = clean_function(
             prep_dict['RunFast'], 
             df_url,
             prep_dict['FLAG_DUPLICATE'], 
-            bug_log, LOGBUG, log_number, bug_log_csv)
+            debug['bug_log'], debug['LOGBUG'], debug['log_number'], debug['bug_log_csv'])
         
         df_url = inference_function(
                 df_url, 
@@ -130,7 +128,7 @@ def df_from_url(
                 prep_dict['prevailing_wage_terms'], 
                 prep_dict['prevailing_wage_labor_code'], 
                 prep_dict['prevailing_wage_politicals'], 
-                bug_log, LOGBUG, log_number)
+                debug['bug_log'], debug['LOGBUG'], debug['log_number'])
         
         save_backup_to_folder( #save clean download here
             df_url, 
@@ -167,14 +165,14 @@ def df_from_url(
     
 
 
-def build_url_list(includeFedData, includeStateJudgements, includeStateCases, TEST_ = False, Fast = False, ):
+def build_url_list(prep_dict, TEST_ = False, Fast = False, ):
 
     includeTestData = 0 #this is always 0
     if (TEST_ == 1): 
         includeTestData = 1
-        includeFedData = 0
-        includeStateJudgements = 0
-        includeStateCases = 0
+        prep_dict['includeFedData'] = 0
+        prep_dict['includeStateJudgements'] = 0
+        prep_dict['includeStateCases'] = 0
         #includeLocalData = False -- unused
         #includeOfficeData = False -- unused
 
@@ -209,11 +207,11 @@ def build_url_list(includeFedData, includeStateJudgements, includeStateCases, TE
 
     url_list = [
         [url0, includeTestData,'TEST'], 
-        [url1, includeFedData,'DOL_WHD'], 
-        [url2, includeStateCases,'DIR_DLSE'],
-        [url3, includeStateCases,'DLSE_WageClaim'],
-        [url4, includeStateJudgements,'DLSE_J-23'],
-        [url5, includeStateJudgements,'DLSE_J-5413'],
+        [url1, prep_dict['includeFedData'],'DOL_WHD'], 
+        [url2, prep_dict['includeStateCases'],'DIR_DLSE'],
+        [url3, prep_dict['includeStateCases'],'DLSE_WageClaim'],
+        [url4, prep_dict['includeStateJudgements'],'DLSE_J-23'],
+        [url5, prep_dict['includeStateJudgements'],'DLSE_J-5413'],
         #includeLocalData = False -- unused
         #includeOfficeData = False -- unused
     ]

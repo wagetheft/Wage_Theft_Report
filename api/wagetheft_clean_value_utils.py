@@ -1259,10 +1259,22 @@ def Cleanup_Number_Columns(df):
 
 def Clean_Summary_Values(DF_OG_VLN):
 
-    DF_OG_VLN['bw_amt'] = CleanNumberColumns(DF_OG_VLN['bw_amt'])
-    DF_OG_VLN['violtn_cnt'] = CleanNumberColumns(DF_OG_VLN['violtn_cnt'])
-    DF_OG_VLN['ee_violtd_cnt'] = CleanNumberColumns(DF_OG_VLN['ee_violtd_cnt'])
-    DF_OG_VLN['ee_pmt_recv'] = CleanNumberColumns(DF_OG_VLN['ee_pmt_recv'])
+    if 'bw_amt' in DF_OG_VLN.columns:
+        DF_OG_VLN['bw_amt'] = CleanNumberColumns(DF_OG_VLN['bw_amt'])
+    else:
+        DF_OG_VLN['bw_amt'] = 0
+    if 'violtn_cnt' in DF_OG_VLN.columns:
+        DF_OG_VLN['violtn_cnt'] = CleanNumberColumns(DF_OG_VLN['violtn_cnt'])
+    else:
+        DF_OG_VLN['violtn_cnt'] = 0
+    if 'ee_violtd_cnt' in DF_OG_VLN.columns:
+        DF_OG_VLN['ee_violtd_cnt'] = CleanNumberColumns(DF_OG_VLN['ee_violtd_cnt'])
+    else:
+        DF_OG_VLN['ee_violtd_cnt'] = 0
+    if 'ee_pmt_recv' in DF_OG_VLN.columns:
+        DF_OG_VLN['ee_pmt_recv'] = CleanNumberColumns(DF_OG_VLN['ee_pmt_recv'])
+    else:
+        DF_OG_VLN['ee_pmt_recv'] = 0
 
     return DF_OG_VLN
 
