@@ -107,7 +107,7 @@ def df_from_url(
         df_url = pd.DataFrame()
 
         df_url = Read_Violation_Data( #save raw downloads here
-            prep_dict['TEST_CASES'], 
+            debug['TEST_CASES'], 
             url_cell, 
             out_file_report, 
             trigger, 
@@ -116,9 +116,9 @@ def df_from_url(
         
         df_url = df_url.replace('\s', ' ', regex=True)  # remove line returns
         df_url = clean_function(
-            prep_dict['RunFast'], 
+            debug['RunFast'], 
             df_url,
-            prep_dict['FLAG_DUPLICATE'], 
+            debug['FLAG_DUPLICATE'], 
             debug['bug_log'], debug['LOGBUG'], debug['log_number'], debug['bug_log_csv'])
         
         df_url = inference_function(
