@@ -62,14 +62,14 @@ def read_df(
         True
     
     if debug['short_run']:
-        prep_dict['url_abs_path'] = prep_dict['url_abs_path'] #+ '_fast'
+        prep_dict['url_abs_path'] = prep_dict['url_abs_path'] + '_fast'
     csv_files = glob.glob(os.path.join(prep_dict['url_abs_path'], "*.csv"))
 
     for f in csv_files:
         time.sleep(2) #pause to prevent whatever is causing crash
         #df_backup = pd.read_csv(f, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=debug['TEST_CASES'], dtype={'zip_cd': 'str'} )
         df_backup = pd.read_csv(f, encoding = 'utf8', low_memory=False, thousands=',', nrows=debug['TEST_CASES'], dtype={'zip_cd': 'str'} )
-        #df_backup_test = pq.read_parquet(f.split('.')[0] + '.parquet')
+        #df_backup = pq.read_parquet(f.split('.')[0] + '.parquet') #only activate on VM
         prep_dict['DF_OG'] = pd.concat([df_backup, prep_dict['DF_OG']], ignore_index=True)  
 
     out_target = prep_dict['DF_OG'].copy()  # new df -- hold df_csv as a backup and only df from this point on

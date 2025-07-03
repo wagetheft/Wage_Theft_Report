@@ -229,17 +229,17 @@ def generateWageReport(
         'bug_log_csv':"", # will be set later
         'bugFile':"", # will be set later
 
-        'log_number':1,
-        'LOGBUG':False,
+        'log_number':1, #typically 1
+        'LOGBUG':False, #typically False
 
         'TEST_CASES':1000000000, # read all records -- infinit large number
 
         'RunFast':False, # True skip slow formating; False run normal
-        'short_run': True,
-        'FLAG_DUPLICATE':0, # 1 FLAG_DUPLICATE duplicate, #0 drop duplicates
-        'New_Data_On_Run_Test':False,
+        'short_run': True, #typically True: california, construction, last eight years
+        'FLAG_DUPLICATE':0, # 1 FLAG_DUPLICATE duplicate, #0 drop duplicates --typically 0
+        'New_Data_On_Run_Test':False, #typically False
 
-        'TEST_':2,
+        'TEST_':0, #typically 0
         # 0 for normal run w/ all records
         # 1 for custom test dataset (url0 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv" <-- open and edit this file with test data)
         # 2 for small dataset (first 100 of each file)

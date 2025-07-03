@@ -285,4 +285,4 @@ def compile_theft_report(
 
         Sources_Block(textFile_temp_html_to_pdf)
 
-        return
+    return

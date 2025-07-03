@@ -247,6 +247,8 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
     out_signatory_target, sig_file_name_csv, prevailing_header, header, multi_agency_header, dup_agency_header, dup_header, 
     dup_owner_header, prevailing_wage_report, out_prevailing_target, prev_file_name_csv, TEST):
 
+    result = "<h2>Top Violators for Selected Region and Industry</h2> \n"
+
     if not df.empty and (len(unique_address) != 0):
         import matplotlib
 
@@ -282,8 +284,7 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
         
         #with open(temp_file_name, 'a', encoding='utf-8') as f:  # append to report main file
         #result += "<HR> \n"
-        result = "<h2>Top Violators for Selected Region and Industry</h2> \n"
-
+        
         if not out_sort_bw_amt.empty:
             # by backwages
             result += "<h3>Top violators by amount of backwages stolen (by legal name)</h3> \n"
@@ -468,10 +469,10 @@ def print_top_viol_tables_html(df, unique_address, unique_legalname2,
             result += "\n"
             result += "<p> There are no prevailing wage cases to report.</p> \n"
             result += "\n"
-            
 
     with open(temp_file_name, mode='a', encoding='utf-8') as f:  # append to report main file
         f.write(result)
+
 
 def write_style_html(temp_file_name):
 
