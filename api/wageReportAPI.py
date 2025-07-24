@@ -83,12 +83,14 @@ def generateFile():
         infer_by_naics = 1
 
     #log
+    '''
     logfile(target_state, target_county, target_city, target_industry, \
                 target_organization, \
                 includeFedData, includeStateJudgements, includeStateCases, infer_zip, prevailing_wage_report, signatories_report, \
                 open_cases_only, include_tables, include_summaries, only_sig_summaries, \
                 include_top_viol_tables, use_assumptions, infer_by_naics, YEAR_START_TEXT, YEAR_END_TEXT)
-
+    '''
+    
     #out it goes
     report_file_name = generateWageReport(
         target_state, target_county, target_city, target_industry, target_organization, 
@@ -99,19 +101,20 @@ def generateFile():
         use_assumptions, infer_by_naics, 
         YEAR_START_TEXT, YEAR_END_TEXT)
     
-    abs_report_file = os.path.abspath(report_file_name)
-    download_name_temp = os.path.basename(report_file_name)
-    error_msg = "send an email to information@paloaltodatagroup.com"
-    error_msg_add = ""
-    if not os.path.exists(abs_report_file):
-        error_msg_add = "File not found, "
+    #abs_report_file = os.path.abspath(report_file_name)
+    #download_name_temp = os.path.basename(report_file_name)
+    #error_msg = "send an email to information@paloaltodatagroup.com"
+    #error_msg_add = ""
+    #if not os.path.exists(abs_report_file):
+    #    error_msg_add = "File not found, "
         
     try:
-        #return send_file(abs_report_file, report_file_name, as_attachment=True)
-        return send_file(abs_report_file, as_attachment=True, download_name=download_name_temp)
+        return send_file(report_file_name, as_attachment=True)
+        #return send_file(abs_report_file, as_attachment=True, download_name=download_name_temp)
     
     except Exception as e:
-        return error_msg_add + error_msg + ": " + str(e), 500
+        #return error_msg_add + error_msg + ": " + str(e), 500
+        return "Server Error -- send an email to information@paloaltodatagroup.com", 500
 
 def checkValidInput(inputDict: dict) -> bool:
     toCheck = ["target_city", "target_industry", "target_organization", 
