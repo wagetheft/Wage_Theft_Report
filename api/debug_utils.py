@@ -2,15 +2,28 @@
 import os
 
 
-def debug_fileSetup_def(bug_filename):
+def debug_fileSetup_def(bug_log, LOGBUG = True):
+    if LOGBUG:
+        bugFile = open(bug_log, 'w')
+        bugFile.write("<!DOCTYPE html>")
+        bugFile.write("\n")
+        bugFile.write("<html><body>")
+        bugFile.write("\n")
 
-    bug_filename.write("<!DOCTYPE html>")
-    bug_filename.write("\n")
-    bug_filename.write("<html><body>")
-    bug_filename.write("\n")
+        bugFile.write("<h1>START</h1>")
+        bugFile.write("\n")
+        bugFile.close()
 
-    bug_filename.write("<h1>START</h1>")
-    bug_filename.write("\n")
+
+def debug_fileClose_def(bug_log, LOGBUG = True):
+    if LOGBUG:
+        bugFile = open(bug_log, 'a')
+
+        bugFile.write("<h1>DONE</h1>")
+        bugFile.write("\n")
+        bugFile.write("</html></body>")
+        bugFile.write("\n")
+        bugFile.close()
 
 
 def file_path(relative_path):
@@ -22,7 +35,7 @@ def file_path(relative_path):
     return new_path
 
 
-def append_log(bug_log, LOGBUG, text):
+def append_log(bug_log, text = "", LOGBUG = True):
     if LOGBUG:
         bugFile = open(bug_log, 'a')
         bugFile.write(text)
