@@ -12,8 +12,6 @@ def debug_fileSetup_def(bug_log, LOGBUG = True):
 
         bugFile.write("<h1>START</h1>")
         bugFile.write("\n")
-        bugFile.write("TEST | TEST | TEST")
-        bugFile.write("\n")
         bugFile.close()
 
 

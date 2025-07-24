@@ -272,8 +272,6 @@ def generateWageReport(
     debug['bug_log'] = os.path.join(debug['debug_log_path'], ('log_'+'bug_').replace(' ', '_') + '.txt')
     debug['bug_log_csv'] = os.path.join(debug['debug_log_path'], ('log_'+'bug_').replace(' ', '_') + '.csv')
     debug_fileSetup_def(debug['bug_log'], debug['LOGBUG'])
-
-    append_log(debug['bug_log'], "established", debug['LOGBUG'])
     
     f_dict = {
         'temp_file_name':name_gen(debug['debug_log_path'], debug['file_name'], '_theft_summary_', target_organization, '.html'),
