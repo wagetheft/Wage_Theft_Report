@@ -374,10 +374,9 @@ def generateWageReport(
 
     #CLOSE LOG FILE***************************************************************
     time_2 = time.time()
-    log_number = 14
-    append_log(debug['bug_log'], f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n", debug['LOGBUG'])
     append_log(debug['bug_log'], f"Time to finish report " + "%.5f" % (time_2 - time_0) + "\n", debug['LOGBUG'])
-    debug_fileClose_def(debug['bugFile']) #close the log file
+    append_log(debug['bug_log'], f_dict['temp_file_name'], debug['LOGBUG'])
+    debug_fileClose_def(debug['bugFile'], debug['LOGBUG']) #close the log file
     # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
     
     #RETURN REPORT
