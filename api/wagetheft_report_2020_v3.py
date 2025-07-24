@@ -33,6 +33,7 @@ if platform.system() == 'Windows' or platform.system() =='Darwin':
 
     from debug_utils import (
         debug_fileSetup_def,
+        debug_fileClose_def,
         append_log,
     )
     from util_zipcode import (
@@ -241,7 +242,6 @@ def generateWageReport(
         'abs_path':"", # will be set later -- same as debug_log_path', legacy, refactor out
         'bug_log': "", # will be set later
         'bug_log_csv':"", # will be set later
-        'bugFile':"", # will be set later
 
         'log_number':1, #typically 1
         'LOGBUG':True, #typically False
@@ -271,11 +271,10 @@ def generateWageReport(
     if not os.path.exists(debug['debug_log_path']): os.makedirs(debug['debug_log_path'])
     debug['bug_log'] = os.path.join(debug['debug_log_path'], ('log_'+'bug_').replace(' ', '_') + '.txt')
     debug['bug_log_csv'] = os.path.join(debug['debug_log_path'], ('log_'+'bug_').replace(' ', '_') + '.csv')
-    if debug['LOGBUG']:
-        debug['bugFile'] = open(debug['bug_log'], 'w')
-        debug_fileSetup_def(debug['bugFile'])
-        debug['bugFile'].close()
+    debug_fileSetup_def(debug['bug_log'], debug['LOGBUG'])
 
+    append_log(debug['bug_log'], "established", debug['LOGBUG'])
+    
     f_dict = {
         'temp_file_name':name_gen(debug['debug_log_path'], debug['file_name'], '_theft_summary_', target_organization, '.html'),
         'temp_file_name_HTML_to_PDF':name_gen(debug['debug_log_path'], debug['file_name'], '_temp_theft_summary_', target_organization, '.html'),
@@ -311,7 +310,7 @@ def generateWageReport(
 
         'sig_file_name_csv':f_dict['sig_file_name_csv'],
         'prev_file_name_csv':f_dict['prev_file_name_csv'],
-        'temp_file_name_HTML_to_PDF':f_dict['temp_file_name_HTML_to_PDF'],
+        'temp_file_name_HTML_to_PDF':f_dict['temp_file_name_HTML_to_PDF'], #for future use in PDF output
         
         'DF_OG':prep_dict['DF_OG'],
 
@@ -327,6 +326,7 @@ def generateWageReport(
 
     # df.to_csv(debug['bug_log_csv']) #debug outfile -- use to debug
 
+    append_log(debug['bug_log'], "HERE_0", debug['LOGBUG'])
     out_target, prep_dict['DF_OG'] = read_df(
         industriesDict, 
         prep_dict, 
@@ -334,21 +334,25 @@ def generateWageReport(
         )
     
     #TARGET LIST
+    append_log(debug['bug_log'], "HERE_1", debug['LOGBUG'])
     out_target = shape_df(
         out_target, 
         option_dict, 
         debug['FLAG_DUPLICATE'],
         debug['bug_log_csv'],
         )
-
+    
+    append_log(debug['bug_log'], "HERE_2", debug['LOGBUG'])
     out_target, out_target_organization = extract_values_for_report(
         out_target, 
         option_dict['TARGET_ORGANIZATIONS'], 
         option_dict['signatories_report'],
         f_dict['temp_file_name_csv'])
     
+    append_log(debug['bug_log'], "HERE_3", debug['LOGBUG'])
     out_prevailing_target, out_signatory_target = prevailing_wage_blacklist(out_target)
 
+    append_log(debug['bug_log'], "HERE_4", debug['LOGBUG'])
     target_dict = {
         'case_disposition_series':out_target_organization['Case Status'].copy(),
         'out_prevailing_target':out_prevailing_target,
@@ -356,6 +360,7 @@ def generateWageReport(
     }
 
     #SUM COUNTS
+    append_log(debug['bug_log'], "HERE_5", debug['LOGBUG'])
     sum_dict = {
         'total_ee_violtd': out_target_organization['ee_violtd_cnt'].sum(),
         'total_bw_atp': out_target_organization['bw_amt'].sum(),
@@ -363,6 +368,7 @@ def generateWageReport(
     }
 
     #PRINT
+    append_log(debug['bug_log'], "HERE_6", debug['LOGBUG'])
     compile_theft_report(
         out_target,
         out_target_organization,
@@ -376,10 +382,9 @@ def generateWageReport(
 
     #CLOSE LOG FILE***************************************************************
     time_2 = time.time()
-    log_number = 14
-    append_log(debug['bug_log'], debug['LOGBUG'], f"Time to finish section {log_number} " + "%.5f" % (time_2 - time_1) + "\n")
-    append_log(debug['bug_log'], debug['LOGBUG'], f"Time to finish report " + "%.5f" % (time_2 - time_0) + "\n")
-    append_log(debug['bug_log'], debug['LOGBUG'], "<h1>DONE</h1> \n" + "</html></body> \n") #CLOSE
+    append_log(debug['bug_log'], f"Time to finish report " + "%.5f" % (time_2 - time_0) + "\n", debug['LOGBUG'])
+    append_log(debug['bug_log'], f_dict['temp_file_name'], debug['LOGBUG'])
+    debug_fileClose_def(debug['bug_log'], debug['LOGBUG']) #close the log file
     # updated 8/10/2022 by f. peterson to .format() per https://stackoverflow.com/questions/18053500/typeerror-not-all-arguments-converted-during-string-formatting-python
     
     #RETURN REPORT
@@ -457,20 +462,20 @@ def inference_function(df, cityDict, TARGET_INDUSTRY,
     InferZipcode(df, cityDict)
     time_2 = time.time()
     log_number = "InferZipcode"
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+    append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
 
     time_1 = time.time()
     df = Infer_Industry(df, TARGET_INDUSTRY)
     time_2 = time.time()
     log_number = "Infer_Industry"
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+    append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
     # unused df = Filter_for_Target_Industry(df,TARGET_INDUSTRY) ##debug 12/23/2020 <-- run here for faster time but without global summary
     
     time_1 = time.time()
     df = InferAgencyFromCaseIDAndLabel(df, 'juris_or_proj_nm')
     time_2 = time.time()
     log_number = "InferAgency"
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+    append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
 
     # PREVAILING WAGE
     time_1 = time.time()
@@ -479,20 +484,20 @@ def inference_function(df, cityDict, TARGET_INDUSTRY,
         df['Prevailing'] = pd.to_numeric(df['Prevailing'], errors='coerce')
     time_2 = time.time()
     log_number = "infer_prevailing_wage_cases"
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+    append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
 
     time_1 = time.time()
     df = wages_owed(df)
     time_2 = time.time()
     log_number = "calc wages_owed"
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+    append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
 
     #coulf be buggy 1/18/2024 so removed
     #time_1 = time.time()
     #df = fill_case_status_for_missing_enddate(df)
     #time_2 = time.time()
     #log_number+=1
-    #append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+    #append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
 
     return df
 

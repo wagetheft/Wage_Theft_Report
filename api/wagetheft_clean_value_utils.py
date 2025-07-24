@@ -90,25 +90,25 @@ def clean_function(
         df = Cleanup_Number_Columns(df)
         time_2 = time.time()
         log_number = "Cleanup number columns"
-        append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+        append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
         
         time_1 = time.time()
         df = Cleanup_Text_Columns(df, bug_log, LOGBUG, bug_log_csv)
         time_2 = time.time()
         log_number = "Cleanup text columns"
-        append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+        append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
 
         #time_1 = time.time()
         #df = CleanUpAgency(df, ) #<-- use for case file codes
         #time_2 = time.time()
         #log_number+=1
-        #append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+        #append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
 
         time_1 = time.time()
         df = Define_Column_Types(df)
         time_2 = time.time()
         log_number = "Define_Column_Types"
-        append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+        append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
 
         # remove duplicate cases using case_id and violation as a unique key
         time_1 = time.time()
@@ -116,7 +116,7 @@ def clean_function(
         df = FlagDuplicateBackwage(df, FLAG_DUPLICATE)
         time_2 = time.time()
         log_number = "DropDuplicateRecords"
-        append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+        append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
         
     return df
 
@@ -1295,13 +1295,13 @@ def Cleanup_Text_Columns(df, bug_log, LOGBUG, bug_log_csv):
     df = RemoveDoubleSpacesFromAddresses(df)
     time_2 = time.time()
     log_number = "appreviation, punctuation, and spaces"
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+    append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
 
     time_1 = time.time()
     df = RemovePunctuationFromCity(df)  # once more
     time_2 = time.time()
     log_number = "RemovePunctuationFromCity"
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+    append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
 
     time_1 = time.time()
     df = StripPunctuationFromNames(df)
@@ -1314,7 +1314,7 @@ def Cleanup_Text_Columns(df, bug_log, LOGBUG, bug_log_csv):
     df = StripPunctuationFromNames(df)
     time_2 = time.time()
     log_number = "Move Business Type"
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+    append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
 
     """
     # run a second time
