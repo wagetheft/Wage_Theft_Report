@@ -92,7 +92,7 @@ def generateFile():
     '''
     
     #out it goes
-    report_file_name = generateWageReport(
+    report_file_path = generateWageReport(
         target_state, target_county, target_city, target_industry, target_organization, 
         includeFedData, includeStateJudgements, includeStateCases, 
         infer_zip, 
@@ -101,11 +101,10 @@ def generateFile():
         use_assumptions, infer_by_naics, 
         YEAR_START_TEXT, YEAR_END_TEXT)
     
-    #download_name_temp = os.path.basename(report_file_name)
     error_msg = "send an email to information@paloaltodatagroup.com"
         
     try:
-        return send_file(report_file_name, as_attachment=True) #, download_name=download_name_temp)
+        return send_file(report_file_path, as_attachment=True) #, download_name=download_name_temp)
     
     except Exception as e:
         return error_msg + ": " + str(e), 500
