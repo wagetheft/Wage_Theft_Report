@@ -309,7 +309,7 @@ def generateWageReport(
 
         'sig_file_name_csv':f_dict['sig_file_name_csv'],
         'prev_file_name_csv':f_dict['prev_file_name_csv'],
-        'temp_file_name_HTML_to_PDF':f_dict['temp_file_name_HTML_to_PDF'],
+        'temp_file_name_HTML_to_PDF':f_dict['temp_file_name_HTML_to_PDF'], #for future use in PDF output
         
         'DF_OG':prep_dict['DF_OG'],
 
@@ -325,6 +325,7 @@ def generateWageReport(
 
     # df.to_csv(debug['bug_log_csv']) #debug outfile -- use to debug
 
+    append_log(debug['bug_log'], "HERE_0", debug['LOGBUG'])
     out_target, prep_dict['DF_OG'] = read_df(
         industriesDict, 
         prep_dict, 
@@ -332,21 +333,25 @@ def generateWageReport(
         )
     
     #TARGET LIST
+    append_log(debug['bug_log'], "HERE_1", debug['LOGBUG'])
     out_target = shape_df(
         out_target, 
         option_dict, 
         debug['FLAG_DUPLICATE'],
         debug['bug_log_csv'],
         )
-
+    
+    append_log(debug['bug_log'], "HERE_2", debug['LOGBUG'])
     out_target, out_target_organization = extract_values_for_report(
         out_target, 
         option_dict['TARGET_ORGANIZATIONS'], 
         option_dict['signatories_report'],
         f_dict['temp_file_name_csv'])
     
+    append_log(debug['bug_log'], "HERE_3", debug['LOGBUG'])
     out_prevailing_target, out_signatory_target = prevailing_wage_blacklist(out_target)
 
+    append_log(debug['bug_log'], "HERE_4", debug['LOGBUG'])
     target_dict = {
         'case_disposition_series':out_target_organization['Case Status'].copy(),
         'out_prevailing_target':out_prevailing_target,
@@ -354,6 +359,7 @@ def generateWageReport(
     }
 
     #SUM COUNTS
+    append_log(debug['bug_log'], "HERE_5", debug['LOGBUG'])
     sum_dict = {
         'total_ee_violtd': out_target_organization['ee_violtd_cnt'].sum(),
         'total_bw_atp': out_target_organization['bw_amt'].sum(),
@@ -361,6 +367,7 @@ def generateWageReport(
     }
 
     #PRINT
+    append_log(debug['bug_log'], "HERE_6", debug['LOGBUG'])
     compile_theft_report(
         out_target,
         out_target_organization,
