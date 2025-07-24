@@ -1,0 +1,746 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <title>Theft Violations</title>
+        <style>
+
+            h2, h3 {
+                text-align: center;
+                font-family: Helvetica, Arial, sans-serif;
+            }
+
+            table { 
+                margin-left: auto;
+                margin-right: auto;
+            }
+            table, th, td {
+                border: 1px solid black;
+                border-collapse: collapse;
+            }
+            th, td {
+                padding: 5px;
+                text-align: center;
+                font-family: Helvetica, Arial, sans-serif;
+                font-size: 90%;
+            }
+            table tbody tr:hover {
+                background-color: #dddddd;
+            }
+            .wide {
+                width: 90%; 
+            }
+
+        </style>
+        </head>
+        <body> 
+
+        <h1>DRAFT REPORT: Total Wage Theft in the Jurisdiction of  San Jose for All NAICS Industry</h1> 
+
+<p>These data are a combination of the Division of Labor Standards Enforcement Wage Claim Adjudications,                 the Division of Labor Standards Enforcement Wage Claim Adjudications,                     and the Division of Labor Standards Enforcement judgments. The WHD data were obtained from the DOL , and the  DLSE data pre-2020 were obtained through a Section 6250 CA Public Records Act request                        (does not include purged cases which are those settled and then purged typically after three years),                        and then post-2020 DLSE data are from the CA DIR websearch portal.</p>
+<p>The dataset in this report is pulled from a larger dataset that for all regions and sources contains  unknown number of  cases. This is approximately a <p>The total Federal WHD dataset goes back to 2000 , and  total State DLSE dataset goes back to 2000 (Note: The State purged old closed cases and thus the above is an imperfect ratio).</p><p> These data are internally incomplete, and do not include private lawsuits, stop notices, and complaints to the awarding agency, contractor, employment department, licensing board, and district attorney. Therefore, the following is a sample given the above data constraints and the reluctance by populations to file wage and hour claims.</p>
+
+<h2>Summary for Reported Industry and Organizations</h2> 
+<p>Actual date range: 02/2021 to 01/2024</p> 
+<p>Total wage theft cases: 55 <i>(Note: sum is of several types of 'open' disposition)</i></p> 
+<p>Total wage theft:  $ 244,077 <i>(gaps estimated as $4,437 in backwage  and $555 monetary penalty per employee violated ) </i></p> 
+<p>Including monetary penalties and accrued interest, the amount owed is:  $ 318,715</p><p>Total employees: 55</p> 
+<p>Total violations: 55 <i>(gaps estimated as 1 violation(s) per employee violated)</i></p>
+
+<p>Companies that are involved in multiple cases: 29</p> 
+
+
+
+
+<p>Number and proportion of wage theft --  out of all 55 wage theft cases against                 All NAICS industry companies in  San Jose                 from 07/2021 to the present:</p> 
+<ul><li>10 are Open/Unpaid                     (18%)</li>
+<li>7 are Closed-Claimant Judgment                     (13%)</li>
+<li>2 are Under Investigation                     (4%)</li>
+<li>2 are Awaiting Approval                     (4%)</li>
+<li><i>*disposition types with less than 2 records are not listed</i></li></ul>
+
+<HR> 
+<div style='break-before:page'></div> 
+<h2>Top Violators for Selected Region and Industry</h2> 
+<h3>Top violators by amount of backwages stolen (by legal name)</h3> 
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>legal_nm</th>
+      <th>trade_nm</th>
+      <th>cty_nm</th>
+      <th>violtn_cnt</th>
+      <th>ee_violtd_cnt</th>
+      <th>bw_amt</th>
+      <th>records</th>
+      <th>ee_pmt_recv</th>
+      <th>naics_desc.</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>JUAN CARLOS GONZALES</td>
+      <td></td>
+      <td></td>
+      <td>2</td>
+      <td>2</td>
+      <td>52,020</td>
+      <td>2</td>
+      <td>0</td>
+      <td>Drywall and Insulation Contractors</td>
+    </tr>
+    <tr>
+      <td>TEAM BUILDERS</td>
+      <td></td>
+      <td></td>
+      <td>2</td>
+      <td>2</td>
+      <td>26,763</td>
+      <td>2</td>
+      <td>0</td>
+      <td>Construction</td>
+    </tr>
+    <tr>
+      <td>ANDERSON GARCIA SAURE</td>
+      <td></td>
+      <td></td>
+      <td>1</td>
+      <td>1</td>
+      <td>18,619</td>
+      <td>1</td>
+      <td>0</td>
+      <td>Construction</td>
+    </tr>
+    <tr>
+      <td>FRANCISRAMON ALCARAZ</td>
+      <td></td>
+      <td></td>
+      <td>1</td>
+      <td>1</td>
+      <td>15,370</td>
+      <td>1</td>
+      <td>0</td>
+      <td>Construction</td>
+    </tr>
+    <tr>
+      <td>JAM GENERAL CONTRACTORS</td>
+      <td></td>
+      <td></td>
+      <td>1</td>
+      <td>1</td>
+      <td>14,810</td>
+      <td>1</td>
+      <td>0</td>
+      <td>Construction</td>
+    </tr>
+    <tr>
+      <td>MARIAH CHRISTIAN GOMEZ</td>
+      <td></td>
+      <td></td>
+      <td>1</td>
+      <td>1</td>
+      <td>13,293</td>
+      <td>1</td>
+      <td>0</td>
+      <td>Construction</td>
+    </tr>
+  </tbody>
+</table>
+<h3>Top violators by number of employees violated (by legal name)</h3> 
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>legal_nm</th>
+      <th>trade_nm</th>
+      <th>cty_nm</th>
+      <th>violtn_cnt</th>
+      <th>ee_violtd_cnt</th>
+      <th>bw_amt</th>
+      <th>records</th>
+      <th>ee_pmt_recv</th>
+      <th>naics_desc.</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>CONSTRUCTION BLGWIIF</td>
+      <td>construction dba kfivoqv</td>
+      <td>san jose</td>
+      <td>15</td>
+      <td>15</td>
+      <td>1,500</td>
+      <td>15</td>
+      <td>6,000</td>
+      <td>Plumbing, Heating, and Air-Conditioning Contractors</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION XIMFWXR</td>
+      <td>construction dba krgemsq</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Retail Bakeries</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION WHCLMSE</td>
+      <td>construction dba fjkguyn</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Local Nursing Homes</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION SLMINEI</td>
+      <td>construction dba jiebfig</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Local Group Homes for Mentally and Physically Handicapped</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION MZKOQTN</td>
+      <td>construction dba huqppgt</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Other Grocery and Related Products Merchant Wholesalers</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION REEBQKJ</td>
+      <td>construction dba epbproj</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>State Generation and Distribution of Electric Power</td>
+    </tr>
+  </tbody>
+</table>
+<h3>Top violators by number of repeat violations (by legal name)</h3> 
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>legal_nm</th>
+      <th>trade_nm</th>
+      <th>cty_nm</th>
+      <th>violtn_cnt</th>
+      <th>ee_violtd_cnt</th>
+      <th>bw_amt</th>
+      <th>records</th>
+      <th>ee_pmt_recv</th>
+      <th>naics_desc.</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>CONSTRUCTION BLGWIIF</td>
+      <td>construction dba kfivoqv</td>
+      <td>san jose</td>
+      <td>15</td>
+      <td>15</td>
+      <td>1,500</td>
+      <td>15</td>
+      <td>6,000</td>
+      <td>Plumbing, Heating, and Air-Conditioning Contractors</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION XIMFWXR</td>
+      <td>construction dba krgemsq</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Retail Bakeries</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION WHCLMSE</td>
+      <td>construction dba fjkguyn</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Local Nursing Homes</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION SLMINEI</td>
+      <td>construction dba jiebfig</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Local Group Homes for Mentally and Physically Handicapped</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION MZKOQTN</td>
+      <td>construction dba huqppgt</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Other Grocery and Related Products Merchant Wholesalers</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION REEBQKJ</td>
+      <td>construction dba epbproj</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>State Generation and Distribution of Electric Power</td>
+    </tr>
+  </tbody>
+</table>
+<h3>Top violators group by address and sort by records</h3> 
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>legal_nm</th>
+      <th>trade_nm</th>
+      <th>cty_nm</th>
+      <th>violtn_cnt</th>
+      <th>ee_violtd_cnt</th>
+      <th>bw_amt</th>
+      <th>records</th>
+      <th>ee_pmt_recv</th>
+      <th>naics_desc.</th>
+      <th>street_addr</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>CONSTRUCTION BLGWIIF</td>
+      <td>construction dba kfivoqv</td>
+      <td>san jose</td>
+      <td>15</td>
+      <td>15</td>
+      <td>1,500</td>
+      <td>15</td>
+      <td>6,000</td>
+      <td>Plumbing, Heating, and Air-Conditioning Contractors</td>
+      <td>135 SOME STREET</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION SLMINEI</td>
+      <td>construction dba jiebfig</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Local Group Homes for Mentally and Physically Handicapped</td>
+      <td>133 SOME STREET</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION WHCLMSE</td>
+      <td>construction dba fjkguyn</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Local Nursing Homes</td>
+      <td>131 SOME STREET</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION XIMFWXR</td>
+      <td>construction dba krgemsq</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Retail Bakeries</td>
+      <td>132 SOME STREET</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION REEBQKJ</td>
+      <td>construction dba epbproj</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>State Generation and Distribution of Electric Power</td>
+      <td>130 SOME STREET</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION MZKOQTN</td>
+      <td>construction dba huqppgt</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Other Grocery and Related Products Merchant Wholesalers</td>
+      <td>134 SOME STREET</td>
+    </tr>
+    <tr>
+      <td>WEST MAX CONSTRUCTION</td>
+      <td></td>
+      <td></td>
+      <td>2</td>
+      <td>2</td>
+      <td>14,347</td>
+      <td>2</td>
+      <td>0</td>
+      <td>Construction</td>
+      <td>15105 CENTER AVENUE SAN MARTIN CA 95046</td>
+    </tr>
+    <tr>
+      <td>JAM GENERAL CONTRACTORS</td>
+      <td></td>
+      <td></td>
+      <td>2</td>
+      <td>2</td>
+      <td>27,818</td>
+      <td>2</td>
+      <td>0</td>
+      <td>Construction</td>
+      <td>3227 PENTLAND COURT SAN JOSE CA 95148</td>
+    </tr>
+    <tr>
+      <td>JUAN CARLOS GONZALES</td>
+      <td></td>
+      <td></td>
+      <td>2</td>
+      <td>2</td>
+      <td>52,020</td>
+      <td>2</td>
+      <td>0</td>
+      <td>Drywall and Insulation Contractors</td>
+      <td>1934 18TH STREET SAN PABLO CA USA 94806</td>
+    </tr>
+  </tbody>
+</table>
+<h3>Top violators group by legal name and sort by records</h3> 
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>legal_nm</th>
+      <th>trade_nm</th>
+      <th>cty_nm</th>
+      <th>violtn_cnt</th>
+      <th>ee_violtd_cnt</th>
+      <th>bw_amt</th>
+      <th>records</th>
+      <th>ee_pmt_recv</th>
+      <th>naics_desc.</th>
+      <th>street_addr</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>CONSTRUCTION BLGWIIF</td>
+      <td>construction dba kfivoqv</td>
+      <td>san jose</td>
+      <td>15</td>
+      <td>15</td>
+      <td>1,500</td>
+      <td>15</td>
+      <td>6,000</td>
+      <td>Plumbing, Heating, and Air-Conditioning Contractors</td>
+      <td>135 some street</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION WHCLMSE</td>
+      <td>construction dba fjkguyn</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Local Nursing Homes</td>
+      <td>131 some street</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION XIMFWXR</td>
+      <td>construction dba krgemsq</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Retail Bakeries</td>
+      <td>132 some street</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION REEBQKJ</td>
+      <td>construction dba epbproj</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>State Generation and Distribution of Electric Power</td>
+      <td>130 some street</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION SLMINEI</td>
+      <td>construction dba jiebfig</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Local Group Homes for Mentally and Physically Handicapped</td>
+      <td>133 some street</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION MZKOQTN</td>
+      <td>construction dba huqppgt</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Other Grocery and Related Products Merchant Wholesalers</td>
+      <td>134 some street</td>
+    </tr>
+    <tr>
+      <td>TEAM BUILDERS</td>
+      <td></td>
+      <td></td>
+      <td>2</td>
+      <td>2</td>
+      <td>26,763</td>
+      <td>2</td>
+      <td>0</td>
+      <td>Construction</td>
+      <td>1034 west julian street san jose ca 95128</td>
+    </tr>
+    <tr>
+      <td>JUAN CARLOS GONZALES</td>
+      <td></td>
+      <td></td>
+      <td>2</td>
+      <td>2</td>
+      <td>52,020</td>
+      <td>2</td>
+      <td>0</td>
+      <td>Drywall and Insulation Contractors</td>
+      <td>1934 18th street san pablo ca usa 94806</td>
+    </tr>
+  </tbody>
+</table>
+<h3>Top violators group by trade name and sort by records</h3> 
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>legal_nm</th>
+      <th>trade_nm</th>
+      <th>cty_nm</th>
+      <th>violtn_cnt</th>
+      <th>ee_violtd_cnt</th>
+      <th>bw_amt</th>
+      <th>records</th>
+      <th>ee_pmt_recv</th>
+      <th>naics_desc.</th>
+      <th>street_addr</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>CONSTRUCTION BLGWIIF</td>
+      <td>CONSTRUCTION DBA KFIVOQV</td>
+      <td>san jose</td>
+      <td>15</td>
+      <td>15</td>
+      <td>1,500</td>
+      <td>15</td>
+      <td>6,000</td>
+      <td>Plumbing, Heating, and Air-Conditioning Contractors</td>
+      <td>135 some street</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION REEBQKJ</td>
+      <td>CONSTRUCTION DBA EPBPROJ</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>State Generation and Distribution of Electric Power</td>
+      <td>130 some street</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION WHCLMSE</td>
+      <td>CONSTRUCTION DBA FJKGUYN</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Local Nursing Homes</td>
+      <td>131 some street</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION XIMFWXR</td>
+      <td>CONSTRUCTION DBA KRGEMSQ</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Retail Bakeries</td>
+      <td>132 some street</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION SLMINEI</td>
+      <td>CONSTRUCTION DBA JIEBFIG</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Local Group Homes for Mentally and Physically Handicapped</td>
+      <td>133 some street</td>
+    </tr>
+    <tr>
+      <td>CONSTRUCTION MZKOQTN</td>
+      <td>CONSTRUCTION DBA HUQPPGT</td>
+      <td>san jose</td>
+      <td>3</td>
+      <td>3</td>
+      <td>300</td>
+      <td>3</td>
+      <td>1,200</td>
+      <td>Other Grocery and Related Products Merchant Wholesalers</td>
+      <td>134 some street</td>
+    </tr>
+  </tbody>
+</table>
+<p> There are no groups by companies with violations by multiple agencies to report</p> 
+<h3>Cases by agency or owner</h3> 
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>violtn_cnt</th>
+      <th>ee_violtd_cnt</th>
+      <th>bw_amt</th>
+      <th>records</th>
+      <th>ee_pmt_recv</th>
+      <th>juris_or_proj_nm</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>30</td>
+      <td>30</td>
+      <td>3,000</td>
+      <td>30</td>
+      <td>12,000</td>
+      <td>TEST</td>
+    </tr>
+    <tr>
+      <td>17</td>
+      <td>17</td>
+      <td>210,083</td>
+      <td>17</td>
+      <td>0</td>
+      <td>DLSE</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>8</td>
+      <td>30,994</td>
+      <td>8</td>
+      <td>0</td>
+      <td>DLSE_WAGECLAIM</td>
+    </tr>
+  </tbody>
+</table>
+<h3>Cases by jurisdiction (includes private jurisdictions)</h3> 
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>violtn_cnt</th>
+      <th>ee_violtd_cnt</th>
+      <th>bw_amt</th>
+      <th>records</th>
+      <th>ee_pmt_recv</th>
+      <th>Jurisdiction_region_or_General_Contractor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>30</td>
+      <td>30</td>
+      <td>3,000</td>
+      <td>30</td>
+      <td>12,000</td>
+      <td>SAN FRANCISCO WCA</td>
+    </tr>
+    <tr>
+      <td>20</td>
+      <td>20</td>
+      <td>200,141</td>
+      <td>20</td>
+      <td>0</td>
+      <td>SAN JOSE WCA</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>3</td>
+      <td>28,571</td>
+      <td>3</td>
+      <td>0</td>
+      <td>SALINAS WCA</td>
+    </tr>
+  </tbody>
+</table>
+
+<p> There are no prevailing wage cases to report.</p> 
+
+<div style='break-before:page'></div> 
+
+<h1> Notes and methods summary</h1> 
+<p> Report generated 07/02/2025</p> 
+<p>Palo Alto Data Group pulled a list from databases of all sector judgments and adjudications         to generate this report using an open source software that was prepared by the Center for Integrated Facility Engineering (CIFE)         at Stanford University in collaboration with the Santa Clara County Wage Theft Coalition. These data         have not been audited and, therefore, are only intended as an indication of wage theft.</p> 
+<p>Notes:</p>
+<p>(1) In the tables and city summaries, the zip ####X represents data that is missing the zip code field. (2) There are unlabeled industries, many of these are actually construction, care homes, restaurants, etc. just there is not an ability to label them as such--a label of 'other' could lead one to indicate that they are not these industries and therefore the category of 'undefined.' (3) Values may deviate by 10% within the report for camparable subcategories: this is due to labeling and relabeling of industry that may overwrite a previous industry label (for example Nail Hamburger could be labeled service or food). </p>
+<p>Note that categorizations are based on both documented data and intelligent inferences, therefore, there are errors. For the fields used to prepare this report, please see <a href='https://docs.google.com/spreadsheets/d/19EPT9QlUgemOZBiGMrtwutbR8XyKwnrEhB5rZpZqM98/'>https://docs.google.com/spreadsheets/d/19EPT9QlUgemOZBiGMrtwutbR8XyKwnrEhB5rZpZqM98/</a> . And for the industry categories, which are given shortened names here, please see <a href='https://www.naics.com/search/'>https://www.naics.com/search/</a>  . </p>
+<p>The DIR DLSE uses one case per employee while the DOL WHD combines employees into one case. </p>
+
+<p>Methods: </p><p>backwage_owed:</p><ul><li>the sum of wages owed, monetary penalty, and interest</li><li>df['backwage_owed'] = df['wages_owed'] + df['cmp_assd_cnt'] + df['interest_owed']</li></ul><p>estimate when missing:</p><ul><li>estimated backwage per employee = (df['bw_amt'].sum() / df['ee_violtd_cnt'].sum() ) </li><li>estimated monetary penalty (CMP) assessed per employee = (est_bw_amt * 12.5%) </li><li>where interest balance due is missing, then infer an interest balance based on a calaculated compounded interest of the backwages owed</li><ul><li>df['interest_owed'] = np.where((df['interest_owed'].isna() | (df['interest_owed'] == '')), df['Interest_Accrued'], df['interest_owed'])</li><li>df['Interest_Accrued'] = (df['wages_owed'] * (((1 + ((r/100.0)/n)) ** (n*df['Years_Unpaid']))) ) - df['wages_owed']</li></ul></ul><p>wages_owed: </p><ul><li>unpaid backwages less payment recieved by employee</li><li>df['wages_owed'] = df['bw_amt'] - df['ee_pmt_recv']</li></ul><p>interest_owed: </p><ul><li>interestd due less interest payments recieved</li><li>df['interest_owed'] = df['Interest_Accrued'] - df['Interest_Payments_Recd])</li></ul>
+
+<p>Data Sources: </p> 
+<p><ul><li>CA Dept. of Labor Standards Enforcement (DLSE) Judgements from Aug 2019 to Jan 2024 <a href='https://cadir.my.site.com/'>https://cadir.my.site.com/</a>  </li><li>CA Dept. of Labor Standards Enforcement (DLSE) Wage Claim Adjudications (WCA) from Aug 2019 to Jan 2024 <a href='https://cadir.my.site.com/wcsearch/s/'>https://cadir.my.site.com/wcsearch/s/</a>  </li><li>CA Dept. of Labor Standards Enforcement (DLSE) Wage Claim Adjudications (WCA) from Jan 2001 to Jul 2019 <a href='https://www.researchgate.net/publication/357767172_California_Dept_of_Labor_Standards_Enforcement_DLSE_PRA_Wage_Claim_Adjudications_WCA_for_all_DLSE_offices_from_January_2001_to_July_2019'>https://www.researchgate.net/publication/357767172_California_Dept_of_Labor_Standards_Enforcement_DLSE_PRA_Wage_Claim_Adjudications_WCA_for_all_DLSE_offices_from_January_2001_to_July_2019</a>  </li><li>US DOL WHD Enforcement Database Compliance Actions from Jan 2005 to Jan 2024 <a href='https://enforcedata.dol.gov/views/data_catalogs.php'>https://enforcedata.dol.gov/views/data_catalogs.php</a> </li></ul></p>
+

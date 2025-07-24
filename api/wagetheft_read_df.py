@@ -48,34 +48,51 @@ def read_df(
             OLD_DATA = True
             os.remove(f) #remove and make new   
 
-    if ( #read new files from url source -- kae all new regardless
-        (OLD_DATA
-        or len(dir) < 2) #folder empty
-        or debug['New_Data_On_Run_Test']):    
-        url_list = build_url_list(prep_dict, TEST_ = debug['TEST_'])
-        time.sleep(2) #pause to prevent whatever is causing crash
-        df_from_url(
-            industriesDict, 
-            prep_dict, 
-            url_list,
-            debug)
-        True
-    
-    if debug['short_run']:
-        prep_dict['url_abs_path'] = prep_dict['url_abs_path'] + '_fast'
-    csv_files = glob.glob(os.path.join(prep_dict['url_abs_path'], "*.csv"))
+    valid_and_done = False
+    pull_fresh = False
+    time_0 = time.time()
+    while not valid_and_done:
+        if ( #read new files from url source -- kae all new regardless
+            (OLD_DATA
+            or len(dir) < 2) #folder empty
+            or debug['New_Data_On_Run_Test']
+            or pull_fresh
+            ):    
+            url_list = build_url_list(prep_dict, TEST_ = debug['TEST_'])
+            time.sleep(2) #pause to prevent whatever is causing crash
+            df_from_url(
+                industriesDict, 
+                prep_dict, 
+                url_list,
+                debug)
+            True
+            #refactor with a loop to verify url list complete -- repeat after delay if not complete after 7,200 seconds (2 hours)
+        
+        if prep_dict['short_run']:
+            prep_dict['url_abs_path'] = prep_dict['url_abs_path'] + '_fast' #pull premade short csv list for just california and construction
+        csv_files = glob.glob(os.path.join(prep_dict['url_abs_path'], "*.csv"))
 
-    for f in csv_files:
-        time.sleep(2) #pause to prevent whatever is causing crash
-        #df_backup = pd.read_csv(f, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=debug['TEST_CASES'], dtype={'zip_cd': 'str'} )
-        df_backup = pd.read_csv(f, encoding = 'utf8', low_memory=False, thousands=',', nrows=debug['TEST_CASES'], dtype={'zip_cd': 'str'} )
-        #df_backup = pq.read_parquet(f.split('.')[0] + '.parquet') #only activate on VM
-        prep_dict['DF_OG'] = pd.concat([df_backup, prep_dict['DF_OG']], ignore_index=True)  
+        counter = 0
+        for f in csv_files:
+            time.sleep(2) #pause to prevent whatever is causing crash
+            #df_backup = pd.read_csv(f, encoding = "ISO-8859-1", low_memory=False, thousands=',', nrows=debug['TEST_CASES'], dtype={'zip_cd': 'str'} )
+            df_backup = pd.read_csv(f, encoding = 'utf8', low_memory=False, thousands=',', nrows=debug['TEST_CASES'], dtype={'zip_cd': 'str'} )
+            #df_backup = pq.read_parquet(f.split('.')[0] + '.parquet') #only activate on VM
+            prep_dict['DF_OG'] = pd.concat([df_backup, prep_dict['DF_OG']], ignore_index=True)  
+            counter += 1
+        
+        #check for exits status
+        if counter >= len(csv_files): #if all files read
+            valid_and_done = True
+        else: #if counter < len(csv_files):
+            pull_fresh = True
+        if time.time() - time_0 > 7200: #if more than 2 hours
+            valid_and_done = True #likely will pass out an error but just go and maybe it will work
 
     out_target = prep_dict['DF_OG'].copy()  # new df -- hold df_csv as a backup and only df from this point on
 
     time.sleep(2) #pause to prevent whatever is causing crash
-    url_list = build_url_list(prep_dict, Fast=debug['short_run'])
+    url_list = build_url_list(prep_dict, Fast=True)
 
     for url in url_list: #filter dataset for this run -- example, remove fed and state
         time.sleep(2) #pause to prevent whatever is causing crash
@@ -164,7 +181,7 @@ def df_from_url(
     return
     
 
-
+#fast simply retrieves the list without the urls
 def build_url_list(prep_dict, TEST_ = False, Fast = False, ):
 
     includeTestData = 0 #this is always 0

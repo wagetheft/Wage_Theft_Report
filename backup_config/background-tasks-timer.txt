@@ -1,0 +1,24 @@
+#background-tasks.timer
+
+[Unit]
+Description=Run background report task monthly with random delay
+
+[Timer]
+OnCalendar=monthly
+RandomizedDelaySec=2h
+AccuracySec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+
+
+
+#/etc/systemd/system/background-tasks.service
+#/etc/systemd/system/background-tasks.timer
+
+#sudo systemctl daemon-reexec
+#sudo systemctl daemon-reload
+#sudo systemctl enable --now background-tasks.timer
+
+#.timer file must have the same base name as .service file.
