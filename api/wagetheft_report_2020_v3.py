@@ -244,7 +244,7 @@ def generateWageReport(
         'bugFile':"", # will be set later
 
         'log_number':1, #typically 1
-        'LOGBUG':False, #typically False
+        'LOGBUG':True, #typically False
 
         'TEST_CASES':1000000000, # read all records -- infinit large number
 
