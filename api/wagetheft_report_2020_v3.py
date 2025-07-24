@@ -117,7 +117,7 @@ def main():
     # https://www.goodjobsfirst.org/violation-tracker
 
     # API call***************************************************************************
-    generateWageReport(
+    report_test = generateWageReport(
         PARAM_1_TARGET_STATE, PARAM_1_TARGET_COUNTY, PARAM_1_TARGET_ZIPCODE, 
         PARAM_2_TARGET_INDUSTRY, 
         PARAM_3_TARGET_ORGANIZATION,
@@ -128,6 +128,8 @@ def main():
         TOP_VIOLATORS, USE_ASSUMPTIONS, INFER_NAICS, 
         PARAM_YEAR_START, PARAM_YEAR_END
         )
+    
+    temp_stuff = report_test
 
 
 # API function entry*******************************************************************
