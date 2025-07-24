@@ -38,7 +38,9 @@ def file_path(relative_path):
 def append_log(bug_log, text = "", LOGBUG = True):
     if LOGBUG:
         bugFile = open(bug_log, 'a')
+        bugFile.write("\n")
         bugFile.write(text)
+        bugFile.write("\n")
         bugFile.close()
         print(text)
 
