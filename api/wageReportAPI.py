@@ -1,4 +1,5 @@
 from flask import Flask, request, send_file
+import os
 import platform
 if platform.system() == 'Windows' or platform.system() =='Darwin':
     from wagetheft_report_2020_v3 import generateWageReport
@@ -97,11 +98,17 @@ def generateFile():
         include_tables, include_summaries, only_sig_summaries, include_top_viol_tables, 
         use_assumptions, infer_by_naics, 
         YEAR_START_TEXT, YEAR_END_TEXT)
+    
+    abs_report_file = os.path.abspath(report_file_name)
+    error_msg = "send an email to information@paloaltodatagroup.com"
+    error_msg_add = ""
+    if not os.path.exists(abs_report_file):
+        error_msg_add = "File not found, "
 
     try:
-        return send_file(report_file_name, as_attachment=True)
+        return send_file(abs_report_file, report_file_name, as_attachment=True)
     except Exception as e:
-        return "Server Error -- send an email to information@paloaltodatagroup.com", 500
+        return error_msg_add + error_msg + ": " + str(e), 500
 
 def checkValidInput(inputDict: dict) -> bool:
     toCheck = ["target_city", "target_industry", "target_organization", 
