@@ -36,20 +36,20 @@ def inference_function(df, cityDict, TARGET_INDUSTRY,
     InferZipcode(df, cityDict) #long runtime
     time_2 = time.time()
     log_number = "InferZipcode"
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+    append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
 
     time_1 = time.time()
     df = Infer_Industry(df, TARGET_INDUSTRY)
     time_2 = time.time()
     log_number = "Infer_Industry"
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+    append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
     # unused df = Filter_for_Target_Industry(df,TARGET_INDUSTRY) ##debug 12/23/2020 <-- run here for faster time but without global summary
     
     time_1 = time.time()
     df = InferAgencyFromCaseIDAndLabel(df, 'juris_or_proj_nm')
     time_2 = time.time()
     log_number = "InferAgency"
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+    append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
 
     # PREVAILING WAGE
     time_1 = time.time()
@@ -58,20 +58,20 @@ def inference_function(df, cityDict, TARGET_INDUSTRY,
         df['Prevailing'] = pd.to_numeric(df['Prevailing'], errors='coerce')
     time_2 = time.time()
     log_number = "infer_prevailing_wage_cases"
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+    append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
 
     time_1 = time.time()
     df = wages_owed(df)
     time_2 = time.time()
     log_number = "calc wages_owed"
-    append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+    append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
 
     #coulf be buggy 1/18/2024 so removed
     #time_1 = time.time()
     #df = fill_case_status_for_missing_enddate(df)
     #time_2 = time.time()
     #log_number+=1
-    #append_log(bug_log, LOGBUG, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n")
+    #append_log(bug_log, f"Time to finish section {log_number} in {function_name} " + "%.5f" % (time_2 - time_1) + "\n", LOGBUG)
 
     return df
 
