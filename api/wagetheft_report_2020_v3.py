@@ -87,7 +87,7 @@ def main():
     PARAM_1_TARGET_STATE = "" #"California"
     PARAM_1_TARGET_COUNTY = "" #"Santa_Clara_County"
     PARAM_1_TARGET_ZIPCODE = "San_Jose_Zipcode" #"San_Jose_Zipcode"
-    PARAM_2_TARGET_INDUSTRY = 'All NAICS' #"Janitorial" #"Construction" #for test use 'All NAICS'
+    PARAM_2_TARGET_INDUSTRY = "Construction" #'All NAICS' #"Janitorial" #for test use 'All NAICS'
     PARAM_3_TARGET_ORGANIZATION = "" #"Cobabe Brothers Incorporated|COBABE BROTHERS PLUMBING|COBABE BROTHERS|COBABE"
     
     PARAM_YEAR_START = "" #"2000/01/01" # default is 'today' - years=4 #or "2016/05/01"
@@ -213,11 +213,23 @@ def generateWageReport(
         'url_backup_path':'url_backup/',
         'url_abs_path': "", # will be set later
 
+        'short_run':True, # True for short run, False for full run
+
         'DF_OG': pd.DataFrame(),
     }
     script_dir0 = os.path.dirname(os.path.dirname(__file__))
     prep_dict['url_abs_path'] = os.path.join(script_dir0, prep_dict['url_backup_path'])
-    
+
+    #unlikely search criteria that triggers a longer full search
+    if target_state != "" and target_state.lower() != ("California").lower():
+        prep_dict['short_run'] = False
+    if target_industry.lower() != ("Construction").lower():
+        prep_dict['short_run'] = False
+    if (
+        YEAR_START != (pd.to_datetime('today') - pd.DateOffset(years=4)) 
+        and YEAR_START < pd.to_datetime('2010-05-01')
+        ):
+        prep_dict['short_run'] = False
     
     # SET DEBUG SETTINGS AND LOG FILE NAME/PATH *********************************************************
     debug = {
@@ -235,7 +247,6 @@ def generateWageReport(
         'TEST_CASES':1000000000, # read all records -- infinit large number
 
         'RunFast':False, # True skip slow formating; False run normal
-        'short_run':True, #typically True: california, construction, last eight years
         'FLAG_DUPLICATE':0, # 1 FLAG_DUPLICATE duplicate, #0 drop duplicates --typically 0
         'New_Data_On_Run_Test':False, #typically False
 
