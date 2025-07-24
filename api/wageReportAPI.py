@@ -100,13 +100,16 @@ def generateFile():
         YEAR_START_TEXT, YEAR_END_TEXT)
     
     abs_report_file = os.path.abspath(report_file_name)
+    download_name_temp = os.path.basename(report_file_name)
     error_msg = "send an email to information@paloaltodatagroup.com"
     error_msg_add = ""
     if not os.path.exists(abs_report_file):
         error_msg_add = "File not found, "
-
+        
     try:
-        return send_file(abs_report_file, report_file_name, as_attachment=True)
+        #return send_file(abs_report_file, report_file_name, as_attachment=True)
+        return send_file(abs_report_file, as_attachment=True, download_name=download_name_temp)
+    
     except Exception as e:
         return error_msg_add + error_msg + ": " + str(e), 500
 
