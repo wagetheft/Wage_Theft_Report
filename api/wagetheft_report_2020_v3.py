@@ -272,6 +272,8 @@ def generateWageReport(
     debug['bug_log'] = os.path.join(debug['debug_log_path'], ('log_'+'bug_').replace(' ', '_') + '.txt')
     debug['bug_log_csv'] = os.path.join(debug['debug_log_path'], ('log_'+'bug_').replace(' ', '_') + '.csv')
     debug_fileSetup_def(debug['bug_log'], debug['LOGBUG'])
+
+    append_log(debug['bug_log'], "established", debug['LOGBUG'])
     
     f_dict = {
         'temp_file_name':name_gen(debug['debug_log_path'], debug['file_name'], '_theft_summary_', target_organization, '.html'),
@@ -324,7 +326,7 @@ def generateWageReport(
 
     # df.to_csv(debug['bug_log_csv']) #debug outfile -- use to debug
 
-    append_log(debug['bug_log'], "HERE_0 \n", debug['LOGBUG'])
+    append_log(debug['bug_log'], "HERE_0", debug['LOGBUG'])
     out_target, prep_dict['DF_OG'] = read_df(
         industriesDict, 
         prep_dict, 
@@ -332,7 +334,7 @@ def generateWageReport(
         )
     
     #TARGET LIST
-    append_log(debug['bug_log'], "HERE_1 \n", debug['LOGBUG'])
+    append_log(debug['bug_log'], "HERE_1", debug['LOGBUG'])
     out_target = shape_df(
         out_target, 
         option_dict, 
@@ -340,17 +342,17 @@ def generateWageReport(
         debug['bug_log_csv'],
         )
     
-    append_log(debug['bug_log'], "HERE_2 \n", debug['LOGBUG'])
+    append_log(debug['bug_log'], "HERE_2", debug['LOGBUG'])
     out_target, out_target_organization = extract_values_for_report(
         out_target, 
         option_dict['TARGET_ORGANIZATIONS'], 
         option_dict['signatories_report'],
         f_dict['temp_file_name_csv'])
     
-    append_log(debug['bug_log'], "HERE_3 \n", debug['LOGBUG'])
+    append_log(debug['bug_log'], "HERE_3", debug['LOGBUG'])
     out_prevailing_target, out_signatory_target = prevailing_wage_blacklist(out_target)
 
-    append_log(debug['bug_log'], "HERE_4 \n", debug['LOGBUG'])
+    append_log(debug['bug_log'], "HERE_4", debug['LOGBUG'])
     target_dict = {
         'case_disposition_series':out_target_organization['Case Status'].copy(),
         'out_prevailing_target':out_prevailing_target,
@@ -358,7 +360,7 @@ def generateWageReport(
     }
 
     #SUM COUNTS
-    append_log(debug['bug_log'], "HERE_5 \n", debug['LOGBUG'])
+    append_log(debug['bug_log'], "HERE_5", debug['LOGBUG'])
     sum_dict = {
         'total_ee_violtd': out_target_organization['ee_violtd_cnt'].sum(),
         'total_bw_atp': out_target_organization['bw_amt'].sum(),
@@ -366,7 +368,7 @@ def generateWageReport(
     }
 
     #PRINT
-    append_log(debug['bug_log'], "HERE_6 \n", debug['LOGBUG'])
+    append_log(debug['bug_log'], "HERE_6", debug['LOGBUG'])
     compile_theft_report(
         out_target,
         out_target_organization,
