@@ -217,7 +217,7 @@ def generateWageReport(
         'url_backup_path':'url_backup/',
         'url_abs_path': "", # will be set later
 
-        'short_run':True, # True for short run, False for full run
+        'short_run':False, # True for short run, False for full run -- normally set to False
 
         'DF_OG': pd.DataFrame(),
     }
@@ -247,7 +247,7 @@ def generateWageReport(
         'log_number':1, #typically 1
         'LOGBUG':True, #typically False
 
-        'TEST_CASES':1000000000, # read all records -- infinit large number
+        'TEST_CASES':1000000000, # read all records -- infinite large number
 
         'RunFast':False, # True skip slow formating; False run normal
         'FLAG_DUPLICATE':0, # 1 FLAG_DUPLICATE duplicate, #0 drop duplicates --typically 0
@@ -333,7 +333,7 @@ def generateWageReport(
         )
     
     #TARGET LIST
-    append_log(debug['bug_log'], "HERE_1", debug['LOGBUG'])
+    append_log(debug['bug_log'], str(len(out_target)), debug['LOGBUG'])
     out_target = shape_df(
         out_target, 
         option_dict, 
@@ -341,14 +341,15 @@ def generateWageReport(
         debug['bug_log_csv'],
         )
     
-    append_log(debug['bug_log'], "HERE_2", debug['LOGBUG'])
+    append_log(debug['bug_log'], str(len(out_target)), debug['LOGBUG'])
     out_target, out_target_organization = extract_values_for_report(
         out_target, 
         option_dict['TARGET_ORGANIZATIONS'], 
         option_dict['signatories_report'],
         f_dict['temp_file_name_csv'])
     
-    append_log(debug['bug_log'], "HERE_3", debug['LOGBUG'])
+    append_log(debug['bug_log'], str(len(out_target)), debug['LOGBUG'])
+    append_log(debug['bug_log'], str(len(out_target_organization)), debug['LOGBUG'])
     out_prevailing_target, out_signatory_target = prevailing_wage_blacklist(out_target)
 
     append_log(debug['bug_log'], "HERE_4", debug['LOGBUG'])
