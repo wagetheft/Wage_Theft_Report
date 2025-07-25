@@ -217,7 +217,7 @@ def generateWageReport(
         'url_backup_path':'url_backup/',
         'url_abs_path': "", # will be set later
 
-        'short_run':False, # True for short run, False for full run -- normally set to False
+        'short_run':True, # True for short run, False for full run -- normally set to True
 
         'DF_OG': pd.DataFrame(),
     }
