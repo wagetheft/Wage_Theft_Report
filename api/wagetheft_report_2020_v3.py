@@ -67,6 +67,7 @@ else:
 
     from api.debug_utils import (
         debug_fileSetup_def,
+        debug_fileClose_def,
         append_log,
     )
     from api.util_zipcode import (
