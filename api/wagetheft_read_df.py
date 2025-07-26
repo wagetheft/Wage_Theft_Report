@@ -154,14 +154,14 @@ def df_from_url(
             ) #save copy to url_backup -- cleaned file
         
         YEAR_END_THEN = pd.to_datetime('today')
-        YEAR_START_NOW = (YEAR_END_THEN - timedelta(days=8*365)).strftime('%Y-%m-%d')
+        YEAR_START_NOW = (YEAR_END_THEN - timedelta(days=9*365)).strftime('%Y-%m-%d')
 
         df_url_short = filter_function(
             df_url,
             YEAR_START = YEAR_START_NOW, 
             YEAR_END = YEAR_END_THEN, 
-            TARGET_ZIPCODES = '00000',
-            TARGET_INDUSTRY = 'Construction',
+            TARGET_ZIPCODES = ['All Regions','00000'], #bypass zipcode check and just filter on state CA per target_state = 'California'
+            TARGET_INDUSTRY = industriesDict['All NAICS'],
             infer_zip = True, infer_by_naics = True, 
             target_state = 'California', 
             )

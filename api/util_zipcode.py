@@ -198,7 +198,7 @@ def InferZipcodeFromJurisdictionName(df, cityDict):
 
 def Filter_for_Zipcode(df, TARGET_ZIPCODES = '00000', infer_zip = True, target_state = 'California'):
     if 'st_cd' in df.columns and target_state == "California":
-        df = df.loc[df['st_cd']== "CA"] #hacketty time at 1:30 pm and somewhere to go Jan 11, 2024 by F Peterson
+        df = df.loc[(df['st_cd']== "CA") | (df['st_cd'].isnull()) | (df['st_cd'] == "")] #hacketty time at 1:30 pm and somewhere to go Jan 11, 2024 by F Peterson
     else:
         if len(TARGET_ZIPCODES) > 0 and TARGET_ZIPCODES[1] != '00000': # faster run for "All_Zipcode" condition
             TARGET_ZIPCODES_HERE = TARGET_ZIPCODES #make local copy
