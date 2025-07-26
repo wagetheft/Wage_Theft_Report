@@ -205,10 +205,15 @@ def build_url_list(prep_dict, TEST_ = False, Fast = False, ):
         url0 = "https://stanford.edu/~granite/DLSE_no_returns_Linux_TEST.csv" #<-- open and edit this file with test data
 
         #find updated url -- #dev by Henry 8/21/2023
-        ret = requests.post('https://enforcedata.dol.gov/views/data_summary.php', data={'agency':'whd'})
-        m = re.search(r'(https://enfxfr.dol.gov/\.\./data_catalog/WHD/whd_whisard_[0-9]{8}\.csv\.zip)', str(ret.content))   
-        #url1 = "https://enfxfr.dol.gov/data_catalog/WHD/whd_whisard_20230710.csv.zip" #update link from here https://enforcedata.dol.gov/views/data_catalogs.php
-        url1 = m.group(0)
+        try:
+            ret = requests.post('https://enforcedata.dol.gov/views/data_summary.php', data={'agency':'whd'})
+            m = re.search(r'(https://enfxfr.dol.gov/\.\./data_catalog/WHD/whd_whisard_[0-9]{8}\.csv\.zip)', str(ret.content))
+            url1 = m.group(0)
+            print("Successfully fetched live DOL data URL.")
+        except Exception as e:
+            print(f"Live DOL URL fetch failed: {e}. Falling back to backup URL.")
+            url1 = "https://stanford.edu/~granite/DOL_WHD_backup.csv" # Static backup link
+
         time.sleep(2) #pause to prevent whatever is causing crash
 
         #pre-2019 DLSE data
