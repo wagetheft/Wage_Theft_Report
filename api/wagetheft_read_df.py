@@ -161,7 +161,7 @@ def df_from_url(
             YEAR_START = YEAR_START_NOW, 
             YEAR_END = YEAR_END_THEN, 
             TARGET_ZIPCODES = ['All Regions','00000'], #bypass zipcode check and just filter on state CA per target_state = 'California'
-            TARGET_INDUSTRY = industriesDict['All NAICS'],
+            TARGET_INDUSTRY = industriesDict['Construction'],
             infer_zip = True, infer_by_naics = True, 
             target_state = 'California', 
             )
